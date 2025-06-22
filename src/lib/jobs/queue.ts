@@ -15,6 +15,7 @@ export const setImportQueue = new Queue('set-imports', { connection });
 export const cardSyncQueue = new Queue('card-sync', { connection });
 export const dataCleanupQueue = new Queue('data-cleanup', { connection });
 export const reportQueue = new Queue('reports', { connection });
+export const collectionIndexQueue = new Queue('collection-index', { connection });
 
 // Queue events for monitoring
 export const priceUpdateEvents = new QueueEvents('price-updates', { connection });
@@ -74,6 +75,19 @@ export async function scheduleRecurringJobs(): Promise<void> {
       },
       removeOnComplete: { count: 4 },
       removeOnFail: { count: 8 },
+    }
+  );
+
+  // Daily collection index update - Every day at 1 AM
+  await collectionIndexQueue.add(
+    'daily-index-update',
+    { type: 'INDEX_COLLECTIONS', payload: { scope: 'all' } },
+    {
+      repeat: {
+        pattern: '0 1 * * *',
+      },
+      removeOnComplete: { count: 7 },
+      removeOnFail: { count: 14 },
     }
   );
 
@@ -159,6 +173,7 @@ export async function getAllQueuesStats(): Promise<Record<string, any>> {
     cardSync: cardSyncQueue,
     dataCleanup: dataCleanupQueue,
     reports: reportQueue,
+    collectionIndex: collectionIndexQueue,
   };
 
   const stats: Record<string, any> = {};

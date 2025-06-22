@@ -105,6 +105,7 @@ model Set {
   series            String
   printedTotal      Int
   total             Int
+  totalCards        Int       @default(0)
   releaseDate       DateTime
   updatedAt         DateTime  @updatedAt
   
@@ -159,6 +160,7 @@ model Card {
   set                     Set       @relation(fields: [setId], references: [id])
   number                  String
   printedNumber           String?
+  collectorNumber         String?
   
   // Metadata
   artist                  String?
@@ -190,6 +192,8 @@ model Card {
   prices                  CardPrice[]
   priceHistory            PriceHistory[]
   favoriteStrategies      Strategy[] @relation("StrategyCards")
+  cardNotes               CardNote[]
+  wantList                WantList[]
   
   // Indexes for search performance
   @@index([name])
@@ -237,6 +241,18 @@ model User {
   tradeOffers       TradeOffer[]     @relation("OfferedTrades")
   tradeRequests     TradeOffer[]     @relation("RequestedTrades")
   priceAlerts       PriceAlert[]
+  tags              CollectionTag[]
+  folders           CollectionFolder[]
+  cardNotes         CardNote[]
+  wantList          WantList[]
+  snapshots         CollectionSnapshot[]
+  tradingPartners   TradingPartner[] @relation("UserPartners")
+  partnerOf         TradingPartner[] @relation("PartnerUsers")
+  savedSearches     SavedSearch[]
+  backups           CollectionBackup[]
+  sharedCollections SharedCollection[]
+  sharedWantLists   SharedWantList[]
+  savedViews        SavedView[]
   
   // Indexes
   @@index([clerkUserId])
@@ -254,11 +270,16 @@ model UserCollection {
   quantityFoil    Int             @default(0)
   condition       CardCondition   @default(NEAR_MINT)
   language        String          @default("EN")
-  purchasePrice   Decimal?        @db.Decimal(10, 2)
-  acquiredDate    DateTime?
+  purchasePrice   Decimal         @default(0) @db.Decimal(10, 2)
+  acquiredAt      DateTime        @default(now())
   notes           String?
-  isWishlist      Boolean         @default(false)
-  isForTrade      Boolean         @default(false)
+  onWishlist      Boolean         @default(false)
+  forTrade        Boolean         @default(false)
+  
+  // New fields for collection management
+  source          AcquisitionSource @default(OTHER)
+  location        StorageLocation   @default(BINDER)
+  tags            String[]          @default([])
   
   // Timestamps
   createdAt       DateTime        @default(now())
@@ -269,13 +290,17 @@ model UserCollection {
   card            Card            @relation(fields: [cardId], references: [id])
   
   // Constraints
-  @@unique([userId, cardId, condition, language, isWishlist])
+  @@unique([userId, cardId, condition, location])
   
   // Indexes
   @@index([userId])
   @@index([cardId])
-  @@index([isWishlist])
-  @@index([isForTrade])
+  @@index([onWishlist])
+  @@index([forTrade])
+  @@index([source])
+  @@index([location])
+  @@index([acquiredAt])
+  @@index([tags])
 }
 
 // Deck formats (Standard, Expanded, etc.)
@@ -373,6 +398,7 @@ model CardPrice {
   source          PriceSource
   priceType       PriceType
   price           Decimal       @db.Decimal(10, 2)
+  marketPrice     Decimal?      @db.Decimal(10, 2)
   currency        Currency      @default(USD)
   url             String?
   
@@ -400,8 +426,10 @@ model PriceHistory {
   source          PriceSource
   priceType       PriceType
   price           Decimal       @db.Decimal(10, 2)
+  marketPrice     Decimal?      @db.Decimal(10, 2)
   currency        Currency      @default(USD)
   volume          Int?          // Trading volume if available
+  createdAt       DateTime      @default(now())
   
   // Relationships
   card            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -542,4 +570,262 @@ enum TradeStatus {
 enum AlertType {
   ABOVE
   BELOW
+}
+
+enum AcquisitionSource {
+  PURCHASE
+  TRADE
+  GIFT
+  PACK_OPENING
+  TOURNAMENT_PRIZE
+  OTHER
+}
+
+enum StorageLocation {
+  BINDER
+  BOX
+  DECK
+  DISPLAY
+  SAFE
+  OTHER
+}
+
+// ==================== COLLECTION MANAGEMENT MODELS ====================
+
+// Collection tags for organization
+model CollectionTag {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  name            String
+  color           String        @default("#000000")
+  cardCount       Int           @default(0)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Constraints
+  @@unique([userId, name])
+  
+  // Indexes
+  @@index([userId])
+}
+
+// Collection folders for custom organization
+model CollectionFolder {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  name            String
+  description     String?
+  cardIds         String[]      @default([])
+  isPublic        Boolean       @default(false)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([isPublic])
+}
+
+// Personal notes and ratings for cards
+model CardNote {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cardId          String
+  userId          String        @db.Uuid
+  note            String
+  rating          Int?          // 1-5 stars
+  memories        String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card            Card          @relation(fields: [cardId], references: [id])
+  
+  // Constraints
+  @@unique([cardId, userId])
+  
+  // Indexes
+  @@index([userId])
+  @@index([cardId])
+}
+
+// Want list items with priority
+model WantList {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  cardId          String
+  priority        Int           @default(5) // 1-10
+  maxPrice        Decimal?      @db.Decimal(10, 2)
+  quantity        Int           @default(1)
+  notes           String?
+  priceAlerts     Json[]        @default([]) // Array of PriceAlert objects
+  
+  // Timestamps
+  dateAdded       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card            Card          @relation(fields: [cardId], references: [id])
+  
+  // Constraints
+  @@unique([userId, cardId])
+  
+  // Indexes
+  @@index([userId])
+  @@index([cardId])
+  @@index([priority])
+}
+
+// Collection value snapshots for tracking
+model CollectionSnapshot {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  totalValue      Decimal       @db.Decimal(12, 2)
+  cardCount       Int
+  uniqueCards     Int           @default(0)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId, createdAt])
+}
+
+// Trading partners for trade matching
+model TradingPartner {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  partnerId       String        @db.Uuid
+  trustLevel      Int           @default(50) // 0-100
+  totalTrades     Int           @default(0)
+  successfulTrades Int          @default(0)
+  notes           String?
+  lastTradeDate   DateTime?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation("UserPartners", fields: [userId], references: [id], onDelete: Cascade)
+  partner         User          @relation("PartnerUsers", fields: [partnerId], references: [id], onDelete: Cascade)
+  
+  // Constraints
+  @@unique([userId, partnerId])
+  
+  // Indexes
+  @@index([userId])
+  @@index([partnerId])
+}
+
+// Saved searches for quick access
+model SavedSearch {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  name            String
+  filters         Json          // CollectionSearchFilters
+  useCount        Int           @default(0)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  lastUsed        DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([lastUsed])
+}
+
+// Collection backup records
+model CollectionBackup {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  cardCount       Int
+  totalValue      Decimal       @db.Decimal(12, 2)
+  format          String        // json, csv
+  compressed      Boolean       @default(false)
+  size            Int           // bytes
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId, createdAt])
+}
+
+// Shared collection views
+model SharedCollection {
+  id              String        @id @default(cuid())
+  userId          String        @db.Uuid
+  config          Json          // CollectionSharingConfig
+  shareUrl        String        @unique
+  qrCode          String
+  views           Int           @default(0)
+  expiresAt       DateTime?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Shared want lists
+model SharedWantList {
+  id              String        @id @default(cuid())
+  userId          String        @db.Uuid
+  config          Json          // Sharing configuration
+  expiresAt       DateTime?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Saved collection views
+model SavedView {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  name            String
+  viewConfig      Json          // CollectionView configuration
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
 }

@@ -27,16 +27,21 @@ npx prisma generate           # Generate Prisma client
 npx prisma migrate deploy     # Deploy migrations in production
 ```
 
-### Testing & Analysis
+### Testing API Endpoints
 ```bash
-# Analyze a deck via API
+# Analyze a deck
 curl -X GET http://localhost:3000/api/analysis/{deckId} \
   -H "Authorization: Bearer {clerk-token}"
 
-# Compare two decks
-curl -X POST http://localhost:3000/api/analysis/compare \
+# Get personalized recommendations
+curl -X GET "http://localhost:3000/api/recommendations/personalized?minPrice=0&maxPrice=100" \
+  -H "Authorization: Bearer {clerk-token}"
+
+# Optimize existing deck
+curl -X POST http://localhost:3000/api/recommendations/optimize \
   -H "Content-Type: application/json" \
-  -d '{"deckIdA": "...", "deckIdB": "...", "format": "standard"}'
+  -H "Authorization: Bearer {clerk-token}" \
+  -d '{"deckId": "...", "optimizationGoal": "maximize_win_rate"}'
 ```
 
 ## Architecture Overview
@@ -83,6 +88,26 @@ curl -X POST http://localhost:3000/api/analysis/compare \
    - **ArchetypeClassifier**: 9 deck archetype detection
    - **ScoringSystem**: Comprehensive deck scoring
 
+7. **AI Recommendation System** (`src/lib/recommendations/`)
+   - **RecommendationEngine**: Main orchestrator with learning capabilities
+   - **ArchetypeGenerator**: Builds decks from scratch using templates
+   - **ReplacementOptimizer**: Intelligent card replacement suggestions
+   - **BudgetBuilder**: Budget-aware deck building with upgrade paths
+   - **CollectionBuilder**: Leverages user's owned cards
+   - **SynergyCalculator**: Advanced synergy and combo detection
+   - **MetaAnalyzer**: Real-time meta analysis and counter strategies
+
+8. **Collection Management System** (`src/lib/collection/`)
+   - **CollectionManager**: Main orchestrator for all collection features
+   - **CollectionSearchEngine**: Advanced search with full-text and filtering
+   - **CollectionStatisticsAnalyzer**: Analytics and insights generation
+   - **QuickAddManager**: Bulk import and quick card addition
+   - **CollectionOrganizationManager**: Tags, folders, and custom organization
+   - **WantListManager**: Want list tracking with price alerts
+   - **CollectionValueTracker**: Real-time value and performance tracking
+   - **ImportExportManager**: Multi-format import/export capabilities
+   - **CollectionSearchIndexer**: Redis-based search indexing
+
 ### Key Design Patterns
 
 1. **Enum Handling**
@@ -117,6 +142,26 @@ curl -X POST http://localhost:3000/api/analysis/compare \
    }
    ```
 
+5. **Recommendation Pattern**
+   ```typescript
+   const engine = new RecommendationEngine();
+   const recommendations = await engine.getPersonalizedRecommendations(
+     userId,
+     filter
+   );
+   ```
+
+6. **Collection Search Pattern**
+   ```typescript
+   const manager = new CollectionManager();
+   const results = await manager.searchCollection(
+     userId,
+     filters,
+     page,
+     pageSize
+   );
+   ```
+
 ### Data Flow
 
 1. **Card Data Sync**
@@ -133,6 +178,16 @@ curl -X POST http://localhost:3000/api/analysis/compare \
    - TCGPlayer API → Price processor → Database
    - Weekly bulk updates via background jobs
    - Real-time updates for individual cards
+
+4. **Recommendation Flow**
+   - User preferences → Engine → Multiple builders → Scoring → Filtering → Results
+   - Learning system tracks feedback
+   - Personalization improves over time
+
+5. **Collection Management Flow**
+   - Cards → Collection → Search Index → Analytics → Insights
+   - Real-time value tracking with price updates
+   - Import/Export with multiple format support
 
 ### Environment Variables
 
@@ -167,6 +222,17 @@ Optional but recommended:
    - Update types in `src/lib/analysis/types.ts`
    - Integrate in `DeckAnalyzer` class
 
+5. **Add recommendation feature**
+   - Extend or create builder in `src/lib/recommendations/`
+   - Update types in `src/lib/recommendations/types.ts`
+   - Integrate in `RecommendationEngine` class
+
+6. **Add collection management feature**
+   - Extend managers in `src/lib/collection/`
+   - Update types in `src/lib/collection/types.ts`
+   - Add API endpoints in `src/app/api/collection/`
+   - Update search indexes if needed
+
 ### Performance Considerations
 
 1. **API Rate Limits**
@@ -179,6 +245,9 @@ Optional but recommended:
    - Prices: 1 hour TTL
    - Search results: 1 hour TTL
    - Analysis results: 1 hour TTL
+   - Recommendations: 1 hour TTL
+   - Meta data: 24 hour TTL
+   - Collection search: 5 minute TTL
 
 3. **Database Queries**
    - Use indexes defined in schema
@@ -211,3 +280,15 @@ Optional but recommended:
    - Check queue status: `/api/health`
    - View failed jobs in queue stats
    - Manually retry: `queue.retry(jobId)`
+
+6. **Recommendation Issues**
+   - Check user preferences are loaded
+   - Verify collection data exists
+   - Check meta data is current
+   - Review filter constraints
+
+7. **Collection Search Issues**
+   - Rebuild search index: `collectionIndexQueue.add(...)`
+   - Check Redis connection for indexes
+   - Verify search filters are valid
+   - Monitor index size and performance
