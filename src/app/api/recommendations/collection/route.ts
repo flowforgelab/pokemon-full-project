@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { CollectionBuilder } from '@/lib/recommendations/collection-builder';
 import { z } from 'zod';
