@@ -1,5 +1,5 @@
 import { createClient, RedisClientType } from 'redis';
-import LRU from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { compress, decompress } from '@/lib/utils/compression';
 import { encrypt, decrypt } from '@/lib/utils/encryption';
 
@@ -49,7 +49,7 @@ export interface CacheEntry<T> {
 }
 
 class MultiLevelCacheManager {
-  private memoryCache: LRU<string, any>;
+  private memoryCache: LRUCache<string, any>;
   private redisClient: RedisClientType | null = null;
   private stats = {
     memory: { hits: 0, misses: 0, evictions: 0 },
@@ -58,9 +58,11 @@ class MultiLevelCacheManager {
 
   constructor() {
     // Initialize memory cache with 100MB limit
-    this.memoryCache = new LRU({
-      max: 100 * 1024 * 1024, // 100MB
-      maxSize: (value) => {
+    this.memoryCache = new LRUCache({
+      max: 1000, // Maximum number of items
+      maxSize: 100 * 1024 * 1024, // 100MB total size limit
+      sizeCalculation: (value) => {
+        // Calculate size of the value in bytes
         return JSON.stringify(value).length;
       },
       ttl: 1000 * 60 * 5, // 5 minutes default

@@ -1,13 +1,24 @@
 // Central export for all performance optimization utilities
 
+// Server-side exports only (safe for API routes)
 export * from './database-optimizer';
 export * from './cache-manager';
-export * from './frontend-optimizer';
 export * from './api-optimizer';
 export * from './monitoring';
-export * from './service-worker-manager';
-export * from './image-optimizer';
 export * from './scalability';
+
+// Re-export only server-safe utilities from frontend-optimizer
+export { 
+  PerformanceCollector, 
+  performanceCollector,
+  prefetchComponentData,
+  analyzeBundle 
+} from './performance-utils';
+
+// Note: Client-side utilities should be imported from:
+// - './frontend-optimizer-client' for React components/hooks
+// - './service-worker-manager' for service worker utilities
+// - './image-optimizer' for image optimization utilities
 
 // Performance configuration
 export const performanceConfig = {

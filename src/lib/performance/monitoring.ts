@@ -1,4 +1,4 @@
-import { performanceCollector } from './frontend-optimizer';
+import { performanceCollector } from './performance-utils';
 
 // Core Web Vitals thresholds
 const WEB_VITALS_THRESHOLDS = {
@@ -58,13 +58,14 @@ export class PerformanceMonitor {
     if (typeof window === 'undefined') return;
     
     // Dynamic import for web-vitals library
-    import('web-vitals').then(({ onCLS, onFID, onLCP, onTTFB, onFCP }) => {
-      onCLS(metric => this.recordWebVital('CLS', metric));
-      onFID(metric => this.recordWebVital('FID', metric));
-      onLCP(metric => this.recordWebVital('LCP', metric));
-      onTTFB(metric => this.recordWebVital('TTFB', metric));
-      onFCP(metric => this.recordWebVital('FCP', metric));
-    });
+    // TODO: Re-enable after fixing build issues
+    // import('web-vitals').then(({ onCLS, onFID, onLCP, onTTFB, onFCP }) => {
+    //   onCLS(metric => this.recordWebVital('CLS', metric));
+    //   onFID(metric => this.recordWebVital('FID', metric));
+    //   onLCP(metric => this.recordWebVital('LCP', metric));
+    //   onTTFB(metric => this.recordWebVital('TTFB', metric));
+    //   onFCP(metric => this.recordWebVital('FCP', metric));
+    // });
   }
   
   // Record Web Vital metric
