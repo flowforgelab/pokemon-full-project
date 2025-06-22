@@ -13,6 +13,18 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - **Real-time Updates**: Built with tRPC for type-safe API calls
 - **Responsive Design**: Tailwind CSS with custom Pokemon TCG theme
 
+### 🎮 Advanced Deck Builder Interface
+- **Intuitive Card Search**: Real-time search with instant results and smart filtering
+- **Drag-and-Drop**: Smooth drag-and-drop with multi-select and touch support
+- **Live Validation**: Real-time deck validation with format legality checking
+- **Visual Statistics**: Interactive charts for energy curves and type distribution
+- **Deck Testing**: Simulate opening hands with probability calculations
+- **Smart Suggestions**: AI-powered card recommendations based on deck composition
+- **Collaboration**: Share decks with version history and commenting
+- **Import/Export**: Support for text, JSON, and PTCGO formats
+- **Mobile Optimized**: Touch gestures and responsive design for all devices
+- **Accessibility**: Full keyboard navigation and screen reader support
+
 ### 🧠 AI-Powered Deck Analysis Engine
 - **Consistency Calculator**: Energy ratios, mulligan probability, and setup analysis
 - **Synergy Analyzer**: Card interaction detection and combo identification
@@ -215,6 +227,19 @@ src/
 - `POST /api/recommendations/collection` - Collection-based recommendations
 - `POST /api/recommendations/feedback` - Submit recommendation feedback
 
+### Deck Builder Endpoints
+- `POST /api/deck-builder/create` - Create new deck
+- `GET /api/deck-builder/:deckId` - Load deck composition
+- `PUT /api/deck-builder/:deckId` - Save deck changes
+- `DELETE /api/deck-builder/:deckId` - Delete deck
+- `GET /api/deck-builder/:deckId/analyze` - Get deck statistics
+- `POST /api/deck-builder/:deckId/test` - Test deck hands
+- `GET /api/deck-builder/:deckId/suggestions` - Get smart suggestions
+- `POST /api/deck-builder/:deckId/export` - Export deck
+- `POST /api/deck-builder/import` - Import deck from text/JSON
+- `POST /api/deck-builder/search` - Search cards with filters
+- `GET /api/deck-builder/search/popular` - Get popular cards
+
 ### System Endpoints
 - `GET /api/health` - System health check
 - `GET /api/metrics` - Performance metrics
@@ -274,6 +299,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**Current Version**: v0.7.0
+**Current Version**: v0.8.0
 
 Built with ❤️ by the Pokemon TCG community
