@@ -143,6 +143,16 @@ curl -X POST http://localhost:3000/api/deck-builder/search \
    - **SmartSuggestionEngine**: AI-powered card recommendations
    - **CollaborationManager**: Deck sharing and version control
 
+10. **Performance Optimization System** (`src/lib/performance/`)
+   - **DatabaseOptimizer**: Query optimization, indexing, and health monitoring
+   - **CacheManager**: Multi-level caching (memory, Redis, CDN, browser)
+   - **FrontendOptimizer**: React performance, lazy loading, virtual lists
+   - **APIOptimizer**: Response caching, compression, ETags, batch processing
+   - **PerformanceMonitor**: Web Vitals, RUM, API tracking, budgets
+   - **ServiceWorkerManager**: Offline support, background sync, push notifications
+   - **ImageOptimizer**: CDN integration, responsive images, lazy loading
+   - **Scalability**: Load balancing, auto-scaling, circuit breakers, edge computing
+
 ### Key Design Patterns
 
 1. **Enum Handling**
@@ -289,6 +299,41 @@ Optional but recommended:
    - Batch operations when possible
    - Consider pagination for large results
    - Use includes wisely to avoid N+1 queries
+
+4. **Performance Optimizations**
+   - **Database**: Custom indexes, query optimization, connection pooling
+   - **Caching**: Multi-level cache (memory → Redis → CDN → browser)
+   - **Frontend**: React.memo, lazy loading, virtual lists, image optimization
+   - **API**: Response caching, compression, ETags, batch processing
+   - **Monitoring**: Web Vitals tracking, performance budgets, alerts
+   - **Scalability**: Load balancing, auto-scaling, circuit breakers
+
+5. **Using Performance Features**
+   ```typescript
+   // Optimize API routes
+   import { optimizeAPIRoute } from '@/lib/performance';
+   
+   export const GET = optimizeAPIRoute(handler, {
+     cache: { ttl: 3600, tags: ['cards'] },
+     compress: true,
+   });
+   
+   // Use optimized images
+   import { PokemonCardImageOptimizer } from '@/lib/performance';
+   
+   const imageUrl = PokemonCardImageOptimizer.getCardImageUrl(
+     card.images.large,
+     'medium',
+     { quality: 90 }
+   );
+   
+   // Monitor performance
+   import { performanceMonitor } from '@/lib/performance';
+   
+   performanceMonitor.startTiming('deck-analysis');
+   // ... perform analysis
+   performanceMonitor.endTiming('deck-analysis');
+   ```
 
 ### Troubleshooting
 

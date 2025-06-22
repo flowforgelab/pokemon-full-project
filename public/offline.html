@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Pokemon TCG Deck Builder</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      margin: 1rem;
+    }
+    
+    h1 {
+      color: #1f2937;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    
+    .icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 1.5rem;
+      background-color: #f3f4f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+    
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #2563eb;
+    }
+    
+    .features {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .features h2 {
+      font-size: 1.25rem;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+    
+    .features ul {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    
+    .features li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      color: #6b7280;
+    }
+    
+    .features li::before {
+      content: "✓";
+      color: #10b981;
+      margin-right: 0.5rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶</div>
+    <h1>You're Offline</h1>
+    <p>
+      It looks like you've lost your internet connection. 
+      Don't worry, some features are still available offline!
+    </p>
+    
+    <button onclick="window.location.reload()">
+      Try Again
+    </button>
+    
+    <div class="features">
+      <h2>Available Offline:</h2>
+      <ul>
+        <li>View previously loaded decks</li>
+        <li>Browse cached card data</li>
+        <li>Access your collection</li>
+        <li>Use deck analysis tools</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+    // Check for connection periodically
+    setInterval(() => {
+      fetch('/api/health')
+        .then(() => {
+          // Connection restored, reload page
+          window.location.reload();
+        })
+        .catch(() => {
+          // Still offline
+        });
+    }, 5000);
+  </script>
+</body>
+</html>
