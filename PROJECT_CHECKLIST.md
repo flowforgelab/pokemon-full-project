@@ -145,6 +145,9 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - [x] Fixed Clerk auth imports for Next.js App Router
 - [x] Configured ESLint for production builds
 - [x] Resolved all critical build errors
+- [x] Fixed build-time singleton initialization with lazy loading
+- [x] Added .env.production for build-time environment variables
+- [x] Fixed Next.js 15 dynamic route parameters (async params)
 
 ## 📋 To-Do Items
 
@@ -429,14 +432,17 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 
 ## 🔄 Last Updated
 - Date: 2024-12-23
-- Version: 0.8.1
+- Version: 0.8.2
 - Latest Updates:
-  - Fixed all critical deployment and build errors
-  - Updated imports to use correct server directory structure
-  - Fixed Clerk authentication imports for Next.js App Router
-  - Configured ESLint for production compatibility
-  - Resolved TypeScript unused variable errors
-  - Successfully deployed to Vercel
+  - Fixed build-time initialization error with DeckBuilderManager singleton
+  - Implemented lazy initialization to prevent document access during build
+  - Updated ESLint configuration to treat unused vars as warnings
+  - Fixed Next.js 15 async route parameters in all API handlers
+  - Added .env.production with dummy values for build-time
+  - Updated build script with ESLINT_NO_DEV_ERRORS flag
+  - Fixed enum imports to import as values (not just types)
+  - Made Redis client initialization graceful during build
+  - Removed deprecated instrumentationHook from next.config.ts
   - All 3 major systems now complete: Analysis, Recommendations, Deck Builder
   - Backend implementation 90% complete, ready for UI development
 
