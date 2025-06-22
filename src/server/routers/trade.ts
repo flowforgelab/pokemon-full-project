@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-
-const tradeStatusEnum = z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']);
+import { TradeStatus } from '@prisma/client';
 
 export const tradeRouter = createTRPCRouter({
   create: protectedProcedure
@@ -13,19 +12,33 @@ export const tradeRouter = createTRPCRouter({
           z.object({
             cardId: z.string(),
             quantity: z.number().min(1),
+            condition: z.string().optional(),
           })
         ),
         requestedCards: z.array(
           z.object({
             cardId: z.string(),
             quantity: z.number().min(1),
+            condition: z.string().optional(),
           })
         ),
         message: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.receiverId === ctx.userId) {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (input.receiverId === user.id) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'You cannot trade with yourself',
@@ -34,7 +47,7 @@ export const tradeRouter = createTRPCRouter({
 
       return ctx.prisma.tradeOffer.create({
         data: {
-          offererId: ctx.userId,
+          offererId: user.id,
           receiverId: input.receiverId,
           offeredCards: input.offeredCards,
           requestedCards: input.requestedCards,
@@ -47,7 +60,7 @@ export const tradeRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        status: tradeStatusEnum,
+        status: z.nativeEnum(TradeStatus),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -67,8 +80,20 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const isOfferer = trade.offererId === ctx.userId;
-      const isReceiver = trade.receiverId === ctx.userId;
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const isOfferer = trade.offererId === user.id;
+      const isReceiver = trade.receiverId === user.id;
 
       if (!isOfferer && !isReceiver) {
         throw new TRPCError({
@@ -77,21 +102,21 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      if (trade.status !== 'PENDING') {
+      if (trade.status !== TradeStatus.PENDING) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'This trade has already been resolved',
         });
       }
 
-      if (input.status === 'CANCELLED' && !isOfferer) {
+      if (input.status === TradeStatus.CANCELLED && !isOfferer) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Only the offerer can cancel a trade',
         });
       }
 
-      if ((input.status === 'ACCEPTED' || input.status === 'REJECTED') && !isReceiver) {
+      if ((input.status === TradeStatus.ACCEPTED || input.status === TradeStatus.REJECTED) && !isReceiver) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Only the receiver can accept or reject a trade',
@@ -108,7 +133,7 @@ export const tradeRouter = createTRPCRouter({
     .input(
       z.object({
         type: z.enum(['sent', 'received', 'all']).default('all'),
-        status: tradeStatusEnum.optional(),
+        status: z.nativeEnum(TradeStatus).optional(),
         page: z.number().min(1).default(1),
         pageSize: z.number().min(1).max(50).default(10),
       })
@@ -117,16 +142,28 @@ export const tradeRouter = createTRPCRouter({
       const { type, status, page, pageSize } = input;
       const skip = (page - 1) * pageSize;
 
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
       const where: Record<string, any> = {
         ...(status && { status }),
       };
 
       if (type === 'sent') {
-        where.offererId = ctx.userId;
+        where.offererId = user.id;
       } else if (type === 'received') {
-        where.receiverId = ctx.userId;
+        where.receiverId = user.id;
       } else {
-        where.OR = [{ offererId: ctx.userId }, { receiverId: ctx.userId }];
+        where.OR = [{ offererId: user.id }, { receiverId: user.id }];
       }
 
       const [trades, total] = await ctx.prisma.$transaction([
@@ -194,7 +231,19 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      if (trade.offererId !== ctx.userId && trade.receiverId !== ctx.userId) {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      if (trade.offererId !== user.id && trade.receiverId !== user.id) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'You are not part of this trade',

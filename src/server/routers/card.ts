@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '@/server/trpc';
+import { Rarity, Supertype } from '@prisma/client';
 
 export const cardRouter = createTRPCRouter({
   search: publicProcedure
@@ -11,10 +12,10 @@ export const cardRouter = createTRPCRouter({
         filters: z
           .object({
             types: z.array(z.string()).optional(),
-            supertype: z.string().optional(),
+            supertype: z.nativeEnum(Supertype).optional(),
             subtypes: z.array(z.string()).optional(),
-            set: z.string().optional(),
-            rarity: z.string().optional(),
+            setId: z.string().optional(),
+            rarity: z.nativeEnum(Rarity).optional(),
           })
           .optional(),
       })
@@ -26,7 +27,7 @@ export const cardRouter = createTRPCRouter({
       const where: Record<string, any> = {
         OR: [
           { name: { contains: query, mode: 'insensitive' } },
-          { set: { contains: query, mode: 'insensitive' } },
+          { set: { name: { contains: query, mode: 'insensitive' } } },
         ],
       };
 
@@ -40,8 +41,8 @@ export const cardRouter = createTRPCRouter({
         if (filters.subtypes?.length) {
           where.subtypes = { hasSome: filters.subtypes };
         }
-        if (filters.set) {
-          where.set = filters.set;
+        if (filters.setId) {
+          where.setId = filters.setId;
         }
         if (filters.rarity) {
           where.rarity = filters.rarity;
@@ -54,6 +55,9 @@ export const cardRouter = createTRPCRouter({
           skip,
           take: pageSize,
           orderBy: { name: 'asc' },
+          include: {
+            set: true,
+          },
         }),
         ctx.prisma.card.count({ where }),
       ]);
@@ -72,6 +76,13 @@ export const cardRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.prisma.card.findUnique({
         where: { id: input },
+        include: {
+          set: true,
+          prices: {
+            orderBy: { updatedAt: 'desc' },
+            take: 1,
+          },
+        },
       });
     }),
 
@@ -80,15 +91,29 @@ export const cardRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.prisma.card.findMany({
         where: { id: { in: input } },
+        include: {
+          set: true,
+        },
       });
     }),
 
   getSets: publicProcedure.query(async ({ ctx }) => {
-    const sets = await ctx.prisma.card.findMany({
-      select: { set: true },
-      distinct: ['set'],
-      orderBy: { set: 'asc' },
+    return ctx.prisma.set.findMany({
+      orderBy: { releaseDate: 'desc' },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        series: true,
+        releaseDate: true,
+        logoUrl: true,
+        symbolUrl: true,
+        isLegalStandard: true,
+        isLegalExpanded: true,
+        _count: {
+          select: { cards: true },
+        },
+      },
     });
-    return sets.map((s: { set: string }) => s.set);
   }),
 });

@@ -1,211 +1,229 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
-
-const cardConditionEnum = z.enum([
-  'MINT',
-  'NEAR_MINT',
-  'LIGHTLY_PLAYED',
-  'MODERATELY_PLAYED',
-  'HEAVILY_PLAYED',
-  'DAMAGED',
-]);
+import { CardCondition } from '@prisma/client';
 
 export const collectionRouter = createTRPCRouter({
-  create: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1).max(100),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      return ctx.prisma.collection.create({
-        data: {
-          ...input,
-          userId: ctx.userId,
-        },
+  // Get user's collection summary
+  getSummary: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.prisma.user.findUnique({
+      where: { clerkUserId: ctx.userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
       });
-    }),
+    }
 
-  update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1).max(100).optional(),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+    const [totalCards, uniqueCards, totalValue] = await ctx.prisma.$transaction([
+      ctx.prisma.userCollection.aggregate({
+        where: { userId: user.id, isWishlist: false },
+        _sum: { quantity: true, quantityFoil: true },
+      }),
+      ctx.prisma.userCollection.count({
+        where: { userId: user.id, isWishlist: false },
+      }),
+      ctx.prisma.userCollection.aggregate({
+        where: { userId: user.id, isWishlist: false },
+        _sum: { purchasePrice: true },
+      }),
+    ]);
 
-      const collection = await ctx.prisma.collection.findUnique({
-        where: { id },
-        select: { userId: true },
-      });
+    return {
+      totalCards: (totalCards._sum.quantity || 0) + (totalCards._sum.quantityFoil || 0),
+      uniqueCards,
+      totalValue: totalValue._sum.purchasePrice || 0,
+    };
+  }),
 
-      if (!collection || collection.userId !== ctx.userId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You do not have permission to edit this collection',
-        });
-      }
-
-      return ctx.prisma.collection.update({
-        where: { id },
-        data: updateData,
-      });
-    }),
-
-  delete: protectedProcedure
-    .input(z.string())
-    .mutation(async ({ ctx, input }) => {
-      const collection = await ctx.prisma.collection.findUnique({
-        where: { id: input },
-        select: { userId: true },
-      });
-
-      if (!collection || collection.userId !== ctx.userId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You do not have permission to delete this collection',
-        });
-      }
-
-      return ctx.prisma.collection.delete({
-        where: { id: input },
-      });
-    }),
-
+  // Add a card to the collection
   addCard: protectedProcedure
     .input(
       z.object({
-        collectionId: z.string(),
         cardId: z.string(),
-        quantity: z.number().min(1),
-        condition: cardConditionEnum.default('NEAR_MINT'),
+        quantity: z.number().min(1).default(1),
+        quantityFoil: z.number().min(0).default(0),
+        condition: z.nativeEnum(CardCondition).default(CardCondition.NEAR_MINT),
+        language: z.string().default('EN'),
+        purchasePrice: z.number().optional(),
+        acquiredDate: z.date().optional(),
+        notes: z.string().optional(),
+        isWishlist: z.boolean().default(false),
         isForTrade: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const collection = await ctx.prisma.collection.findUnique({
-        where: { id: input.collectionId },
-        select: { userId: true },
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
       });
 
-      if (!collection || collection.userId !== ctx.userId) {
+      if (!user) {
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You do not have permission to add cards to this collection',
+          code: 'NOT_FOUND',
+          message: 'User not found',
         });
       }
 
-      const existingCard = await ctx.prisma.collectionCard.findUnique({
+      // Check if this exact card already exists in the collection
+      const existingCard = await ctx.prisma.userCollection.findUnique({
         where: {
-          collectionId_cardId_condition: {
-            collectionId: input.collectionId,
+          userId_cardId_condition_language_isWishlist: {
+            userId: user.id,
             cardId: input.cardId,
             condition: input.condition,
+            language: input.language,
+            isWishlist: input.isWishlist,
           },
         },
       });
 
       if (existingCard) {
-        return ctx.prisma.collectionCard.update({
+        // Update quantities
+        return ctx.prisma.userCollection.update({
           where: { id: existingCard.id },
           data: {
             quantity: existingCard.quantity + input.quantity,
+            quantityFoil: existingCard.quantityFoil + input.quantityFoil,
             isForTrade: input.isForTrade,
+            notes: input.notes || existingCard.notes,
+            purchasePrice: input.purchasePrice || existingCard.purchasePrice,
           },
         });
       }
 
-      return ctx.prisma.collectionCard.create({
-        data: input,
+      return ctx.prisma.userCollection.create({
+        data: {
+          ...input,
+          userId: user.id,
+        },
       });
     }),
 
+  // Update a card in the collection
   updateCard: protectedProcedure
     .input(
       z.object({
         id: z.string(),
         quantity: z.number().min(0).optional(),
-        condition: cardConditionEnum.optional(),
+        quantityFoil: z.number().min(0).optional(),
+        condition: z.nativeEnum(CardCondition).optional(),
+        language: z.string().optional(),
+        purchasePrice: z.number().optional(),
+        acquiredDate: z.date().optional(),
+        notes: z.string().optional(),
         isForTrade: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      const collectionCard = await ctx.prisma.collectionCard.findUnique({
-        where: { id },
-        include: {
-          collection: {
-            select: { userId: true },
-          },
-        },
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
       });
 
-      if (!collectionCard || collectionCard.collection.userId !== ctx.userId) {
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const userCollection = await ctx.prisma.userCollection.findUnique({
+        where: { id },
+        select: { userId: true },
+      });
+
+      if (!userCollection || userCollection.userId !== user.id) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'You do not have permission to update this card',
         });
       }
 
-      if (updateData.quantity === 0) {
-        return ctx.prisma.collectionCard.delete({
+      // If both quantities are 0, delete the card
+      if (updateData.quantity === 0 && updateData.quantityFoil === 0) {
+        return ctx.prisma.userCollection.delete({
           where: { id },
         });
       }
 
-      return ctx.prisma.collectionCard.update({
+      return ctx.prisma.userCollection.update({
         where: { id },
         data: updateData,
       });
     }),
 
-  getUserCollections: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.collection.findMany({
-      where: { userId: ctx.userId },
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        _count: {
-          select: { cards: true },
-        },
-      },
-    });
-  }),
+  // Delete a card from the collection
+  deleteCard: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
 
-  getCollectionCards: protectedProcedure
-    .input(
-      z.object({
-        collectionId: z.string(),
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(20),
-        search: z.string().optional(),
-        isForTrade: z.boolean().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { collectionId, page, pageSize, search, isForTrade } = input;
-      const skip = (page - 1) * pageSize;
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
 
-      const collection = await ctx.prisma.collection.findUnique({
-        where: { id: collectionId },
+      const userCollection = await ctx.prisma.userCollection.findUnique({
+        where: { id: input },
         select: { userId: true },
       });
 
-      if (!collection || collection.userId !== ctx.userId) {
+      if (!userCollection || userCollection.userId !== user.id) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
-          message: 'You do not have permission to view this collection',
+          message: 'You do not have permission to delete this card',
+        });
+      }
+
+      return ctx.prisma.userCollection.delete({
+        where: { id: input },
+      });
+    }),
+
+  // Get user's collection cards
+  getCards: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+        search: z.string().optional(),
+        isWishlist: z.boolean().optional(),
+        isForTrade: z.boolean().optional(),
+        condition: z.nativeEnum(CardCondition).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize, search, isWishlist, isForTrade, condition } = input;
+      const skip = (page - 1) * pageSize;
+
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
         });
       }
 
       const where: Record<string, any> = {
-        collectionId,
+        userId: user.id,
+        ...(isWishlist !== undefined && { isWishlist }),
         ...(isForTrade !== undefined && { isForTrade }),
+        ...(condition && { condition }),
         ...(search && {
           card: {
             name: { contains: search, mode: 'insensitive' },
@@ -214,16 +232,79 @@ export const collectionRouter = createTRPCRouter({
       };
 
       const [cards, total] = await ctx.prisma.$transaction([
-        ctx.prisma.collectionCard.findMany({
+        ctx.prisma.userCollection.findMany({
           where,
           skip,
           take: pageSize,
           orderBy: { card: { name: 'asc' } },
           include: {
-            card: true,
+            card: {
+              include: {
+                set: true,
+              },
+            },
           },
         }),
-        ctx.prisma.collectionCard.count({ where }),
+        ctx.prisma.userCollection.count({ where }),
+      ]);
+
+      return {
+        cards,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      };
+    }),
+
+  // Get user's wishlist
+  getWishlist: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize } = input;
+      const skip = (page - 1) * pageSize;
+
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const where = {
+        userId: user.id,
+        isWishlist: true,
+      };
+
+      const [cards, total] = await ctx.prisma.$transaction([
+        ctx.prisma.userCollection.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            card: {
+              include: {
+                set: true,
+                prices: {
+                  orderBy: { updatedAt: 'desc' },
+                  take: 1,
+                },
+              },
+            },
+          },
+        }),
+        ctx.prisma.userCollection.count({ where }),
       ]);
 
       return {

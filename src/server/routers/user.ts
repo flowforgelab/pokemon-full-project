@@ -5,7 +5,7 @@ import { TRPCError } from '@trpc/server';
 export const userRouter = createTRPCRouter({
   getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
-      where: { clerkId: ctx.userId },
+      where: { clerkUserId: ctx.userId },
     });
 
     if (!user) {
@@ -23,22 +23,28 @@ export const userRouter = createTRPCRouter({
       z.object({
         email: z.string().email(),
         username: z.string().optional(),
+        displayName: z.string().optional(),
         avatarUrl: z.string().url().optional(),
+        bio: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.user.upsert({
-        where: { clerkId: ctx.userId },
+        where: { clerkUserId: ctx.userId },
         create: {
-          clerkId: ctx.userId,
+          clerkUserId: ctx.userId,
           email: input.email,
           username: input.username,
+          displayName: input.displayName,
           avatarUrl: input.avatarUrl,
+          bio: input.bio,
         },
         update: {
           email: input.email,
           username: input.username,
+          displayName: input.displayName,
           avatarUrl: input.avatarUrl,
+          bio: input.bio,
         },
       });
     }),
@@ -47,12 +53,14 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         username: z.string().min(3).max(20).optional(),
+        displayName: z.string().optional(),
         avatarUrl: z.string().url().optional(),
+        bio: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.user.update({
-        where: { clerkId: ctx.userId },
+        where: { clerkUserId: ctx.userId },
         data: input,
       });
     }),
