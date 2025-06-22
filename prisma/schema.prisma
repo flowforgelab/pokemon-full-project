@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  clerkId         String         @unique
+  email           String         @unique
+  username        String?        @unique
+  avatarUrl       String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  decks           Deck[]
+  collections     Collection[]
+  tradeOffers     TradeOffer[]   @relation("UserTradeOffers")
+  tradeRequests   TradeOffer[]   @relation("UserTradeRequests")
+  
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Card {
+  id              String         @id
+  name            String
+  supertype       String
+  subtypes        String[]
+  types           String[]
+  hp              String?
+  evolvesFrom     String?
+  abilities       Json?
+  attacks         Json?
+  weaknesses      Json?
+  resistances     Json?
+  retreatCost     String[]
+  set             String
+  number          String
+  artist          String?
+  rarity          String?
+  imageUrl        String
+  imageUrlHiRes   String?
+  prices          Json?
+  tcgplayerId     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  deckCards       DeckCard[]
+  collectionCards CollectionCard[]
+  
+  @@index([name])
+  @@index([set])
+  @@index([types])
+}
+
+model Deck {
+  id              String         @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  format          DeckFormat     @default(STANDARD)
+  isPublic        Boolean        @default(false)
+  tags            String[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards           DeckCard[]
+  matchups        Matchup[]      @relation("DeckMatchups")
+  opponentMatchups Matchup[]     @relation("OpponentMatchups")
+  
+  @@index([userId])
+  @@index([format])
+  @@index([isPublic])
+}
+
+model DeckCard {
+  id              String         @id @default(cuid())
+  deckId          String
+  cardId          String
+  quantity        Int
+  
+  deck            Deck           @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  card            Card           @relation(fields: [cardId], references: [id])
+  
+  @@unique([deckId, cardId])
+  @@index([deckId])
+  @@index([cardId])
+}
+
+model Collection {
+  id              String         @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards           CollectionCard[]
+  
+  @@index([userId])
+}
+
+model CollectionCard {
+  id              String         @id @default(cuid())
+  collectionId    String
+  cardId          String
+  quantity        Int
+  condition       CardCondition  @default(NEAR_MINT)
+  isForTrade      Boolean        @default(false)
+  
+  collection      Collection     @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  card            Card           @relation(fields: [cardId], references: [id])
+  
+  @@unique([collectionId, cardId, condition])
+  @@index([collectionId])
+  @@index([cardId])
+  @@index([isForTrade])
+}
+
+model Matchup {
+  id              String         @id @default(cuid())
+  deckId          String
+  opponentDeckId  String
+  wins            Int            @default(0)
+  losses          Int            @default(0)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  deck            Deck           @relation("DeckMatchups", fields: [deckId], references: [id], onDelete: Cascade)
+  opponentDeck    Deck           @relation("OpponentMatchups", fields: [opponentDeckId], references: [id], onDelete: Cascade)
+  
+  @@unique([deckId, opponentDeckId])
+  @@index([deckId])
+  @@index([opponentDeckId])
+}
+
+model TradeOffer {
+  id              String         @id @default(cuid())
+  offererId       String
+  receiverId      String
+  status          TradeStatus    @default(PENDING)
+  offeredCards    Json
+  requestedCards  Json
+  message         String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  offerer         User           @relation("UserTradeOffers", fields: [offererId], references: [id])
+  receiver        User           @relation("UserTradeRequests", fields: [receiverId], references: [id])
+  
+  @@index([offererId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+enum DeckFormat {
+  STANDARD
+  EXPANDED
+  UNLIMITED
+  GLC
+}
+
+enum CardCondition {
+  MINT
+  NEAR_MINT
+  LIGHTLY_PLAYED
+  MODERATELY_PLAYED
+  HEAVILY_PLAYED
+  DAMAGED
+}
+
+enum TradeStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
