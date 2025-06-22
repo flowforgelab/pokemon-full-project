@@ -61,33 +61,55 @@
 
 @layer components {
   .card-container {
-    @apply relative overflow-hidden rounded-lg transition-all duration-300;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    transition: all 300ms;
   }
 
   .card-container:hover {
-    @apply shadow-card-hover -translate-y-1;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-0.25rem);
   }
 
   .card-holo-effect {
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: var(--card-holo);
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 300ms;
+    background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.8) 45%, rgba(132, 50, 255, 0.6) 50%, transparent 54%);
   }
 
   .card-container:hover .card-holo-effect {
-    @apply opacity-100;
+    opacity: 1;
   }
 
   .type-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .deck-card {
-    @apply rounded-lg p-4 transition-all duration-200 shadow-card hover:shadow-card-hover;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 200ms;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     background-color: hsl(var(--card));
   }
 
+  .deck-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
   .gradient-border {
-    @apply relative bg-gradient-to-r from-pokemon-yellow via-pokemon-blue to-pokemon-red p-[2px] rounded-lg;
+    position: relative;
+    background: linear-gradient(to right, #FFCB05, #3D7DCA, #EE1515);
+    padding: 2px;
+    border-radius: 0.5rem;
   }
 
   .gradient-border > * {
@@ -119,10 +141,14 @@
   }
 
   .card-grid {
-    @apply grid grid-cols-card-grid gap-4;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
   }
 
   .deck-grid {
-    @apply grid grid-cols-deck-grid gap-6;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
   }
 }
