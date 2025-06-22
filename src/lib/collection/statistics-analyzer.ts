@@ -12,8 +12,8 @@ import type {
   PerformanceCard,
   MonthlyPerformance,
   AcquisitionData,
-  CardCondition,
 } from './types';
+import { CardCondition } from './types';
 
 export class CollectionStatisticsAnalyzer {
   private readonly CACHE_TTL = 3600; // 1 hour

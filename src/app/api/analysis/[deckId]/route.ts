@@ -6,7 +6,7 @@ import type { AnalysisConfig } from '@/lib/analysis/types';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     // Check authentication
@@ -15,9 +15,12 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get params
+    const { deckId } = await params;
+
     // Get deck with cards
     const deck = await prisma.deck.findUnique({
-      where: { id: params.deckId },
+      where: { id: deckId },
       include: {
         cards: {
           include: {
@@ -73,7 +76,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     // Check authentication
@@ -82,12 +85,15 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get params
+    const { deckId } = await params;
+
     // This endpoint can be used to save analysis results or trigger background analysis
     const _body = await req.json();
     
     // Verify deck ownership
     const deck = await prisma.deck.findUnique({
-      where: { id: params.deckId },
+      where: { id: deckId },
       include: {
         user: {
           select: {

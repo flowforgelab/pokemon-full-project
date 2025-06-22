@@ -10,10 +10,11 @@ const testDeckSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
+    const { deckId } = await params;
     
     if (!clerkUserId) {
       return NextResponse.json(
@@ -49,7 +50,7 @@ export async function POST(
 
     // Load deck composition
     const composition = await deckBuilderManager.loadDeck(
-      params.deckId,
+      deckId,
       user.id
     );
 

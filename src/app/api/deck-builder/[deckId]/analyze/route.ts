@@ -5,10 +5,11 @@ import { prisma } from '@/server/db/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
+    const { deckId } = await params;
     
     if (!clerkUserId) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function GET(
 
     // Load deck composition
     const composition = await deckBuilderManager.loadDeck(
-      params.deckId,
+      deckId,
       user.id
     );
 

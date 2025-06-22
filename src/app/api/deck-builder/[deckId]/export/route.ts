@@ -13,10 +13,11 @@ const exportFormatSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
+    const { deckId } = await params;
     
     if (!clerkUserId) {
       return NextResponse.json(
@@ -52,7 +53,7 @@ export async function POST(
 
     // Load deck composition
     const composition = await deckBuilderManager.loadDeck(
-      params.deckId,
+      deckId,
       user.id
     );
 
@@ -70,20 +71,20 @@ export async function POST(
       case 'text':
       case 'ptcgo':
         headers['Content-Type'] = 'text/plain';
-        headers['Content-Disposition'] = `attachment; filename="deck-${params.deckId}.txt"`;
+        headers['Content-Disposition'] = `attachment; filename="deck-${deckId}.txt"`;
         break;
       case 'json':
         headers['Content-Type'] = 'application/json';
-        headers['Content-Disposition'] = `attachment; filename="deck-${params.deckId}.json"`;
+        headers['Content-Disposition'] = `attachment; filename="deck-${deckId}.json"`;
         break;
       case 'pdf':
         headers['Content-Type'] = 'application/pdf';
-        headers['Content-Disposition'] = `attachment; filename="deck-${params.deckId}.pdf"`;
+        headers['Content-Disposition'] = `attachment; filename="deck-${deckId}.pdf"`;
         responseData = exportData; // Buffer
         break;
       case 'image':
         headers['Content-Type'] = 'image/png';
-        headers['Content-Disposition'] = `attachment; filename="deck-${params.deckId}.png"`;
+        headers['Content-Disposition'] = `attachment; filename="deck-${deckId}.png"`;
         responseData = exportData; // Buffer
         break;
     }

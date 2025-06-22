@@ -242,7 +242,7 @@ export class MetricsCollector {
 // Health check functions
 export async function checkDatabaseHealth(): Promise<HealthCheckResult> {
   try {
-    const { prisma } = await import('@/lib/db/prisma');
+    const { prisma } = await import('@/server/db/prisma');
     const startTime = Date.now();
     
     // Simple query to check connection

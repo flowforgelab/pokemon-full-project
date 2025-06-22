@@ -10,7 +10,6 @@ import type {
   TechCard,
   MetaRating,
   BudgetTier,
-  CardRole,
   BuilderConfig,
   DeckRecommendation,
   CardChange,
@@ -20,6 +19,7 @@ import type {
   TrainerCard,
   AlternativeCard,
 } from './types';
+import { CardRole, BudgetTier } from './types';
 
 /**
  * Generates complete decks from scratch based on archetype templates

@@ -3,7 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { CollectionManager } from '@/lib/collection/collection-manager';
 import { z } from 'zod';
-import type { QuickAddItem, CardCondition, AcquisitionSource, StorageLocation } from '@/lib/collection/types';
+import type { QuickAddItem } from '@/lib/collection/types';
+import { CardCondition, AcquisitionSource, StorageLocation } from '@/lib/collection/types';
 
 // Quick add schema
 const quickAddSchema = z.object({

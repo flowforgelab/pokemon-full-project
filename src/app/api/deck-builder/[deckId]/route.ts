@@ -7,7 +7,7 @@ import { prisma } from '@/server/db/prisma';
 // GET - Load deck
 export async function GET(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -18,6 +18,9 @@ export async function GET(
         { status: 401 }
       );
     }
+
+    // Get params
+    const { deckId } = await params;
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -33,7 +36,7 @@ export async function GET(
 
     // Load deck composition
     const composition = await deckBuilderManager.loadDeck(
-      params.deckId,
+      deckId,
       user.id
     );
 
@@ -105,7 +108,7 @@ const saveDeckSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -116,6 +119,9 @@ export async function PUT(
         { status: 401 }
       );
     }
+
+    // Get params
+    const { deckId } = await params;
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -144,7 +150,7 @@ export async function PUT(
 
     // Save deck
     await deckBuilderManager.saveDeck(
-      params.deckId,
+      deckId,
       composition,
       user.id
     );
@@ -173,7 +179,7 @@ export async function PUT(
 // DELETE - Delete deck
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { deckId: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -184,6 +190,9 @@ export async function DELETE(
         { status: 401 }
       );
     }
+
+    // Get params
+    const { deckId } = await params;
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -199,7 +208,7 @@ export async function DELETE(
 
     // Check ownership
     const deck = await prisma.deck.findUnique({
-      where: { id: params.deckId },
+      where: { id: deckId },
       select: { userId: true },
     });
 

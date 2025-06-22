@@ -7,10 +7,10 @@ import type { CollectionSharingConfig } from '@/lib/collection/types';
 // GET /api/collection/share/[shareId] - Get shared collection
 export async function GET(
   req: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
-    const shareId = params.shareId;
+    const { shareId } = await params;
 
     if (!shareId) {
       return NextResponse.json(
