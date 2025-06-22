@@ -203,7 +203,7 @@ export const collectionRouter = createTRPCRouter({
         });
       }
 
-      const where: any = {
+      const where: Record<string, any> = {
         collectionId,
         ...(isForTrade !== undefined && { isForTrade }),
         ...(search && {

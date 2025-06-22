@@ -51,10 +51,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
@@ -81,7 +82,8 @@
   }
 
   .deck-card {
-    @apply bg-card rounded-lg shadow-card p-4 transition-all duration-200 hover:shadow-card-hover;
+    @apply rounded-lg p-4 transition-all duration-200 shadow-card hover:shadow-card-hover;
+    background-color: hsl(var(--card));
   }
 
   .gradient-border {
@@ -89,7 +91,8 @@
   }
 
   .gradient-border > * {
-    @apply bg-background rounded-[calc(0.5rem-2px)];
+    background-color: hsl(var(--background));
+    border-radius: calc(0.5rem - 2px);
   }
 }
 

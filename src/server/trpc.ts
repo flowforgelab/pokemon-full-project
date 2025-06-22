@@ -1,7 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { prisma } from '@/lib/db/prisma';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import type { NextRequest } from 'next/server';
 import SuperJSON from 'superjson';
 import { ZodError } from 'zod';
@@ -17,14 +16,14 @@ export const createInnerTRPCContext = (opts: CreateContextOptions) => {
   };
 };
 
-export const createTRPCContext = async (opts: {
+export const createTRPCContext = async (_opts: {
   req: NextRequest;
   resHeaders: Headers;
 }) => {
-  const { userId } = await getAuth();
-
+  const session = await auth();
+  
   return createInnerTRPCContext({
-    userId,
+    userId: session?.userId || null,
   });
 };
 

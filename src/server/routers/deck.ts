@@ -221,7 +221,7 @@ export const deckRouter = createTRPCRouter({
       const { page, pageSize, format, tags, search } = input;
       const skip = (page - 1) * pageSize;
 
-      const where: any = {
+      const where: Record<string, any> = {
         isPublic: true,
         ...(format && { format }),
         ...(tags?.length && { tags: { hasSome: tags } }),

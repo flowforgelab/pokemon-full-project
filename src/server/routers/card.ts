@@ -23,7 +23,7 @@ export const cardRouter = createTRPCRouter({
       const { query, page, pageSize, filters } = input;
       const skip = (page - 1) * pageSize;
 
-      const where: any = {
+      const where: Record<string, any> = {
         OR: [
           { name: { contains: query, mode: 'insensitive' } },
           { set: { contains: query, mode: 'insensitive' } },
@@ -89,6 +89,6 @@ export const cardRouter = createTRPCRouter({
       distinct: ['set'],
       orderBy: { set: 'asc' },
     });
-    return sets.map((s) => s.set);
+    return sets.map((s: { set: string }) => s.set);
   }),
 });
