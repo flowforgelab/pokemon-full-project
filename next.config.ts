@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
     // Allow production builds to successfully complete even if there are type errors
     ignoreBuildErrors: true,
   },
-  experimental: {
-    // Skip static generation for API routes to avoid initialization during build
-    instrumentationHook: false,
-  },
   // Skip API route generation during build
   generateBuildId: async () => {
     return 'build-' + Date.now();

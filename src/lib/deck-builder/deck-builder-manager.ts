@@ -636,5 +636,79 @@ export class DeckBuilderManager {
   }
 }
 
-// Export singleton instance
-export const deckBuilderManager = new DeckBuilderManager();
+// Export singleton instance with lazy initialization
+let _instance: DeckBuilderManager | null = null;
+
+export const deckBuilderManager = {
+  get instance(): DeckBuilderManager {
+    if (!_instance) {
+      _instance = new DeckBuilderManager();
+    }
+    return _instance;
+  },
+  
+  // Proxy methods to the instance
+  async createNewDeck(...args: Parameters<DeckBuilderManager['createNewDeck']>) {
+    return this.instance.createNewDeck(...args);
+  },
+  
+  async loadDeck(...args: Parameters<DeckBuilderManager['loadDeck']>) {
+    return this.instance.loadDeck(...args);
+  },
+  
+  async saveDeck(...args: Parameters<DeckBuilderManager['saveDeck']>) {
+    return this.instance.saveDeck(...args);
+  },
+  
+  async deleteDeck(...args: Parameters<DeckBuilderManager['deleteDeck']>) {
+    return this.instance.deleteDeck(...args);
+  },
+  
+  async searchCards(...args: Parameters<DeckBuilderManager['searchCards']>) {
+    return this.instance.searchCards(...args);
+  },
+  
+  async validateDeck(...args: Parameters<DeckBuilderManager['validateDeck']>) {
+    return this.instance.validateDeck(...args);
+  },
+  
+  async analyzeDeck(...args: Parameters<DeckBuilderManager['analyzeDeck']>) {
+    return this.instance.analyzeDeck(...args);
+  },
+  
+  async testDeck(...args: Parameters<DeckBuilderManager['testDeck']>) {
+    return this.instance.testDeck(...args);
+  },
+  
+  async getSuggestions(...args: Parameters<DeckBuilderManager['getSuggestions']>) {
+    return this.instance.getSuggestions(...args);
+  },
+  
+  async exportDeck(...args: Parameters<DeckBuilderManager['exportDeck']>) {
+    return this.instance.exportDeck(...args);
+  },
+  
+  async importDeck(...args: Parameters<DeckBuilderManager['importDeck']>) {
+    return this.instance.importDeck(...args);
+  },
+  
+  async shareDeck(...args: Parameters<DeckBuilderManager['shareDeck']>) {
+    return this.instance.shareDeck(...args);
+  },
+  
+  async forkDeck(...args: Parameters<DeckBuilderManager['forkDeck']>) {
+    return this.instance.forkDeck(...args);
+  },
+  
+  async getDeckVersions(...args: Parameters<DeckBuilderManager['getDeckVersions']>) {
+    return this.instance.getDeckVersions(...args);
+  },
+  
+  async addToCollection(...args: Parameters<DeckBuilderManager['addToCollection']>) {
+    return this.instance.addToCollection(...args);
+  },
+  
+  async removeFromCollection(...args: Parameters<DeckBuilderManager['removeFromCollection']>) {
+    return this.instance.removeFromCollection(...args);
+  }
+};
