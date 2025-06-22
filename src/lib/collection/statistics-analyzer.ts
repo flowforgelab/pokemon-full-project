@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import type { Prisma } from '@prisma/client';
 import { analysisCache } from '@/lib/api/cache';
 import type {

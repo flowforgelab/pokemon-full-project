@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 
 const testDeckSchema = z.object({
   numberOfHands: z.number().min(1).max(100).default(10),

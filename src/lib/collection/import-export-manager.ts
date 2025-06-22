@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
 import Papa from 'papaparse';
 import type {

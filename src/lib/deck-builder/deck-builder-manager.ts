@@ -1,5 +1,5 @@
 import { Card, Deck, Format } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
 import {
   DeckComposition,

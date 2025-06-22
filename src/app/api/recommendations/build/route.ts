@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 import { RecommendationEngine } from '@/lib/recommendations/recommendation-engine';
 import { z } from 'zod';
 import { DeckArchetype } from '@/lib/analysis/types';

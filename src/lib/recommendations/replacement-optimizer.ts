@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 import type { Card, Deck, DeckCard } from '@prisma/client';
 import { DeckAnalyzer } from '../analysis/deck-analyzer';
 import type { DeckAnalysisResult } from '../analysis/types';

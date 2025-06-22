@@ -1,4 +1,4 @@
-import { redis } from '@/lib/db/redis';
+import { redis } from '@/server/db/redis';
 
 export interface RateLimitConfig {
   windowMs: number;

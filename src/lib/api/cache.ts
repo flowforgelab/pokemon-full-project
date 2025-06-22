@@ -1,4 +1,4 @@
-import { redis } from '@/lib/db/redis';
+import { redis } from '@/server/db/redis';
 import { z } from 'zod';
 import type { CacheConfig } from './types';
 

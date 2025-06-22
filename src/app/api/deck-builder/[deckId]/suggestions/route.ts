@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 
 export async function GET(
   request: NextRequest,

@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/db/prisma';
-import { redis } from '@/lib/db/redis';
+import { prisma } from '@/server/db/prisma';
+import { redis } from '@/server/db/redis';
 
 export class CollectionSearchIndexer {
   private readonly INDEX_PREFIX = 'search:index:';

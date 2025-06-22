@@ -1,5 +1,5 @@
 import { Job } from 'bullmq';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { TCGPlayerClient } from '@/lib/api/tcgplayer-client';
 import { priceCache } from '@/lib/api/cache';
 import type { JobData, JobResult } from '@/lib/api/types';

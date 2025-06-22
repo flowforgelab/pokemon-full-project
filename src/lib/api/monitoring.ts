@@ -1,4 +1,4 @@
-import { redis } from '@/lib/db/redis';
+import { redis } from '@/server/db/redis';
 import type { ApiMetrics, HealthCheckResult } from './types';
 
 export class MetricsCollector {

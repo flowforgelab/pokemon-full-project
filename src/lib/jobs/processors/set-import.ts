@@ -1,5 +1,5 @@
 import { Job } from 'bullmq';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { PokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
 import { TCGPlayerClient } from '@/lib/api/tcgplayer-client';
 import { normalizeSetData, normalizeCardData, mapTCGPlayerIds } from '@/lib/api/transformers';

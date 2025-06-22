@@ -1,7 +1,7 @@
 import { Job } from 'bullmq';
 import type { JobData, JobResult } from '@/lib/api/types';
 import { CollectionSearchIndexer } from '@/lib/collection/search-indexer';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 
 export async function processCollectionIndexJob(job: Job<JobData>): Promise<JobResult> {
   const { type, payload } = job.data;

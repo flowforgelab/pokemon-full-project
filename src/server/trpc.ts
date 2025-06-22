@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { auth } from '@clerk/nextjs/server';
 import type { NextRequest } from 'next/server';
 import SuperJSON from 'superjson';

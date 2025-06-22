@@ -1,5 +1,5 @@
 import { Job } from 'bullmq';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import type { JobData, JobResult } from '@/lib/api/types';
 
 export async function processDataCleanupJob(job: Job<JobData>): Promise<JobResult> {

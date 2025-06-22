@@ -1,7 +1,7 @@
 import { Card, Supertype, Rarity, Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
-import { redis } from '@/lib/cache/redis';
+import { redis } from '@/server/db/redis';
 import { CardSearchFilters, SearchSuggestion } from './types';
 
 export class CardSearchEngine {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
 import type { AnalysisConfig } from '@/lib/analysis/types';
 

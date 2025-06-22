@@ -1,7 +1,7 @@
 import { PokemonTCGClient } from './pokemon-tcg-client';
 import { TCGPlayerClient } from './tcgplayer-client';
-import { redis } from '@/lib/db/redis';
-import { prisma } from '@/lib/db/prisma';
+import { redis } from '@/server/db/redis';
+import { prisma } from '@/server/db/prisma';
 import { scheduleRecurringJobs } from '../jobs/queue';
 import { startAllWorkers } from '../jobs/processors';
 import { warmPopularCardsCache } from './cache';

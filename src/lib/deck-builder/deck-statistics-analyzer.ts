@@ -14,7 +14,7 @@ import {
   ComparativeStats,
   CardEntry,
 } from './types';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 
 export class DeckStatisticsAnalyzer {
   async analyzeDeck(

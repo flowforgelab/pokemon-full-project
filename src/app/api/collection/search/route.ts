@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { CollectionManager } from '@/lib/collection/collection-manager';
 import { z } from 'zod';
 import type { CollectionSearchFilters } from '@/lib/collection/types';

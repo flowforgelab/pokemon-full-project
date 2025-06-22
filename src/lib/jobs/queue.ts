@@ -1,5 +1,5 @@
 import { Queue, Worker, Job, QueueEvents } from 'bullmq';
-import { redis } from '@/lib/db/redis';
+import { redis } from '@/server/db/redis';
 import type { JobData, JobResult } from '@/lib/api/types';
 
 // Redis connection configuration for BullMQ

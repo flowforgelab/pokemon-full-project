@@ -5,7 +5,7 @@ import {
   ValidationRule,
   CardEntry 
 } from './types';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 
 export class DeckValidator {
   private readonly DECK_SIZE = 60;

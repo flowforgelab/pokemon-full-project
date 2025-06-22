@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/server/db/prisma';
 import { CollectionSearchEngine } from './search-engine';
 import { CollectionStatisticsAnalyzer } from './statistics-analyzer';
 import { QuickAddManager } from './quick-add-manager';

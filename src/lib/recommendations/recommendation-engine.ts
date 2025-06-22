@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db';
+import { prisma } from '@/server/db/prisma';
 import type { Deck, DeckCard, Card, User } from '@prisma/client';
 import { ArchetypeGenerator } from './archetype-generator';
 import { ReplacementOptimizer } from './replacement-optimizer';
