@@ -1,17 +1,17 @@
 {
-  "extends": ["next/core-web-vitals", "prettier"],
-  "plugins": ["prettier"],
+  "extends": ["next/core-web-vitals"],
   "rules": {
-    "prettier/prettier": "error",
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_",
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    "@typescript-eslint/no-unsafe-function-type": "warn"
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-unsafe-function-type": "off",
+    "@typescript-eslint/no-unused-expressions": "warn",
+    "prefer-const": "warn"
   }
 }

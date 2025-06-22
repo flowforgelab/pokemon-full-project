@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
 import { prisma } from '@/server/db/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId: clerkUserId } = await auth();
     

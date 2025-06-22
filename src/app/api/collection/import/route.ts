@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { CollectionManager } from '@/lib/collection/collection-manager';
 import { z } from 'zod';
-import type { CollectionImportData, ImportOptions } from '@/lib/collection/types';
+import type { CollectionImportData } from '@/lib/collection/types';
 
 // Import options schema
 const importOptionsSchema = z.object({
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 }
 
 // GET /api/collection/import/templates - Get import templates
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { userId } = auth();
     if (!userId) {

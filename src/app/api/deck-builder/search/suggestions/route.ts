@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
-import { prisma } from '@/server/db/prisma';
 
 const suggestionsSchema = z.object({
   query: z.string().min(1),

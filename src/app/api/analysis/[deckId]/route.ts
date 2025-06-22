@@ -83,7 +83,7 @@ export async function POST(
     }
 
     // This endpoint can be used to save analysis results or trigger background analysis
-    const body = await req.json();
+    const _body = await req.json();
     
     // Verify deck ownership
     const deck = await prisma.deck.findUnique({

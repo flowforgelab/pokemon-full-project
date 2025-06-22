@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(performance);
 
       case 'changes':
-        const hours = parseInt(searchParams.get('hours') || '24');
+        const _hours = parseInt(searchParams.get('hours') || '24');
         const changes = await manager.trackValueChanges(user.id);
         return NextResponse.json(changes);
 

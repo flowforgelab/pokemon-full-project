@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { CollectionManager } from '@/lib/collection/collection-manager';
-import { z } from 'zod';
 
 // GET /api/collection/dashboard - Get collection dashboard
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { userId } = auth();
     if (!userId) {

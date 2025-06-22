@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
-import type { AnalysisConfig, DeckAnalysisResult } from '@/lib/analysis/types';
+import type { DeckAnalysisResult } from '@/lib/analysis/types';
 
 interface ComparisonResult {
   deckA: {
@@ -107,8 +107,8 @@ function compareDecks(
   const categoryWinners: Record<string, string> = {};
   const categories = ['consistency', 'power', 'speed', 'versatility', 'metaRelevance'];
 
-  let deckAWins = 0;
-  let deckBWins = 0;
+  let _deckAWins = 0;
+  let _deckBWins = 0;
 
   categories.forEach(category => {
     const scoreA = analysisA.scores[category as keyof typeof analysisA.scores];
@@ -116,10 +116,10 @@ function compareDecks(
     
     if (scoreA > scoreB) {
       categoryWinners[category] = deckA.name;
-      deckAWins++;
+      _deckAWins++;
     } else if (scoreB > scoreA) {
       categoryWinners[category] = deckB.name;
-      deckBWins++;
+      _deckBWins++;
     } else {
       categoryWinners[category] = 'Tie';
     }

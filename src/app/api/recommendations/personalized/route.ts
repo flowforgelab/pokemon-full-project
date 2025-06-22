@@ -6,19 +6,20 @@ import { z } from 'zod';
 import { recommendationCache } from '@/lib/api/cache';
 import type { RecommendationFilter } from '@/lib/recommendations/types';
 
-const filterSchema = z.object({
-  priceRange: z.object({
-    min: z.number().min(0),
-    max: z.number().min(0),
-  }).optional(),
-  ownedCardRequirement: z.number().min(0).max(100).optional(),
-  formatRestriction: z.enum(['Standard', 'Expanded', 'Unlimited']).optional(),
-  strategyPreferences: z.array(z.string()).optional(),
-  complexityLimit: z.number().min(1).max(10).optional(),
-  metaTierRequirement: z.number().min(1).max(4).optional(),
-  excludeCards: z.array(z.string()).optional(),
-  includeCards: z.array(z.string()).optional(),
-});
+// Unused filterSchema - commented out as it's not being used
+// const filterSchema = z.object({
+//   priceRange: z.object({
+//     min: z.number().min(0),
+//     max: z.number().min(0),
+//   }).optional(),
+//   ownedCardRequirement: z.number().min(0).max(100).optional(),
+//   formatRestriction: z.enum(['Standard', 'Expanded', 'Unlimited']).optional(),
+//   strategyPreferences: z.array(z.string()).optional(),
+//   complexityLimit: z.number().min(1).max(10).optional(),
+//   metaTierRequirement: z.number().min(1).max(4).optional(),
+//   excludeCards: z.array(z.string()).optional(),
+//   includeCards: z.array(z.string()).optional(),
+// });
 
 export async function GET(req: NextRequest) {
   try {
