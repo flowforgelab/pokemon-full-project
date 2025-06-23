@@ -339,3 +339,6 @@ export class PokemonTCGClient extends BaseApiClient {
     return this.request<{ data: string[] }>('/types', { method: 'GET' });
   }
 }
+
+// Export a singleton instance
+export const pokemonTCGClient = new PokemonTCGClient(process.env.POKEMON_TCG_API_KEY);

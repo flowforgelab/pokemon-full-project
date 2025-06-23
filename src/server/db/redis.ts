@@ -31,3 +31,42 @@ const createRedisClient = () => {
 };
 
 export const redis = createRedisClient();
+
+// Cache helper functions
+export const redisCache = redis;
+
+export const getCardCache = async (key: string) => {
+  try {
+    return await redis.get(key);
+  } catch (error) {
+    console.error('Error getting card cache:', error);
+    return null;
+  }
+};
+
+export const getAnalysisCache = async (key: string) => {
+  try {
+    return await redis.get(`analysis:${key}`);
+  } catch (error) {
+    console.error('Error getting analysis cache:', error);
+    return null;
+  }
+};
+
+export const getCollectionCache = async (key: string) => {
+  try {
+    return await redis.get(`collection:${key}`);
+  } catch (error) {
+    console.error('Error getting collection cache:', error);
+    return null;
+  }
+};
+
+export const getPriceCache = async (key: string) => {
+  try {
+    return await redis.get(`price:${key}`);
+  } catch (error) {
+    console.error('Error getting price cache:', error);
+    return null;
+  }
+};

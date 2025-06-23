@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Button, 
   PremiumCard, 
@@ -25,7 +25,7 @@ import {
   Tooltip,
   Popover,
 } from '@/components/ui';
-import { ThemeToggle } from '@/components/providers/ThemeProvider';
+// import { ThemeToggle } from '@/components/providers/ThemeProvider';
 import { 
   Sparkles, 
   Zap, 
@@ -36,7 +36,46 @@ import {
   Heart,
   Share2,
   Settings,
+  Sun,
+  Moon,
 } from 'lucide-react';
+
+// Simple theme toggle for design system page
+const SimpleThemeToggle = () => {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial theme
+    const root = document.documentElement;
+    setIsDark(root.classList.contains('dark'));
+  }, []);
+
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+      root.classList.add('dark');
+    }
+    setIsDark(!isDark);
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="relative p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Toggle theme"
+    >
+      {isDark ? (
+        <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+      ) : (
+        <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+      )}
+    </button>
+  );
+};
 
 export default function DesignSystemPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -291,7 +330,7 @@ export default function DesignSystemPage() {
                 Sophisticated dark mode with smooth transitions.
               </p>
               <div className="flex items-center gap-6">
-                <ThemeToggle />
+                <SimpleThemeToggle />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   Toggle between light and dark themes
                 </span>
@@ -350,7 +389,10 @@ export default function DesignSystemPage() {
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-2">Theme</h4>
-              <ThemeToggle variant="menu" />
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Toggle theme:</span>
+                <SimpleThemeToggle />
+              </div>
             </div>
           </div>
         </Drawer>

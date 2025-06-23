@@ -17,6 +17,9 @@ export const dataCleanupQueue = new Queue('data-cleanup', { connection });
 export const reportQueue = new Queue('reports', { connection });
 export const collectionIndexQueue = new Queue('collection-index', { connection });
 
+// Main Pokemon TCG queue for general jobs
+export const pokemonTCGQueue = new Queue('pokemon-tcg', { connection });
+
 // Queue events for monitoring
 export const priceUpdateEvents = new QueueEvents('price-updates', { connection });
 export const setImportEvents = new QueueEvents('set-imports', { connection });
