@@ -57,3 +57,12 @@ dump.rdb
 
 # OS
 Thumbs.db
+
+# sensitive files
+vercel-env-vars.txt
+DEPLOY_NOW.md
+deploy.sh
+*-credentials.txt
+*-secrets.txt
+*.env.local
+*.env.production
