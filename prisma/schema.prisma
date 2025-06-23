@@ -63,7 +63,6 @@ enum DeckCategory {
 }
 
 enum PriceSource {
-  TCGPLAYER
   CARDMARKET
   EBAY
   LOCAL
@@ -174,7 +173,6 @@ model Card {
   imageUrlLarge           String
   
   // External IDs for pricing
-  tcgplayerId             String?   @unique
   cardmarketId            String?   @unique
   
   // Legalities
@@ -203,7 +201,6 @@ model Card {
   @@index([rarity])
   @@index([artist])
   @@index([isLegalStandard, isLegalExpanded])
-  @@index([tcgplayerId])
   @@index([cardmarketId])
   
   // Full text search
@@ -253,6 +250,7 @@ model User {
   sharedCollections SharedCollection[]
   sharedWantLists   SharedWantList[]
   savedViews        SavedView[]
+  notifications     Notification[]
   
   // Indexes
   @@index([clerkUserId])
@@ -284,6 +282,7 @@ model UserCollection {
   // Timestamps
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
   
   // Relationships
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -341,6 +340,13 @@ model Deck {
   wins            Int         @default(0)
   losses          Int         @default(0)
   draws           Int         @default(0)
+  pokemonCount    Int         @default(0)
+  trainerCount    Int         @default(0)
+  energyCount     Int         @default(0)
+  
+  // Legality
+  isLegal         Boolean     @default(true)
+  rotationNotes   Json?       // Information about rotation-affected cards
   
   // Metadata
   coverCardId     String?
@@ -350,6 +356,7 @@ model Deck {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   lastPlayedAt    DateTime?
+  deletedAt       DateTime?
   
   // Relationships
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -357,6 +364,7 @@ model Deck {
   cards           DeckCard[]
   matchups        Matchup[]   @relation("DeckMatchups")
   opponentIn      Matchup[]   @relation("OpponentMatchups")
+  deckMigrations  DeckMigration[]
   
   // Indexes
   @@index([userId])
@@ -828,4 +836,175 @@ model SavedView {
   
   // Indexes
   @@index([userId])
+}
+// ==================== DATA MAINTENANCE MODELS ====================
+
+// Notification system
+model Notification {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String        @db.Uuid
+  type            String
+  title           String
+  message         String
+  data            Json?
+  read            Boolean       @default(false)
+  readAt          DateTime?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relationships
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+// Backup metadata tracking
+model BackupMetadata {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backupId        String        @unique
+  type            String        // full, incremental, differential
+  size            BigInt
+  compressedSize  BigInt?
+  location        String
+  checksum        String
+  duration        Int           // milliseconds
+  tablesBackedUp  String[]
+  errors          String[]
+  retentionDate   DateTime
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Indexes
+  @@index([type])
+  @@index([createdAt])
+  @@index([retentionDate])
+}
+
+// Backup restoration records
+model BackupRestore {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backupId        String
+  restoredAt      DateTime      @default(now())
+  restoredBy      String
+  options         Json
+  success         Boolean
+  error           String?
+  
+  // Indexes
+  @@index([backupId])
+  @@index([restoredAt])
+}
+
+// Admin action tracking
+model AdminAction {
+  id              String        @id @default(cuid())
+  adminUserId     String
+  action          String
+  parameters      Json
+  timestamp       DateTime      @default(now())
+  reason          String
+  status          String        // pending, completed, failed
+  result          Json?
+  auditLog        String[]
+  
+  // Indexes
+  @@index([adminUserId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+// Alert system
+model Alert {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alertId         String        @unique
+  severity        String        // critical, warning, info
+  type            String
+  message         String
+  metadata        Json
+  acknowledged    Boolean       @default(false)
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  resolved        Boolean       @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Indexes
+  @@index([severity])
+  @@index([type])
+  @@index([acknowledged])
+  @@index([resolved])
+  @@index([createdAt])
+}
+
+// On-call schedule
+model OnCallSchedule {
+  id              String        @id @default(cuid())
+  name            String
+  rotation        String        // daily, weekly
+  startDate       DateTime
+  users           Json          // Array of OnCallUser objects
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Indexes
+  @@index([name])
+}
+
+// Audit logging
+model AuditLog {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auditId         String        @unique
+  category        String        // data, user, system, security, admin
+  action          String
+  actorId         String?
+  actorType       String        // user, system, job, api
+  targetId        String?
+  targetType      String?
+  changes         Json?         // { before, after }
+  metadata        Json
+  ipAddress       String?
+  userAgent       String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Indexes
+  @@index([category])
+  @@index([action])
+  @@index([actorId])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+// Deck migration tracking for format rotations
+model DeckMigration {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deckId                  String        @db.Uuid
+  formatRotationDate      DateTime
+  illegalCards            Json          // Array of illegal card info
+  suggestedReplacements   Json          // Array of replacement suggestions
+  estimatedCost           Decimal       @db.Decimal(10, 2)
+  autoFixAvailable        Boolean
+  wasApplied              Boolean       @default(false)
+  appliedAt               DateTime?
+  
+  // Timestamps
+  createdAt               DateTime      @default(now())
+  
+  // Relationships
+  deck                    Deck          @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([deckId])
+  @@index([formatRotationDate])
 }

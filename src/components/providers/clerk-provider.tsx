@@ -1,22 +1,142 @@
 'use client';
 
 import { ClerkProvider as BaseClerkProvider } from '@clerk/nextjs';
-import { PropsWithChildren } from 'react';
+import { dark } from '@clerk/themes';
+import { PropsWithChildren, useEffect } from 'react';
+// Theme will be implemented after ThemeProvider is set up
+
+const publicRoutes = [
+  '/',
+  '/pricing',
+  '/features',
+  '/about',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/sso-callback',
+  '/verify-email',
+];
 
 export function ClerkProvider({ children }: PropsWithChildren) {
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    console.warn('Clerk publishable key not found. Authentication disabled.');
     return <>{children}</>;
   }
 
   return (
+    <ClerkProviderWithTheme>
+      {children}
+    </ClerkProviderWithTheme>
+  );
+}
+
+function ClerkProviderWithTheme({ children }: PropsWithChildren) {
+  // Theme detection will be added when ThemeProvider is set up
+  const theme = 'light'; // temporary default
+  
+  return (
     <BaseClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL}
-      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL}
-      afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
-      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/sign-in'}
+      signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || '/sign-up'}
+      afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || '/dashboard'}
+      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || '/onboarding'}
+      appearance={{
+        baseTheme: theme === 'dark' ? dark : undefined,
+        elements: {
+          formButtonPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+          card: 'shadow-none',
+          footerActionLink: 'text-primary hover:text-primary/90',
+          identityPreviewText: 'text-foreground',
+          identityPreviewEditButton: 'text-primary hover:text-primary/90',
+          formFieldLabel: 'text-foreground',
+          formFieldInput: 'bg-background border-input',
+          dividerLine: 'bg-border',
+          dividerText: 'text-muted-foreground',
+          socialButtonsBlockButton: 'bg-background border-input hover:bg-accent',
+          socialButtonsBlockButtonText: 'text-foreground',
+          formHeaderTitle: 'text-foreground',
+          formHeaderSubtitle: 'text-muted-foreground',
+          alertText: 'text-foreground',
+          userButtonPopoverCard: 'bg-popover',
+          userButtonPopoverActionButton: 'hover:bg-accent',
+          userButtonPopoverActionButtonText: 'text-foreground',
+          userButtonPopoverFooter: 'hidden',
+          userPreviewSecondaryIdentifier: 'text-muted-foreground',
+        },
+        variables: {
+          colorPrimary: 'hsl(var(--primary))',
+          colorBackground: 'hsl(var(--background))',
+          colorInputBackground: 'hsl(var(--background))',
+          colorText: 'hsl(var(--foreground))',
+          colorTextSecondary: 'hsl(var(--muted-foreground))',
+          colorDanger: 'hsl(var(--destructive))',
+          colorSuccess: 'hsl(142.1 76.2% 36.3%)',
+          colorWarning: 'hsl(38 92% 50%)',
+          colorNeutral: 'hsl(var(--muted))',
+          borderRadius: '0.5rem',
+          fontFamily: 'var(--font-geist-sans)',
+        },
+        layout: {
+          socialButtonsPlacement: 'bottom',
+          socialButtonsVariant: 'blockButton',
+          privacyPageUrl: '/privacy',
+          termsPageUrl: '/terms',
+        },
+      }}
+      localization={{
+        signIn: {
+          start: {
+            title: 'Welcome back to Pokemon TCG Deck Builder',
+            subtitle: 'Sign in to access your collection and decks',
+          },
+        },
+        signUp: {
+          start: {
+            title: 'Create your Pokemon TCG account',
+            subtitle: 'Join thousands of trainers building winning decks',
+          },
+        },
+        userProfile: {
+          navbar: {
+            title: 'Account Settings',
+            description: 'Manage your profile and preferences',
+          },
+        },
+      }}
     >
+      <AuthenticationListener />
       {children}
     </BaseClerkProvider>
   );
+}
+
+function AuthenticationListener() {
+  useEffect(() => {
+    // Track authentication events
+    const handleSignIn = () => {
+      // Log sign in event
+      console.log('User signed in');
+      // You can add analytics tracking here
+    };
+
+    const handleSignOut = () => {
+      // Log sign out event
+      console.log('User signed out');
+      // Clean up any cached data
+    };
+
+    // Set up event listeners
+    window.addEventListener('clerk:signin', handleSignIn);
+    window.addEventListener('clerk:signout', handleSignOut);
+
+    return () => {
+      window.removeEventListener('clerk:signin', handleSignIn);
+      window.removeEventListener('clerk:signout', handleSignOut);
+    };
+  }, []);
+
+  return null;
 }

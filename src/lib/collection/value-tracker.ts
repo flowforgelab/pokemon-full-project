@@ -22,6 +22,21 @@ export class CollectionValueTracker {
     changes: ValueChange[];
     alerts: ValueChange[];
   }> {
+    // TCGPlayer integration removed - returning empty value data
+    return {
+      currentValue: {
+        totalValue: 0,
+        valueByCondition: {},
+        valueBySet: [],
+        topValueCards: [],
+        lastUpdated: new Date(),
+        notice: 'Collection value tracking is currently unavailable. TCGPlayer integration has been removed.',
+      },
+      changes: [],
+      alerts: [],
+    };
+    
+    /* Original implementation disabled
     // Get current collection value
     const currentValue = await this.calculateCurrentValue(userId);
 
@@ -37,12 +52,24 @@ export class CollectionValueTracker {
     await this.storeValueSnapshot(userId, currentValue.totalValue);
 
     return { currentValue, changes, alerts };
+    */
   }
 
   /**
    * Calculate current collection value
    */
   async calculateCurrentValue(userId: string): Promise<CollectionValue> {
+    // TCGPlayer integration removed - returning empty value
+    return {
+      totalValue: 0,
+      valueByCondition: {},
+      valueBySet: [],
+      topValueCards: [],
+      lastUpdated: new Date(),
+      notice: 'Collection value tracking is currently unavailable. TCGPlayer integration has been removed.',
+    };
+    
+    /* Original implementation disabled
     const cacheKey = `value:current:${userId}`;
     const cached = await priceCache.get<CollectionValue>(cacheKey);
     if (cached) return cached;
@@ -119,6 +146,7 @@ export class CollectionValueTracker {
 
     await priceCache.set(cacheKey, result, 3600); // Cache for 1 hour
     return result;
+    */
   }
 
   /**

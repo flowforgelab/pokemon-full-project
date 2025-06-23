@@ -14,20 +14,6 @@ export const API_CONFIG = {
     RETRY_DELAY: 1000, // 1 second
   },
 
-  // TCGPlayer API
-  TCGPLAYER: {
-    BASE_URL: process.env.TCGPLAYER_API_URL || 'https://api.tcgplayer.com',
-    PUBLIC_KEY: process.env.TCGPLAYER_API_PUBLIC_KEY,
-    PRIVATE_KEY: process.env.TCGPLAYER_API_PRIVATE_KEY,
-    RATE_LIMIT: {
-      MAX_REQUESTS: 1000,
-      WINDOW_MS: 60 * 60 * 1000, // 1 hour
-    },
-    TIMEOUT: 30000, // 30 seconds
-    MAX_RETRIES: 3,
-    RETRY_DELAY: 1000, // 1 second
-    CATEGORY_ID: 3, // Pokemon TCG
-  },
 
   // Cache Configuration
   CACHE: {
@@ -114,9 +100,6 @@ export function validateConfiguration(): {
     warnings.push('POKEMON_TCG_API_KEY not set - API rate limits will be more restrictive');
   }
 
-  if (!process.env.TCGPLAYER_API_PUBLIC_KEY || !process.env.TCGPLAYER_API_PRIVATE_KEY) {
-    warnings.push('TCGPlayer API keys not set - pricing features will be disabled');
-  }
 
   if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
     warnings.push('Redis/KV credentials not set - caching and job queues will be disabled');

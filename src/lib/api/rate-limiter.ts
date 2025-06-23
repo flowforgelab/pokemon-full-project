@@ -296,11 +296,6 @@ export const pokemonTCGRateLimiter = new RateLimiter({
   keyPrefix: 'rate-limit:pokemon-tcg:',
 });
 
-export const tcgPlayerRateLimiter = new RateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  maxRequests: 1000,
-  keyPrefix: 'rate-limit:tcgplayer:',
-});
 
 // Global distributed rate limiter
 export const globalRateLimiter = new DistributedRateLimiter();
@@ -308,11 +303,6 @@ globalRateLimiter.addLimiter('pokemon-tcg', {
   windowMs: 60 * 60 * 1000,
   maxRequests: 1000,
 });
-globalRateLimiter.addLimiter('tcgplayer', {
-  windowMs: 60 * 60 * 1000,
-  maxRequests: 1000,
-});
 
 // Priority queues for each API
 export const pokemonTCGQueue = new PriorityRequestQueue(pokemonTCGRateLimiter);
-export const tcgPlayerQueue = new PriorityRequestQueue(tcgPlayerRateLimiter);

@@ -22,384 +22,414 @@ npx dotenv -e .env.local -- prisma db push       # Push schema changes to databa
 npx dotenv -e .env.local -- prisma migrate dev   # Create new migration
 npx dotenv -e .env.local -- prisma studio        # Open Prisma Studio GUI
 
-# Without env file loading (if DATABASE_URL is in environment)
+# Migration management
 npx prisma generate           # Generate Prisma client
 npx prisma migrate deploy     # Deploy migrations in production
-```
-
-### Package Management
-```bash
-npm install                   # Install dependencies
-npm install <package>         # Add new dependency
-npm install -D <package>      # Add new dev dependency
+npx prisma migrate dev --name <migration-name>  # Create named migration
 ```
 
 ### Testing API Endpoints
 ```bash
-# Analyze a deck
+# Get Clerk token from browser DevTools: localStorage.getItem('__clerk_db_jwt')
+
+# Deck Analysis
 curl -X GET http://localhost:3000/api/analysis/{deckId} \
   -H "Authorization: Bearer {clerk-token}"
 
-# Search collection
+# Collection Search
 curl -X GET "http://localhost:3000/api/collection/search?text=charizard&types=POKEMON" \
   -H "Authorization: Bearer {clerk-token}"
 
-# Get collection dashboard
-curl -X GET http://localhost:3000/api/collection/dashboard \
-  -H "Authorization: Bearer {clerk-token}"
-
-# Quick add cards
-curl -X POST http://localhost:3000/api/collection/quick-add \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer {clerk-token}" \
-  -d '{"items": [{"cardName": "Charizard ex", "quantity": 1, "condition": "NEAR_MINT"}]}'
-
-# Create new deck
+# Create Deck
 curl -X POST http://localhost:3000/api/deck-builder/create \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer {clerk-token}" \
   -d '{"name": "My Fire Deck", "formatId": "standard"}'
 
-# Search cards for deck builder
-curl -X POST http://localhost:3000/api/deck-builder/search \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer {clerk-token}" \
-  -d '{"text": "charizard", "types": ["POKEMON"], "page": 1}'
+# Test Deck Hands
+curl -X GET http://localhost:3000/api/deck-builder/{deckId}/test?hands=10 \
+  -H "Authorization: Bearer {clerk-token}"
 ```
 
 ## Architecture Overview
 
-### Core Systems
+### Authentication Flow
+1. Clerk middleware (`src/middleware.ts`) protects API routes
+2. Routes extract `clerkUserId` from auth context
+3. Database lookup: `clerkUserId` → `User.id` (UUID)
+4. All API operations use internal `User.id`
+5. Role-based access control (RBAC) with 6 levels: user, premium_user, pro_user, moderator, admin, super_admin
+6. Stripe subscription integration for feature gating
 
-1. **Authentication (Clerk)**
-   - Middleware at `src/middleware.ts` protects routes
-   - Client wrapper at `src/components/providers/clerk-provider.tsx` prevents SSR issues
-   - User lookup: `clerkUserId` → `User.id` (UUID)
+### tRPC API Architecture
+The application uses tRPC for type-safe API communication:
 
-2. **Database (PostgreSQL + Prisma)**
-   - Hosted on Neon with connection pooling
-   - 25+ models including new collection management models
-   - JSON fields for flexible card data (attacks, abilities)
-   - Full-text search enabled with PostgreSQL extensions
-   - Key models: User, Card, Set, Deck, UserCollection, WantList, CollectionTag
+```typescript
+// Client component
+const { data } = api.card.search.useQuery({ query: "charizard" });
 
-3. **API Layer**
-   - **tRPC** routers in `src/server/routers/` for type-safe RPC
-   - **REST API** endpoints in `src/app/api/` for collection management
-   - Protected procedures require authentication
-   - Context provides `userId` and `prisma` client
+// Server router
+export const cardRouter = createTRPCRouter({
+  search: publicProcedure
+    .input(searchSchema)
+    .query(async ({ ctx, input }) => {
+      // Implementation
+    })
+});
+```
 
-4. **External API Integration**
-   - **Pokemon TCG API** (`src/lib/api/pokemon-tcg-client.ts`)
-     - Rate limiting: 1000 requests/hour
-     - Retry logic with exponential backoff using p-retry
-     - Batch operations support
-   - **TCGPlayer API** (`src/lib/api/tcgplayer-client.ts`)
-     - OAuth authentication with auto-refresh
-     - Bulk price fetching (250 items max)
-     - Price history tracking
+**Key tRPC Patterns:**
+- `publicProcedure`: No auth required
+- `protectedProcedure`: Requires authentication
+- `premiumProcedure`: Requires premium subscription
+- `adminProcedure`: Requires admin role
 
-5. **Caching & Jobs**
-   - **Redis** (Vercel KV/Upstash) for caching
-   - **Bull/BullMQ** for background jobs
-   - Job processors in `src/lib/jobs/processors/`
-   - Scheduled jobs: price updates, card sync, collection indexing, cleanup
+### Database Architecture
+- **Neon PostgreSQL** with connection pooling
+- **Prisma ORM** with type-safe queries
+- **Key Relations**:
+  - User → Decks (one-to-many)
+  - User → UserCollection (one-to-many)
+  - Deck → DeckCards → Cards (many-to-many with quantity)
+  - Card → Set (many-to-one)
+  - Card → Prices (one-to-many, ordered by date)
 
-6. **Deck Analysis Engine** (`src/lib/analysis/`)
-   - **ConsistencyCalculator**: Energy ratios, mulligan probability
-   - **SynergyAnalyzer**: Card interactions, combo detection
-   - **MetaEvaluator**: Matchup predictions, tech recommendations
-   - **SpeedAnalyzer**: Setup efficiency, prize race
-   - **ArchetypeClassifier**: 9 deck archetype detection
-   - **ScoringSystem**: Comprehensive deck scoring
+### API Architecture
+```
+Client Request → Clerk Auth → tRPC Router → Business Logic → Database
+                                    ↓
+                              Cache Layer (Redis)
+                                    ↓
+                              External APIs (if needed)
+```
 
-7. **AI Recommendation System** (`src/lib/recommendations/`)
-   - **RecommendationEngine**: Main orchestrator with learning capabilities
-   - **ArchetypeGenerator**: Builds decks from scratch using templates
-   - **ReplacementOptimizer**: Intelligent card replacement suggestions
-   - **BudgetBuilder**: Budget-aware deck building with upgrade paths
-   - **CollectionBuilder**: Leverages user's owned cards
-   - **SynergyCalculator**: Advanced synergy and combo detection
-   - **MetaAnalyzer**: Real-time meta analysis and counter strategies
+### Caching Strategy
+- **Memory Cache**: LRU with 100MB limit, 5min TTL
+- **Redis Cache**: Distributed cache with varied TTLs
+- **Cache Keys**:
+  - Cards: `card:{id}` (24hr)
+  - Search: `search:{hash}` (1hr)
+  - Prices: `price:{id}` (1hr)
+  - Analysis: `analysis:{deckId}` (1hr)
+  - Collection: `collection:dashboard:{userId}` (1hr)
 
-8. **Collection Management System** (`src/lib/collection/`)
-   - **CollectionManager**: Main orchestrator for all collection features
-   - **CollectionSearchEngine**: Advanced search with full-text and filtering
-   - **CollectionStatisticsAnalyzer**: Analytics and insights generation
-   - **QuickAddManager**: Bulk import and quick card addition
-   - **CollectionOrganizationManager**: Tags, folders, and custom organization
-   - **WantListManager**: Want list tracking with price alerts
-   - **CollectionValueTracker**: Real-time value and performance tracking
-   - **ImportExportManager**: Multi-format import/export (CSV, JSON, TCGDB)
-   - **CollectionSearchIndexer**: Redis-based search indexing
+### Background Job Processing
+Jobs are processed using Bull/BullMQ with Redis:
+1. **Price Updates**: Weekly full sync, daily top cards
+2. **Card Sync**: Daily new cards, weekly full sync
+3. **Collection Index**: On-demand after bulk updates
+4. **Cleanup**: Monthly stale data removal
 
-9. **Deck Builder System** (`src/lib/deck-builder/`)
-   - **DeckBuilderManager**: Main orchestrator for deck building operations
-   - **CardSearchEngine**: Advanced card search with suggestions
-   - **DragDropManager**: Drag-and-drop functionality with touch support
-   - **DeckValidator**: Real-time deck validation and format checking
-   - **DeckStatisticsAnalyzer**: Deck statistics and visualization
-   - **DeckTestingSimulator**: Opening hand simulation and testing
-   - **SmartSuggestionEngine**: AI-powered card recommendations
-   - **CollaborationManager**: Deck sharing and version control
+### Performance Optimization
+- **Client/Server Split**: React hooks in `/lib/performance/client`
+- **API Optimization**: Use `optimizeAPIRoute` wrapper
+- **Database Indexes**: Custom indexes for frequent queries
+- **Image CDN**: Automatic optimization with responsive images
 
-10. **Performance Optimization System** (`src/lib/performance/`)
-   - **DatabaseOptimizer**: Query optimization, indexing, and health monitoring
-   - **CacheManager**: Multi-level caching (memory, Redis, CDN, browser)
-   - **FrontendOptimizer**: React performance, lazy loading, virtual lists
-   - **APIOptimizer**: Response caching, compression, ETags, batch processing
-   - **PerformanceMonitor**: Web Vitals, RUM, API tracking, budgets
-   - **ServiceWorkerManager**: Offline support, background sync, push notifications
-   - **ImageOptimizer**: CDN integration, responsive images, lazy loading
-   - **Scalability**: Load balancing, auto-scaling, circuit breakers, edge computing
+## Mobile-First Component Architecture
 
-### Key Design Patterns
+### Component Organization
+```
+src/components/
+├── cards/                 # Card display components
+│   ├── CardDisplay.tsx   # Main container with layout switching
+│   ├── CardGrid.tsx      # Responsive grid layout
+│   ├── CardList.tsx      # Mobile-optimized list view
+│   ├── CardStack.tsx     # Swipeable card stack
+│   └── CardItem.tsx      # Individual card with lazy loading
+├── decks/                # Deck building components
+│   ├── DeckBuilder.tsx   # Main deck building interface
+│   ├── DeckSection.tsx   # Collapsible card sections
+│   ├── DeckSearch.tsx    # Mobile search with voice support
+│   └── DeckStats.tsx     # Visual deck composition
+└── ui/                   # Reusable UI components
+    ├── MobileModal.tsx   # Mobile-optimized modals
+    ├── BottomSheet.tsx   # Drag-to-dismiss sheets
+    ├── Toast.tsx         # Swipeable notifications
+    ├── Accordion.tsx     # Collapsible sections
+    └── Tabs.tsx          # Touch-friendly tabs
+```
 
-1. **Enum Handling**
-   ```typescript
-   import { Rarity, Supertype, CardCondition } from '@prisma/client';
-   // Use z.nativeEnum() in Zod schemas
-   z.object({ rarity: z.nativeEnum(Rarity) })
-   ```
+### Mobile Design Patterns
+- **Touch Targets**: Minimum 44px for all interactive elements
+- **Gesture Support**: Swipe, long press, pinch-to-zoom
+- **Responsive Breakpoints**: Mobile-first with 5 breakpoints (xs, sm, md, lg, xl)
+- **Performance**: Lazy loading, virtualization, intersection observer
+- **Accessibility**: ARIA labels, keyboard navigation, focus management
 
-2. **User Authentication in Routers**
-   ```typescript
-   const user = await ctx.prisma.user.findUnique({
-     where: { clerkUserId: ctx.userId }
-   });
-   ```
+## Key Patterns
 
-3. **Rate Limiting Pattern**
-   ```typescript
-   await pokemonTCGQueue.enqueue(
-     () => apiCall(),
-     userId,
-     JobPriority.HIGH
-   );
-   ```
+### Error Handling
+```typescript
+try {
+  const result = await operation();
+  return NextResponse.json(result);
+} catch (error) {
+  console.error('Operation failed:', error);
+  
+  if (error instanceof SomeKnownError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400 }
+    );
+  }
+  
+  return NextResponse.json(
+    { error: 'Internal server error' },
+    { status: 500 }
+  );
+}
+```
 
-4. **Caching Pattern**
-   ```typescript
-   const cached = await cardCache.get(key);
-   if (!cached) {
-     const data = await fetchData();
-     await cardCache.set(key, data, ttl);
-   }
-   ```
+### Prisma Enum Usage
+```typescript
+import { Rarity, Supertype } from '@prisma/client';
 
-5. **Collection Search Pattern**
-   ```typescript
-   const manager = new CollectionManager();
-   const results = await manager.searchCollection(
-     userId,
-     filters,
-     page,
-     pageSize
-   );
-   ```
+// In Zod schemas
+const schema = z.object({
+  rarity: z.nativeEnum(Rarity),
+  supertype: z.nativeEnum(Supertype)
+});
+```
 
-6. **Error Handling Pattern**
-   ```typescript
-   try {
-     const result = await operation();
-     return NextResponse.json(result);
-   } catch (error) {
-     console.error('Operation failed:', error);
-     return NextResponse.json(
-       { error: 'Failed to perform operation' },
-       { status: 500 }
-     );
-   }
-   ```
+### Rate-Limited API Calls
+```typescript
+await pokemonTCGQueue.enqueue(
+  async () => {
+    const result = await apiClient.cards.list({ q: 'name:charizard' });
+    return result;
+  },
+  userId,
+  JobPriority.HIGH
+);
+```
 
-### Data Flow
+### Protected API Routes
+```typescript
+import { protectedApiRoute } from '@/lib/auth/api-middleware';
 
-1. **Card Data Sync**
-   - Pokemon TCG API → Transformer → Prisma → Database
-   - Background jobs update data daily
-   - Cache invalidation on updates
+export const GET = protectedApiRoute(
+  async (req, context) => {
+    // context.userId and context.userRole available
+    return NextResponse.json({ data });
+  },
+  {
+    requiredRole: 'premium_user',
+    requiredPermission: {
+      resource: 'deck',
+      action: 'create'
+    },
+    rateLimit: { requests: 100, window: 60 }
+  }
+);
+```
 
-2. **Deck Analysis**
-   - Deck → Analyzers → Scoring → Recommendations
-   - Results cached for 1 hour
-   - Comparison uses head-to-head simulation
+### Mobile Component Patterns
+```typescript
+// Touch gesture handling
+const handleTouchStart = (e: React.TouchEvent) => {
+  setTouchStart(e.touches[0].clientX);
+};
 
-3. **Price Updates**
-   - TCGPlayer API → Price processor → Database
-   - Weekly bulk updates via background jobs
-   - Real-time updates for individual cards
+// Responsive image loading
+<Image
+  src={card.imageUrlSmall}
+  alt={card.name}
+  fill
+  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+  className="object-cover"
+/>
 
-4. **Collection Management Flow**
-   - Cards → Collection → Search Index → Analytics → Insights
-   - Real-time value tracking with price updates
-   - Import/Export with multiple format support
+// Mobile-first breakpoints
+const getGridColumns = () => {
+  switch (viewMode) {
+    case 'minimal':
+      return 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6';
+    case 'compact':
+      return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+    default:
+      return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+  }
+};
+```
 
-### Environment Variables
+## Common Tasks
 
-Required:
-- `DATABASE_URL` - PostgreSQL connection string
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` & `CLERK_SECRET_KEY` - Authentication
-- `KV_REST_API_URL` & `KV_REST_API_TOKEN` - Redis/Vercel KV
+### Adding New API Endpoint
+1. Create router method in appropriate `src/server/routers/{feature}.ts`
+2. Use appropriate procedure type (public, protected, premium, admin)
+3. Define input validation with Zod schema
+4. Implement business logic with proper error handling
+5. Update `src/server/routers/_app.ts` if new router
 
-Optional but recommended:
-- `POKEMON_TCG_API_KEY` - Higher rate limits for Pokemon TCG API
-- `TCGPLAYER_API_PUBLIC_KEY` & `TCGPLAYER_API_PRIVATE_KEY` - Pricing data
-- `NEXT_PUBLIC_APP_URL` - Base URL for sharing features
+### Database Schema Changes
+1. Edit `prisma/schema.prisma`
+2. Create migration: `npx dotenv -e .env.local -- prisma migrate dev --name descriptive-name`
+3. Update affected TypeScript types
+4. Update API routes and business logic
+5. Consider adding indexes for new queries
 
-### Common Development Tasks
+### Adding Background Job
+1. Create processor in `src/lib/jobs/processors/{name}-processor.ts`
+2. Add queue definition in `src/lib/jobs/queue.ts`
+3. Register in scheduler if recurring
+4. Add monitoring in `src/lib/jobs/monitoring.ts`
 
-1. **Add a new API endpoint**
-   - Create route handler in `src/app/api/[feature]/route.ts`
-   - Use Clerk auth() for authentication
-   - Add proper error handling and validation
-   - Update CLAUDE.md with endpoint examples
+### Creating Mobile Components
+1. Start with mobile-first responsive design
+2. Implement touch gesture handlers
+3. Add appropriate loading states (skeleton screens)
+4. Ensure minimum touch target size (44px)
+5. Test on actual mobile devices
+6. Add haptic feedback for interactions
+7. Implement proper focus management
 
-2. **Add a new background job**
-   - Create processor in `src/lib/jobs/processors/`
-   - Add queue in `src/lib/jobs/queue.ts`
-   - Register in job scheduler if recurring
-   - Add to queue stats monitoring
+## Environment Variables
 
-3. **Modify database schema**
-   - Edit `prisma/schema.prisma`
-   - Run `npx dotenv -e .env.local -- prisma db push`
-   - Update affected routers and types
-   - Consider adding indexes for performance
+### Required for Development
+```env
+DATABASE_URL              # PostgreSQL connection
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY
+KV_REST_API_URL          # Redis (Vercel KV)
+KV_REST_API_TOKEN
+```
 
-4. **Add collection feature**
-   - Extend managers in `src/lib/collection/`
-   - Update types in `src/lib/collection/types.ts`
-   - Add API endpoints in `src/app/api/collection/`
-   - Update search indexes if affecting searchable data
+### Optional Features
+```env
+POKEMON_TCG_API_KEY      # Higher rate limits
+TCGPLAYER_API_PUBLIC_KEY # Price data
+TCGPLAYER_API_PRIVATE_KEY
+NEXT_PUBLIC_APP_URL      # For sharing features
+```
 
-5. **Add deck builder feature**
-   - Extend managers in `src/lib/deck-builder/`
-   - Update types in `src/lib/deck-builder/types.ts`
-   - Add API endpoints in `src/app/api/deck-builder/`
-   - Update validation rules if needed
+### Stripe Integration
+```env
+STRIPE_SECRET_KEY
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+STRIPE_WEBHOOK_SECRET
+# Price IDs for each subscription tier
+STRIPE_BASIC_MONTHLY_PRICE_ID
+STRIPE_BASIC_YEARLY_PRICE_ID
+STRIPE_PREMIUM_MONTHLY_PRICE_ID
+STRIPE_PREMIUM_YEARLY_PRICE_ID
+STRIPE_ULTIMATE_MONTHLY_PRICE_ID
+STRIPE_ULTIMATE_YEARLY_PRICE_ID
+```
 
-### Performance Considerations
+## Authentication & Subscription System
 
-1. **API Rate Limits**
-   - Pokemon TCG: 1000/hour (tracked per user)
-   - TCGPlayer: 1000/hour (global)
-   - Use queuing system for bulk operations
+### User Roles & Permissions
+- **Roles**: user, premium_user, pro_user, moderator, admin, super_admin
+- **Subscription Tiers**: FREE, BASIC ($4.99), PREMIUM ($9.99), ULTIMATE ($19.99)
+- **Feature Gating**: Use `<FeatureGate feature="feature-name">` component
+- **Permission Check**: `canAccess(role, resource, action)`
 
-2. **Caching Strategy**
-   - Cards: 24 hour TTL
-   - Prices: 1 hour TTL
-   - Search results: 1 hour TTL
-   - Analysis results: 1 hour TTL
-   - Recommendations: 1 hour TTL
-   - Meta data: 24 hour TTL
-   - Collection search: 5 minute TTL
+### Stripe Webhook Handling
+Webhooks are handled at `/api/stripe/webhook`:
+- `checkout.session.completed` - Activates subscription
+- `customer.subscription.updated/deleted` - Updates user tier
+- `invoice.payment_succeeded/failed` - Payment tracking
 
-3. **Database Queries**
-   - Use indexes defined in schema
-   - Batch operations when possible
-   - Consider pagination for large results
-   - Use includes wisely to avoid N+1 queries
+## Troubleshooting
 
-4. **Performance Optimizations**
-   - **Database**: Custom indexes, query optimization, connection pooling
-   - **Caching**: Multi-level cache (memory → Redis → CDN → browser)
-   - **Frontend**: React.memo, lazy loading, virtual lists, image optimization
-   - **API**: Response caching, compression, ETags, batch processing
-   - **Monitoring**: Web Vitals tracking, performance budgets, alerts
-   - **Scalability**: Load balancing, auto-scaling, circuit breakers
+### Build Errors
+- **React hooks in server code**: Import from `/lib/performance/client` for client-only code
+- **Prisma client missing**: Run `npx prisma generate`
+- **Type errors with enums**: Import from `@prisma/client`, use `z.nativeEnum()`
+- **Next.js 15 dynamic routes**: Ensure params are awaited in dynamic routes
 
-5. **Using Performance Features**
-   ```typescript
-   // Optimize API routes
-   import { optimizeAPIRoute } from '@/lib/performance';
-   
-   export const GET = optimizeAPIRoute(handler, {
-     cache: { ttl: 3600, tags: ['cards'] },
-     compress: true,
-   });
-   
-   // Use optimized images
-   import { PokemonCardImageOptimizer } from '@/lib/performance';
-   
-   const imageUrl = PokemonCardImageOptimizer.getCardImageUrl(
-     card.images.large,
-     'medium',
-     { quality: 90 }
-   );
-   
-   // Monitor performance
-   import { performanceMonitor } from '@/lib/performance';
-   
-   performanceMonitor.startTiming('deck-analysis');
-   // ... perform analysis
-   performanceMonitor.endTiming('deck-analysis');
-   ```
+### Runtime Issues
+- **Rate limits**: Check queue status, implement backoff
+- **Cache misses**: Verify Redis connection, check TTLs
+- **Slow queries**: Check database indexes, use query analysis
+- **Memory issues**: Monitor cache size, implement cleanup
+- **Auth issues**: Check Clerk middleware, verify environment variables
+- **Subscription issues**: Verify Stripe webhook configuration
 
-### Troubleshooting
+### Mobile Development Issues
+- **Touch not working**: Check touch event handlers and gesture zones
+- **Layout breaking**: Verify responsive breakpoints and container queries
+- **Performance issues**: Check image sizes, implement virtualization
+- **Modal focus**: Ensure proper focus trap implementation
 
-1. **Prisma Client Not Found**
-   ```bash
-   npx prisma generate
-   npm run build
-   ```
-
-2. **Type Errors with Enums**
-   - Import from `@prisma/client`
-   - Use `z.nativeEnum()` in Zod schemas
-   - Check enum values match database
-
-3. **Rate Limit Errors**
-   - Check rate limit status in monitoring
-   - Implement retry logic with backoff
-   - Use job queues for bulk operations
-
-4. **Cache Issues**
-   - Clear specific keys: `redis.del(key)`
-   - Check TTL: `redis.ttl(key)`
-   - Monitor hit/miss ratios
-   - Use cache invalidation patterns
-
-5. **Collection Search Issues**
-   - Rebuild search index: `collectionIndexQueue.add(...)`
-   - Check Redis connection for indexes
-   - Verify search filters are valid
-   - Monitor index size and performance
-
-6. **Import/Export Issues**
-   - Validate file format before processing
-   - Check field mappings for CSV imports
-   - Handle large files with streaming
-   - Provide clear error messages for failed rows
-
-### Project Structure
-
+## Project Structure
 ```
 src/
 ├── app/                    # Next.js App Router
-│   └── api/               # REST API endpoints
-│       ├── analysis/      # Deck analysis
-│       ├── collection/    # Collection management
-│       ├── deck-builder/  # Deck builder operations
-│       └── recommendations/ # AI recommendations
-├── lib/                   # Core business logic
-│   ├── api/              # External API clients
+│   ├── api/               # REST endpoints
+│   ├── sign-in/          # Custom auth pages
+│   ├── sign-up/          
+│   ├── pricing/          # Subscription tiers
+│   └── account/          # User management
+├── components/            # React components
+│   ├── auth/             # Auth components
+│   ├── cards/            # Card display components
+│   ├── decks/            # Deck building components
+│   ├── profile/          # User profile forms
+│   ├── subscription/     # Subscription UI
+│   └── ui/               # Reusable UI components
+├── lib/                   # Business logic
 │   ├── analysis/         # Deck analysis engine
+│   ├── auth/             # Auth utilities & RBAC
 │   ├── collection/       # Collection management
 │   ├── deck-builder/     # Deck builder system
-│   ├── recommendations/  # AI recommendation system
-│   └── jobs/            # Background job processors
-├── server/              # tRPC backend
-│   └── routers/         # tRPC routers
-└── types/               # TypeScript types
+│   ├── stripe/           # Stripe integration
+│   ├── performance/      # Performance utilities
+│   │   ├── client/      # Client-only code
+│   │   └── *.ts         # Server-safe code
+│   └── recommendations/  # AI system
+├── server/               # tRPC backend
+│   ├── routers/         # API routes
+│   └── trpc.ts          # tRPC setup
+├── types/                # TypeScript types
+│   ├── index.ts         # General types
+│   ├── pokemon.ts       # Pokemon card types
+│   └── auth.ts          # Auth & user types
+└── hooks/                # Custom React hooks
+    ├── useDebounce.ts
+    ├── useIntersectionObserver.ts
+    ├── useFocusTrap.ts
+    └── useBodyScrollLock.ts
 ```
 
-### Key Dependencies
+## API Routers Overview
 
-- **Next.js 15.3.4** - React framework
-- **Prisma 6.10.1** - Database ORM
-- **tRPC 11.4.2** - Type-safe API
-- **Clerk** - Authentication
-- **Bull/BullMQ** - Job queues
-- **Zod** - Schema validation
-- **p-retry** - Retry logic
-- **papaparse** - CSV parsing
+### Card Router (`/server/routers/card.ts`)
+- `search`: Advanced search with 15+ filters
+- `getById`: Get card with full details
+- `getBulk`: Batch card retrieval
+- `getSets`: Get all sets with filters
+- `getBySet`: Cards by set with completion
+- `getSimilar`: Find similar cards
+- `getPopular`: Trending cards by timeframe
+- `validateForDeck`: Format legality check
+- `getPriceHistory`: Historical pricing
+
+### Collection Router (`/server/routers/collection.ts`)
+- `getDashboard`: Comprehensive stats
+- `searchCards`: Advanced collection search
+- `addCard`: Add to collection
+- `bulkAddCards`: Batch add up to 100
+- `updateCard`: Modify collection entry
+- `getStatistics`: Value and growth metrics
+- `getWantList`: Priority-based wishlist
+- `importCollection`: CSV/JSON import
+- `exportCollection`: Multiple formats
+- `createSnapshot`: Save collection state (premium)
+
+### Analysis Router (`/server/routers/analysis.ts`)
+- `analyzeDeck`: Single deck analysis
+- `compareDecks`: Head-to-head comparison
+- `getDeckStats`: Performance over time
+- `scheduleAnalysis`: Automated analysis (premium)
+- `getRecommendations`: Card/strategy suggestions
+- `exportAnalysis`: Generate reports
+
+### Pricing Router (`/server/routers/pricing.ts`)
+- `getCurrentPrice`: Real-time pricing
+- `getPriceHistory`: Historical data
+- `getMarketTrends`: Market movers
+- `createPriceAlert`: Set price alerts
+- `getPortfolioValue`: Collection value tracking
+- `refreshPrices`: Manual update (premium)

@@ -1,5 +1,4 @@
 import { PokemonTCGClient } from './pokemon-tcg-client';
-import { TCGPlayerClient } from './tcgplayer-client';
 import { 
   cardCache, 
   priceCache, 
@@ -9,9 +8,7 @@ import {
 } from './cache';
 import { 
   pokemonTCGQueue, 
-  tcgPlayerQueue,
   pokemonTCGRateLimiter,
-  tcgPlayerRateLimiter,
   JobPriority 
 } from './rate-limiter';
 import { 
@@ -39,18 +36,10 @@ import type {
  */
 export class PokemonTCGService {
   private pokemonClient: PokemonTCGClient;
-  private tcgPlayerClient: TCGPlayerClient | null = null;
   private userId: string = 'system';
 
   constructor(userId?: string) {
     this.pokemonClient = new PokemonTCGClient(process.env.POKEMON_TCG_API_KEY);
-    
-    if (process.env.TCGPLAYER_API_PUBLIC_KEY && process.env.TCGPLAYER_API_PRIVATE_KEY) {
-      this.tcgPlayerClient = new TCGPlayerClient(
-        process.env.TCGPLAYER_API_PUBLIC_KEY,
-        process.env.TCGPLAYER_API_PRIVATE_KEY
-      );
-    }
     
     if (userId) {
       this.userId = userId;
@@ -180,26 +169,8 @@ export class PokemonTCGService {
         await cardCache.set(`card:${cardId}`, card, 86400); // 24 hours
       }
       
-      // Fetch prices if TCGPlayer is available
+      // Prices removed - TCGPlayer integration disabled
       let prices: any[] = [];
-      if (this.tcgPlayerClient && card.tcgplayer?.url) {
-        const tcgPlayerId = this.extractTCGPlayerIdFromUrl(card.tcgplayer.url);
-        
-        if (tcgPlayerId && !cachedPrices) {
-          const priceResult = await tcgPlayerQueue.enqueue(
-            () => this.tcgPlayerClient!.getMarketPrices(parseInt(tcgPlayerId)),
-            this.userId,
-            JobPriority.NORMAL
-          );
-          
-          if (priceResult.data) {
-            prices = priceResult.data;
-            await priceCache.set(`price:${cardId}`, prices, 3600); // 1 hour
-          }
-        } else if (cachedPrices) {
-          prices = cachedPrices as any[];
-        }
-      }
       
       // Record metrics
       await metricsCollector.recordApiCall({
@@ -362,21 +333,14 @@ export class PokemonTCGService {
    */
   async getRateLimitStatus(): Promise<{
     pokemonTCG: any;
-    tcgPlayer: any;
+    tcgPlayer: any | null;
   }> {
     return {
       pokemonTCG: await pokemonTCGRateLimiter.getStatus(this.userId),
-      tcgPlayer: await tcgPlayerRateLimiter.getStatus(this.userId),
+      tcgPlayer: null, // TCGPlayer integration removed
     };
   }
 
-  /**
-   * Helper to extract TCGPlayer ID from URL
-   */
-  private extractTCGPlayerIdFromUrl(url: string): string | null {
-    const match = url.match(/\/product\/(\d+)/);
-    return match ? match[1] : null;
-  }
 }
 
 // Export singleton instance for general use

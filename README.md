@@ -85,7 +85,7 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 
 ### 📊 Data Integration
 - **Pokemon TCG API**: Full card database with advanced search
-- **TCGPlayer API**: Real-time pricing and market data
+- **Pricing Data**: Currently unavailable (TCGPlayer integration removed)
 - **Background Jobs**: Automated price updates and data synchronization
 - **Caching System**: Multi-level caching for optimal performance
 - **Rate Limiting**: Intelligent API request management
@@ -109,7 +109,6 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - Redis server
 - Clerk account for authentication
 - Pokemon TCG API key (optional, for higher rate limits)
-- TCGPlayer API keys (optional, for pricing data)
 
 ## 🚀 Installation
 
@@ -144,8 +143,7 @@ KV_REST_API_TOKEN="..."
 
 # External APIs (optional)
 POKEMON_TCG_API_KEY="..."
-TCGPLAYER_API_PUBLIC_KEY="..."
-TCGPLAYER_API_PRIVATE_KEY="..."
+# TCGPlayer API removed - pricing features currently unavailable
 ```
 
 4. Set up the database:
@@ -179,7 +177,6 @@ src/
 │   ├── db/               # Database utilities
 │   ├── api/              # External API clients
 │   │   ├── pokemon-tcg-client.ts
-│   │   ├── tcgplayer-client.ts
 │   │   ├── rate-limiter.ts
 │   │   └── cache.ts
 │   ├── analysis/         # Deck analysis engine

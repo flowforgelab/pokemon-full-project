@@ -88,24 +88,6 @@ export interface PokemonTCGCard {
     small: string;
     large: string;
   };
-  tcgplayer?: {
-    url: string;
-    updatedAt: string;
-    prices?: {
-      normal?: {
-        low?: number;
-        mid?: number;
-        high?: number;
-        market?: number;
-      };
-      holofoil?: {
-        low?: number;
-        mid?: number;
-        high?: number;
-        market?: number;
-      };
-    };
-  };
   cardmarket?: {
     url: string;
     updatedAt: string;
@@ -126,41 +108,6 @@ export interface PokemonTCGApiResponse<T> {
   totalCount?: number;
 }
 
-// TCGPlayer API Types
-export interface TCGPlayerAuthResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  scope: string;
-}
-
-export interface TCGPlayerProduct {
-  productId: number;
-  name: string;
-  cleanName: string;
-  imageUrl?: string;
-  categoryId: number;
-  groupId: number;
-  url: string;
-  modifiedOn: string;
-}
-
-export interface TCGPlayerPrice {
-  productId: number;
-  lowPrice?: number;
-  midPrice?: number;
-  highPrice?: number;
-  marketPrice?: number;
-  directLowPrice?: number;
-  subTypeName: string;
-}
-
-export interface TCGPlayerPriceHistory {
-  date: string;
-  marketPrice: number;
-  buylistPrice?: number;
-  listedMedianPrice?: number;
-}
 
 // Rate Limiting Types
 export interface RateLimitInfo {
