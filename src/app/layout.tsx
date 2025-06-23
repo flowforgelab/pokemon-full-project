@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from '@/components/providers/clerk-provider';
 import { TRPCProvider } from './providers';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Pokemon TCG Deck Builder",
   description: "Build and analyze your Pokemon Trading Card Game decks",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1917" }
+  ],
 };
 
 export default function RootLayout({
@@ -29,11 +34,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClerkProvider>
-          <TRPCProvider>
-            {children}
-          </TRPCProvider>
-        </ClerkProvider>
+        <ThemeProvider>
+          <ClerkProvider>
+            <TRPCProvider>
+              {children}
+            </TRPCProvider>
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

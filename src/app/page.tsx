@@ -5,18 +5,19 @@ import Image from 'next/image';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { useState } from 'react';
 import { ChevronRightIcon, StarIcon, CheckIcon, XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { ThemeToggle } from '@/components/providers/ThemeProvider';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <header className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg backdrop-saturate-150 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <span className="text-white font-bold text-xl">P</span>
               </div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -35,6 +36,7 @@ export default function Home() {
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Pricing
               </Link>
+              <ThemeToggle />
               <div className="flex items-center gap-4">
                 <SignedOut>
                   <SignInButton mode="modal">
@@ -44,7 +46,7 @@ export default function Home() {
                   </SignInButton>
                   <Link
                     href="/sign-up"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     Get Started
                   </Link>
@@ -67,7 +69,7 @@ export default function Home() {
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <Bars3Icon className="h-6 w-6" />
+              <Bars3Icon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             </button>
           </nav>
 
@@ -126,7 +128,7 @@ export default function Home() {
               <SignedOut>
                 <Link
                   href="/sign-up"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium text-center"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105"
                 >
                   Start Building Free
                 </Link>
@@ -134,14 +136,14 @@ export default function Home() {
               <SignedIn>
                 <Link
                   href="/deck-builder/create"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium text-center"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105"
                 >
                   Create New Deck
                 </Link>
               </SignedIn>
               <Link
                 href="/cards"
-                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-lg font-medium text-center"
+                className="px-6 py-3 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg hover:bg-white dark:hover:bg-gray-600 transition-all duration-300 text-lg font-medium text-center border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transform hover:scale-105"
               >
                 Browse Cards
               </Link>
@@ -162,7 +164,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <StarIcon key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                  <StarIcon key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                 ))}
                 <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
                   4.9/5 rating
@@ -171,9 +173,9 @@ export default function Home() {
             </div>
           </div>
           <div className="relative lg:h-[600px]">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl blur-xl" />
             <div className="relative h-full flex items-center justify-center">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full">
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/10 p-8 max-w-md w-full border border-gray-200 dark:border-gray-700">
                 <h3 className="text-xl font-bold mb-4">Quick Deck Stats</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
@@ -191,9 +193,9 @@ export default function Home() {
                   <div className="mt-6 pt-6 border-t">
                     <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Deck Composition</div>
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-red-500 h-2 rounded-full" style={{ width: '33%' }} />
-                      <div className="flex-1 bg-blue-500 h-2 rounded-full" style={{ width: '27%' }} />
-                      <div className="flex-1 bg-gray-500 h-2 rounded-full" style={{ width: '40%' }} />
+                      <div className="h-2 rounded-full bg-gradient-to-r from-red-400 to-red-600" style={{ width: '33%' }} />
+                      <div className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ width: '27%' }} />
+                      <div className="h-2 rounded-full bg-gradient-to-r from-gray-400 to-gray-600" style={{ width: '40%' }} />
                     </div>
                     <div className="flex justify-between text-xs mt-1">
                       <span>Pokemon</span>
@@ -295,7 +297,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="container mx-auto px-4 py-16 lg:py-24 border-t bg-gray-50 dark:bg-gray-800/50">
+      <section className="container mx-auto px-4 py-16 lg:py-24 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
         <div className="text-center mb-12">
           <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Choose Your Plan
@@ -398,13 +400,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/sign-up"
-              className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors text-lg font-medium"
+              className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-all duration-300 text-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Get Started Free
             </Link>
             <Link
               href="/demo"
-              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition-colors text-lg font-medium"
+              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition-all duration-300 text-lg font-medium backdrop-blur-sm hover:backdrop-blur-md transform hover:scale-105"
             >
               Watch Demo
             </Link>
@@ -413,7 +415,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-white dark:bg-gray-900">
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
@@ -477,26 +479,29 @@ function FeatureCard({
   features: string[];
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-      <div className="text-4xl mb-4">{icon}</div>
-      <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h4>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">{description}</p>
-      <ul className="space-y-2">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <CheckIcon className="w-4 h-4 text-green-500" />
-            {feature}
-          </li>
-        ))}
-      </ul>
+    <div className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-200/50 dark:border-gray-700/50">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="relative">
+        <div className="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">{icon}</div>
+        <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h4>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{description}</p>
+        <ul className="space-y-2">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <CheckIcon className="w-4 h-4 text-green-500 flex-shrink-0" />
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
 
 function ProcessStep({ number, title, description }: { number: string; title: string; description: string }) {
   return (
-    <div className="flex gap-4">
-      <div className="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+    <div className="flex gap-4 group">
+      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/25 group-hover:shadow-xl group-hover:shadow-blue-500/30 transition-all duration-300">
         {number}
       </div>
       <div>
@@ -527,10 +532,16 @@ function PricingCard({
   highlighted?: boolean;
 }) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl p-8 ${highlighted ? 'ring-2 ring-blue-600 shadow-xl scale-105' : 'shadow-lg'}`}>
+    <div className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl p-8 transition-all duration-300 ${
+      highlighted 
+        ? 'ring-2 ring-blue-600 shadow-2xl scale-105 border-blue-500' 
+        : 'shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-gray-700/50'
+    }`}>
       {highlighted && (
-        <div className="bg-blue-600 text-white text-sm font-medium px-3 py-1 rounded-full inline-block mb-4">
-          Most Popular
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-700 text-white text-sm font-medium px-4 py-1 rounded-full shadow-lg">
+            Most Popular
+          </div>
         </div>
       )}
       <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{name}</h4>
@@ -549,9 +560,9 @@ function PricingCard({
       </ul>
       <Link
         href={ctaLink}
-        className={`block text-center px-6 py-3 rounded-lg font-medium transition-colors ${
+        className={`block text-center px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 ${
           highlighted 
-            ? 'bg-blue-600 text-white hover:bg-blue-700' 
+            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg' 
             : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
         }`}
       >
@@ -563,14 +574,14 @@ function PricingCard({
 
 function TestimonialCard({ quote, author, title, rating }: { quote: string; author: string; title: string; rating: number }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50">
       <div className="flex gap-1 mb-4">
         {[...Array(rating)].map((_, i) => (
-          <StarIcon key={i} className="w-5 h-5 text-yellow-500 fill-current" />
+          <StarIcon key={i} className="w-5 h-5 text-yellow-500 fill-yellow-500" />
         ))}
       </div>
-      <p className="text-gray-600 dark:text-gray-400 mb-4 italic">&ldquo;{quote}&rdquo;</p>
-      <div>
+      <p className="text-gray-600 dark:text-gray-400 mb-4 italic leading-relaxed">&ldquo;{quote}&rdquo;</p>
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
         <p className="font-semibold text-gray-900 dark:text-white">{author}</p>
         <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
       </div>

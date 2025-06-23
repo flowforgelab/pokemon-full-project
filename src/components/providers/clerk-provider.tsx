@@ -3,7 +3,7 @@
 import { ClerkProvider as BaseClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
 import { PropsWithChildren, useEffect } from 'react';
-// Theme will be implemented after ThemeProvider is set up
+import { useTheme } from './ThemeProvider';
 
 const publicRoutes = [
   '/',
@@ -33,8 +33,7 @@ export function ClerkProvider({ children }: PropsWithChildren) {
 }
 
 function ClerkProviderWithTheme({ children }: PropsWithChildren) {
-  // Theme detection will be added when ThemeProvider is set up
-  const theme = 'light'; // temporary default
+  const { resolvedTheme } = useTheme();
   
   return (
     <BaseClerkProvider
@@ -44,7 +43,7 @@ function ClerkProviderWithTheme({ children }: PropsWithChildren) {
       afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || '/dashboard'}
       afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || '/onboarding'}
       appearance={{
-        baseTheme: theme === 'dark' ? dark : undefined,
+        baseTheme: resolvedTheme === 'dark' ? dark : undefined,
         elements: {
           formButtonPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90',
           card: 'shadow-none',
