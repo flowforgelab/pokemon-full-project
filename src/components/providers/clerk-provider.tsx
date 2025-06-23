@@ -2,8 +2,9 @@
 
 import { ClerkProvider as BaseClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
-import { PropsWithChildren, useEffect } from 'react';
+import { PropsWithChildren, useEffect, useContext } from 'react';
 import { useTheme } from './ThemeProvider';
+import { ThemeContext } from './ThemeProvider';
 
 const publicRoutes = [
   '/',
@@ -33,7 +34,9 @@ export function ClerkProvider({ children }: PropsWithChildren) {
 }
 
 function ClerkProviderWithTheme({ children }: PropsWithChildren) {
-  const { resolvedTheme } = useTheme();
+  // Try to use theme context, but fallback if not available
+  const themeContext = useContext(ThemeContext);
+  const resolvedTheme = themeContext?.resolvedTheme || 'light';
   
   return (
     <BaseClerkProvider

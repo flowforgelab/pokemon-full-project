@@ -13,7 +13,7 @@ interface ThemeContextType {
   resolvedTheme: 'light' | 'dark';
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -102,7 +102,27 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   className, 
   variant = 'icon' 
 }) => {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  // Try to use theme context, but provide fallback for static generation
+  const themeContext = useContext(ThemeContext);
+  
+  // If no context (during static generation), render a placeholder
+  if (!themeContext) {
+    return (
+      <button
+        className={cn(
+          'relative p-2 rounded-lg transition-colors',
+          'hover:bg-gray-100 dark:hover:bg-gray-800',
+          'focus:outline-none focus:ring-2 focus:ring-blue-500',
+          className
+        )}
+        aria-label="Toggle theme"
+      >
+        <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+      </button>
+    );
+  }
+  
+  const { theme, setTheme, resolvedTheme } = themeContext;
 
   if (variant === 'icon') {
     return (
@@ -179,7 +199,14 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
 // CSS variables injector for design tokens
 export const ThemeStyleInjector: React.FC = () => {
-  const { resolvedTheme } = useTheme();
+  const themeContext = useContext(ThemeContext);
+  
+  // If no context, return null
+  if (!themeContext) {
+    return null;
+  }
+  
+  const { resolvedTheme } = themeContext;
   
   useEffect(() => {
     // Import design tokens and generate CSS variables
