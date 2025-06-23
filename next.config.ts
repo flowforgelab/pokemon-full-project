@@ -13,8 +13,6 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now();
   },
-  // Disable static optimization for API routes
-  output: 'standalone',
 };
 
 export default nextConfig;
