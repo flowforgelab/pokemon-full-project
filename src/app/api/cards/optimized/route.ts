@@ -92,7 +92,7 @@ const handler = async (req: NextRequest) => {
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
         orderBy: [
-          { releaseDate: 'desc' },
+          { createdAt: 'desc' },
           { name: 'asc' },
         ],
         include: {

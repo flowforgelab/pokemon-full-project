@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, publicProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { DeckType, DeckCategory, Supertype } from '@prisma/client';
-import { DeckBuilder } from '@/lib/deck-builder';
-import { DeckValidator } from '@/lib/deck-builder/validator';
-import { kv } from '@/lib/cache/vercel-kv';
+import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
+import { DeckValidator } from '@/lib/deck-builder/deck-validator';
+import { redis as kv } from '@/server/db/redis';
 import crypto from 'crypto';
 
 // Validation schemas
@@ -384,7 +384,7 @@ export const deckRouter = createTRPCRouter({
       name: z.string().min(1).max(100).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -397,7 +397,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Get original deck
-      const originalDeck = await ctx.db.deck.findUnique({
+      const originalDeck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         include: {
           cards: true,
@@ -420,7 +420,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Create duplicate
-      const duplicatedDeck = await ctx.db.deck.create({
+      const duplicatedDeck = await ctx.prisma.deck.create({
         data: {
           name: input.name || `${originalDeck.name} (Copy)`,
           description: originalDeck.description,
@@ -464,7 +464,7 @@ export const deckRouter = createTRPCRouter({
       formatId: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         include: {
           cards: {
@@ -485,7 +485,7 @@ export const deckRouter = createTRPCRouter({
 
       // Check if deck is public or owned by user
       if (!deck.isPublic) {
-        const user = await ctx.db.user.findUnique({
+        const user = await ctx.prisma.user.findUnique({
           where: { clerkUserId: ctx.userId || '' },
           select: { id: true },
         });
@@ -505,7 +505,7 @@ export const deckRouter = createTRPCRouter({
           quantity: dc.quantity,
         })),
         format: input.formatId ? 
-          await ctx.db.format.findUnique({ where: { id: input.formatId } }) : 
+          await ctx.prisma.format.findUnique({ where: { id: input.formatId } }) : 
           deck.format,
       });
 
@@ -519,7 +519,7 @@ export const deckRouter = createTRPCRouter({
       expiresIn: z.enum(['1hour', '1day', '1week', '1month', 'never']).default('1week'),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -531,7 +531,7 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         select: { userId: true },
       });
@@ -588,7 +588,7 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: shareData.deckId },
         include: {
           user: {
@@ -630,7 +630,7 @@ export const deckRouter = createTRPCRouter({
       handSize: z.number().min(1).max(10).default(7),
     }))
     .query(async ({ ctx, input }) => {
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         include: {
           cards: {
@@ -653,7 +653,7 @@ export const deckRouter = createTRPCRouter({
 
       // Check permissions
       if (!deck.isPublic) {
-        const user = await ctx.db.user.findUnique({
+        const user = await ctx.prisma.user.findUnique({
           where: { clerkUserId: ctx.userId || '' },
           select: { id: true },
         });
@@ -666,7 +666,7 @@ export const deckRouter = createTRPCRouter({
         }
       }
 
-      const builder = new DeckBuilder();
+      // Use deckBuilderManager instead of creating new instance
       const testResults = await builder.testHands({
         cards: deck.cards.map(dc => ({
           ...dc.card,
@@ -688,7 +688,7 @@ export const deckRouter = createTRPCRouter({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -700,7 +700,7 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         select: { userId: true },
       });
@@ -721,14 +721,14 @@ export const deckRouter = createTRPCRouter({
       else if (input.result === 'loss') updateData.losses = { increment: 1 };
       else if (input.result === 'draw') updateData.draws = { increment: 1 };
 
-      const updatedDeck = await ctx.db.deck.update({
+      const updatedDeck = await ctx.prisma.deck.update({
         where: { id: input.deckId },
         data: updateData,
       });
 
       // Update matchup data if opponent deck provided
       if (input.opponentDeckId) {
-        await ctx.db.matchup.upsert({
+        await ctx.prisma.matchup.upsert({
           where: {
             deckId_opponentDeckId: {
               deckId: input.deckId,
@@ -761,7 +761,7 @@ export const deckRouter = createTRPCRouter({
       deckId: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      const matchups = await ctx.db.matchup.findMany({
+      const matchups = await ctx.prisma.matchup.findMany({
         where: { deckId: input.deckId },
         include: {
           opponentDeck: {
@@ -794,7 +794,7 @@ export const deckRouter = createTRPCRouter({
       format: z.enum(['ptcgo', 'ptcgl', 'text', 'json', 'csv']),
     }))
     .query(async ({ ctx, input }) => {
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         include: {
           cards: {
@@ -819,7 +819,7 @@ export const deckRouter = createTRPCRouter({
 
       // Check permissions
       if (!deck.isPublic) {
-        const user = await ctx.db.user.findUnique({
+        const user = await ctx.prisma.user.findUnique({
           where: { clerkUserId: ctx.userId || '' },
           select: { id: true },
         });
@@ -832,7 +832,7 @@ export const deckRouter = createTRPCRouter({
         }
       }
 
-      const builder = new DeckBuilder();
+      // Use deckBuilderManager instead of creating new instance
       const exported = await builder.export({
         deck,
         format: input.format,
@@ -850,7 +850,7 @@ export const deckRouter = createTRPCRouter({
       formatId: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -862,14 +862,14 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
-      const builder = new DeckBuilder();
+      // Use deckBuilderManager instead of creating new instance
       const parsedDeck = await builder.import({
         content: input.content,
         format: input.format,
       });
 
       // Create deck with parsed cards
-      const deck = await ctx.db.deck.create({
+      const deck = await ctx.prisma.deck.create({
         data: {
           name: input.name,
           description: `Imported from ${input.format.toUpperCase()}`,
@@ -910,7 +910,7 @@ export const deckRouter = createTRPCRouter({
       limit: z.number().min(1).max(10).default(5),
     }))
     .query(async ({ ctx, input }) => {
-      const deck = await ctx.db.deck.findUnique({
+      const deck = await ctx.prisma.deck.findUnique({
         where: { id: input.deckId },
         include: {
           cards: {
@@ -930,7 +930,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Check permissions
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -942,7 +942,7 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
-      const builder = new DeckBuilder();
+      // Use deckBuilderManager instead of creating new instance
       const suggestions = await builder.getSuggestions({
         deck,
         type: input.type,

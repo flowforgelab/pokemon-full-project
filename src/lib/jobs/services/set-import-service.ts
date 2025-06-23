@@ -1,8 +1,8 @@
 import { JobQueue, SetImportJobData, JobPriority } from '../types';
 import { QueueManager } from '../queues';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { pokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { redisCache } from '@/server/db/redis';
 
 export interface PokemonSet {
   id: string;

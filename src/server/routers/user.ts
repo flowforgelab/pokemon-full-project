@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { SubscriptionTier } from '@prisma/client';
-import { kv } from '@/lib/cache/vercel-kv';
+import { redis as kv } from '@/server/db/redis';
 
 // User preferences schema
 const userPreferencesSchema = z.object({
@@ -38,7 +38,7 @@ const userPreferencesSchema = z.object({
 export const userRouter = createTRPCRouter({
   // Get current user with full profile
   getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.user.findUnique({
+    const user = await ctx.prisma.user.findUnique({
       where: { clerkUserId: ctx.userId },
       include: {
         _count: {
@@ -68,7 +68,7 @@ export const userRouter = createTRPCRouter({
       username: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { username: input.username },
         select: {
           id: true,
@@ -121,7 +121,7 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check username uniqueness if provided
       if (input.username) {
-        const existing = await ctx.db.user.findUnique({
+        const existing = await ctx.prisma.user.findUnique({
           where: { username: input.username },
           select: { clerkUserId: true }
         });
@@ -134,7 +134,7 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      return ctx.db.user.upsert({
+      return ctx.prisma.user.upsert({
         where: { clerkUserId: ctx.userId },
         create: {
           clerkUserId: ctx.userId,
@@ -189,7 +189,7 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check username uniqueness if changing
       if (input.username) {
-        const existing = await ctx.db.user.findFirst({
+        const existing = await ctx.prisma.user.findFirst({
           where: { 
             username: input.username,
             NOT: { clerkUserId: ctx.userId }
@@ -204,7 +204,7 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const updated = await ctx.db.user.update({
+      const updated = await ctx.prisma.user.update({
         where: { clerkUserId: ctx.userId },
         data: {
           ...input,
@@ -220,7 +220,7 @@ export const userRouter = createTRPCRouter({
 
   // Get user preferences
   getPreferences: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.user.findUnique({
+    const user = await ctx.prisma.user.findUnique({
       where: { clerkUserId: ctx.userId },
       select: { preferences: true }
     });
@@ -239,7 +239,7 @@ export const userRouter = createTRPCRouter({
   updatePreferences: protectedProcedure
     .input(userPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { preferences: true }
       });
@@ -262,7 +262,7 @@ export const userRouter = createTRPCRouter({
         display: { ...currentPrefs.display, ...input.display },
       };
 
-      const updated = await ctx.db.user.update({
+      const updated = await ctx.prisma.user.update({
         where: { clerkUserId: ctx.userId },
         data: { preferences: updatedPrefs },
       });
@@ -279,7 +279,7 @@ export const userRouter = createTRPCRouter({
       activityStats
     ] = await Promise.all([
       // Collection statistics
-      ctx.db.userCollection.aggregate({
+      ctx.prisma.userCollection.aggregate({
         where: { 
           userId: ctx.userId,
           onWishlist: false 
@@ -294,7 +294,7 @@ export const userRouter = createTRPCRouter({
       }),
       
       // Deck statistics
-      ctx.db.deck.aggregate({
+      ctx.prisma.deck.aggregate({
         where: { userId: ctx.userId },
         _count: true,
         _sum: {
@@ -305,7 +305,7 @@ export const userRouter = createTRPCRouter({
       }),
       
       // Trade statistics
-      ctx.db.tradeOffer.groupBy({
+      ctx.prisma.tradeOffer.groupBy({
         by: ['status'],
         where: {
           OR: [
@@ -317,7 +317,7 @@ export const userRouter = createTRPCRouter({
       }),
       
       // Recent activity
-      ctx.db.user.findUnique({
+      ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: {
           createdAt: true,
@@ -371,7 +371,7 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // This would typically trigger a deletion process
       // For now, we'll just mark the account as deleted
-      await ctx.db.user.update({
+      await ctx.prisma.user.update({
         where: { clerkUserId: ctx.userId },
         data: {
           // In a real app, you might have a deletedAt field
@@ -394,7 +394,7 @@ export const userRouter = createTRPCRouter({
       username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_-]+$/),
     }))
     .query(async ({ ctx, input }) => {
-      const existing = await ctx.db.user.findUnique({
+      const existing = await ctx.prisma.user.findUnique({
         where: { username: input.username },
         select: { id: true }
       });
@@ -410,7 +410,7 @@ export const userRouter = createTRPCRouter({
       subscriptionEnd: z.date().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const updated = await ctx.db.user.update({
+      const updated = await ctx.prisma.user.update({
         where: { id: input.userId },
         data: {
           subscriptionTier: input.tier,
@@ -424,7 +424,7 @@ export const userRouter = createTRPCRouter({
   // Update last active timestamp
   updateLastActive: protectedProcedure
     .mutation(async ({ ctx }) => {
-      await ctx.db.user.update({
+      await ctx.prisma.user.update({
         where: { clerkUserId: ctx.userId },
         data: { lastActiveAt: new Date() },
       });

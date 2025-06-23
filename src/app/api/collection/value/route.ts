@@ -6,7 +6,7 @@ import { CollectionManager } from '@/lib/collection/collection-manager';
 // GET /api/collection/value - Get collection value and performance
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 // POST /api/collection/value/alert - Set price alert
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

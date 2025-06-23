@@ -13,7 +13,7 @@ const collectionSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
               card: {
                 id: change.card.id,
                 name: change.card.name,
-                imageUrl: change.card.imageUrl,
+                imageUrl: change.card.imageUrlSmall,
                 supertype: change.card.supertype,
               },
               quantity: change.quantity,
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
             card: {
               id: trade.card.id,
               name: trade.card.name,
-              imageUrl: trade.card.imageUrl,
+              imageUrl: trade.card.imageUrlSmall,
             },
             quantity: trade.quantity,
             estimatedValue: trade.estimatedValue,
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
             card: {
               id: target.card.id,
               name: target.card.name,
-              imageUrl: target.card.imageUrl,
+              imageUrl: target.card.imageUrlSmall,
             },
             quantity: target.quantity,
             estimatedCost: target.estimatedCost,
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
             card: {
               id: item.card.id,
               name: item.card.name,
-              imageUrl: item.card.imageUrl,
+              imageUrl: item.card.imageUrlSmall,
               rarity: item.card.rarity,
             },
             needed: item.quantityNeeded,
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
             alternatives: item.alternatives.map(alt => ({
               id: alt.id,
               name: alt.name,
-              imageUrl: alt.imageUrl,
+              imageUrl: alt.imageUrlSmall,
             })),
           })),
           totalCost: wantList.reduce((sum, item) => sum + item.estimatedCost, 0),

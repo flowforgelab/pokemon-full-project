@@ -1,5 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { prisma } from '@/server/db';
+import { prisma } from '@/server/db/prisma';
 import { SubscriptionTier } from '@prisma/client';
 import { UserRole, Permission } from '@/types/auth';
 

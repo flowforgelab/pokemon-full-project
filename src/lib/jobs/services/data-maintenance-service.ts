@@ -1,6 +1,6 @@
 import { JobQueue, DataValidationJobData, DataCleanupJobData, CleanupTask, JobPriority } from '../types';
 import { QueueManager } from '../queues';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { redisCache } from '@/server/db/redis';
 
 export class DataMaintenanceService {
   /**

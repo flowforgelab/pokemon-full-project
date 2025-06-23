@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 // TCGPlayer client removed - pricing integration disabled
-import { redisCache } from '@/lib/cache/redis-cache';
+import { redisCache } from '@/server/db/redis';
 import { 
   PriceUpdateJobData, 
   PriceUpdateResult, 

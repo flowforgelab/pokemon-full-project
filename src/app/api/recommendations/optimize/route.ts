@@ -20,7 +20,7 @@ const optimizeSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       optimizedDeck: result.optimizedDeck.map(card => ({
         id: card.id,
         name: card.name,
-        imageUrl: card.imageUrl,
+        imageUrl: card.imageUrlSmall,
         supertype: card.supertype,
         types: card.types,
       })),
@@ -113,12 +113,12 @@ export async function POST(req: NextRequest) {
         card: {
           id: change.card.id,
           name: change.card.name,
-          imageUrl: change.card.imageUrl,
+          imageUrl: change.card.imageUrlSmall,
         },
         currentCard: change.currentCard ? {
           id: change.currentCard.id,
           name: change.currentCard.name,
-          imageUrl: change.currentCard.imageUrl,
+          imageUrl: change.currentCard.imageUrlSmall,
         } : null,
         quantity: change.quantity,
         reasoning: change.reasoning,

@@ -1,6 +1,6 @@
 import { JobQueue, BackupJobData, BackupDestination, JobPriority } from '../types';
 import { QueueManager } from '../queues';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import * as fs from 'fs/promises';
 import * as crypto from 'crypto';
 import { exec } from 'child_process';

@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';

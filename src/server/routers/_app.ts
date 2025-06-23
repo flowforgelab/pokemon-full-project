@@ -7,10 +7,10 @@ import { tradeRouter } from './trade';
 import { analysisRouter } from './analysis';
 import { pricingRouter } from './pricing';
 import { recommendationRouter } from './recommendation';
-import { adminRouter } from './admin';
-import { subscriptionRouter } from './subscription';
-import { notificationRouter } from './notification';
-import { socialRouter } from './social';
+// import { adminRouter } from './admin';
+// import { subscriptionRouter } from './subscription';
+// import { notificationRouter } from './notification';
+// import { socialRouter } from './social';
 
 /**
  * Main application router combining all sub-routers
@@ -30,13 +30,13 @@ export const appRouter = createTRPCRouter({
   analysis: analysisRouter,
   recommendation: recommendationRouter,
   
-  // User management
-  subscription: subscriptionRouter,
-  notification: notificationRouter,
-  social: socialRouter,
+  // User management (TODO: implement these routers)
+  // subscription: subscriptionRouter,
+  // notification: notificationRouter,
+  // social: socialRouter,
   
-  // Administration
-  admin: adminRouter,
+  // Administration (TODO: implement admin router)
+  // admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

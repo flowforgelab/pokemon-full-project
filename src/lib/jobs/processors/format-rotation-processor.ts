@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { 
   FormatRotationJobData,
   FormatRotationResult,

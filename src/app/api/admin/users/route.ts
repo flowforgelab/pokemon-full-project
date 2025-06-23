@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { protectedApiRoute } from '@/lib/auth/api-middleware';
-import { prisma } from '@/server/db';
+import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
 
 const querySchema = z.object({

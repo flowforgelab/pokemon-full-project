@@ -1,4 +1,4 @@
-import { Prisma, Rarity, Supertype } from '@prisma/client';
+import { Prisma, Rarity, Supertype, PriceSource, PriceType } from '@prisma/client';
 import type { PokemonTCGCard, PokemonTCGSet } from './types';
 import { z } from 'zod';
 
@@ -195,11 +195,210 @@ export function handleImageUrls(imageUrl: string): { isValid: boolean; url: stri
 
 
 /**
+ * Extract pricing data from Pokemon TCG API card
+ */
+export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCreateInput[] {
+  const prices: Prisma.CardPriceCreateInput[] = [];
+  const updatedAt = new Date();
+
+  // Extract TCGPlayer prices (USD)
+  if (apiCard.tcgplayer?.prices) {
+    const tcgPrices = apiCard.tcgplayer.prices;
+    
+    // Normal prices
+    if (tcgPrices.normal) {
+      if (tcgPrices.normal.low) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.LOW,
+          amount: tcgPrices.normal.low,
+          currency: 'USD',
+          foil: false,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.normal.mid) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.MID,
+          amount: tcgPrices.normal.mid,
+          currency: 'USD',
+          foil: false,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.normal.high) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.HIGH,
+          amount: tcgPrices.normal.high,
+          currency: 'USD',
+          foil: false,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.normal.market) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.MARKET,
+          amount: tcgPrices.normal.market,
+          currency: 'USD',
+          foil: false,
+          updatedAt,
+        });
+      }
+    }
+
+    // Holofoil prices
+    if (tcgPrices.holofoil) {
+      if (tcgPrices.holofoil.low) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.LOW,
+          amount: tcgPrices.holofoil.low,
+          currency: 'USD',
+          foil: true,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.holofoil.mid) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.MID,
+          amount: tcgPrices.holofoil.mid,
+          currency: 'USD',
+          foil: true,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.holofoil.high) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.HIGH,
+          amount: tcgPrices.holofoil.high,
+          currency: 'USD',
+          foil: true,
+          updatedAt,
+        });
+      }
+      if (tcgPrices.holofoil.market) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.MARKET,
+          amount: tcgPrices.holofoil.market,
+          currency: 'USD',
+          foil: true,
+          updatedAt,
+        });
+      }
+    }
+
+    // Reverse holofoil prices
+    if (tcgPrices.reverseHolofoil) {
+      if (tcgPrices.reverseHolofoil.low) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.LOW,
+          amount: tcgPrices.reverseHolofoil.low,
+          currency: 'USD',
+          foil: true,
+          condition: 'reverseHolofoil',
+          updatedAt,
+        });
+      }
+      if (tcgPrices.reverseHolofoil.market) {
+        prices.push({
+          cardId: apiCard.id,
+          source: PriceSource.TCGPLAYER,
+          priceType: PriceType.MARKET,
+          amount: tcgPrices.reverseHolofoil.market,
+          currency: 'USD',
+          foil: true,
+          condition: 'reverseHolofoil',
+          updatedAt,
+        });
+      }
+    }
+  }
+
+  // Extract CardMarket prices (EUR)
+  if (apiCard.cardmarket?.prices) {
+    const cmPrices = apiCard.cardmarket.prices;
+    
+    if (cmPrices.averageSellPrice) {
+      prices.push({
+        cardId: apiCard.id,
+        source: PriceSource.CARDMARKET,
+        priceType: PriceType.MARKET,
+        amount: cmPrices.averageSellPrice,
+        currency: 'EUR',
+        foil: false,
+        updatedAt,
+      });
+    }
+    
+    if (cmPrices.lowPrice) {
+      prices.push({
+        cardId: apiCard.id,
+        source: PriceSource.CARDMARKET,
+        priceType: PriceType.LOW,
+        amount: cmPrices.lowPrice,
+        currency: 'EUR',
+        foil: false,
+        updatedAt,
+      });
+    }
+    
+    if (cmPrices.trendPrice) {
+      prices.push({
+        cardId: apiCard.id,
+        source: PriceSource.CARDMARKET,
+        priceType: PriceType.MARKET,
+        amount: cmPrices.trendPrice,
+        currency: 'EUR',
+        foil: false,
+        condition: 'trend',
+        updatedAt,
+      });
+    }
+    
+    if (cmPrices.reverseHoloTrend) {
+      prices.push({
+        cardId: apiCard.id,
+        source: PriceSource.CARDMARKET,
+        priceType: PriceType.MARKET,
+        amount: cmPrices.reverseHoloTrend,
+        currency: 'EUR',
+        foil: true,
+        condition: 'reverseHolo',
+        updatedAt,
+      });
+    }
+  }
+
+  return prices;
+}
+
+/**
  * Transform API response to database format with error handling
  */
 export async function transformAndValidateCard(
   apiCard: PokemonTCGCard
-): Promise<{ isValid: boolean; data?: Prisma.CardCreateInput; errors?: string[] }> {
+): Promise<{ 
+  isValid: boolean; 
+  data?: Prisma.CardCreateInput; 
+  prices?: Prisma.CardPriceCreateInput[];
+  errors?: string[] 
+}> {
   const errors: string[] = [];
   
   try {
@@ -230,7 +429,10 @@ export async function transformAndValidateCard(
       return { isValid: false, errors };
     }
     
-    return { isValid: true, data: cardData };
+    // Extract pricing data
+    const prices = extractPricingData(apiCard);
+    
+    return { isValid: true, data: cardData, prices };
   } catch (error) {
     errors.push(`Transformation error: ${error}`);
     return { isValid: false, errors };

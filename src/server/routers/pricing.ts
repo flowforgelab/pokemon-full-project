@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 // TCGPlayer client removed - pricing integration disabled
-import { getPriceCache } from '@/lib/cache/redis-cache';
+import { getPriceCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue';
 
 // Validation schemas

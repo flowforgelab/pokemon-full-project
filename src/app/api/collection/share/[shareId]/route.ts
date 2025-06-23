@@ -34,7 +34,7 @@ export async function GET(
     const config = shared.config as CollectionSharingConfig;
 
     if (config.requireAuth) {
-      const { userId } = auth();
+      const { userId } = await auth();
       if (!userId) {
         return NextResponse.json(
           { error: 'Authentication required' },

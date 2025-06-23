@@ -1,5 +1,5 @@
 import { stripe } from './config';
-import { prisma } from '@/server/db';
+import { prisma } from '@/server/db/prisma';
 import Stripe from 'stripe';
 
 export async function getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {

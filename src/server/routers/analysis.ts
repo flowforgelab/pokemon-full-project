@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
-import { getAnalysisCache } from '@/lib/cache/redis-cache';
+import { getAnalysisCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue';
 
 // Validation schemas

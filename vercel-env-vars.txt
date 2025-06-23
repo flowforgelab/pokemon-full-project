@@ -1,0 +1,19 @@
+# Environment Variables for Vercel
+# Copy these to Vercel Dashboard → Settings → Environment Variables
+
+DATABASE_URL=postgres://neondb_owner:npg_hPc8etZLHy3E@ep-withered-shape-a4y0xvbt-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Y2VudHJhbC1iZW5nYWwtMTYuY2xlcmsuYWNjb3VudHMuZGV2JA
+CLERK_SECRET_KEY=sk_test_DdQK7vp4wt2FzpjQeNh0YCew8GknCRxUPhzvcIWDOl
+
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+
+POKEMON_TCG_API_KEY=254305f1-3dfe-4e05-879f-014f5c215396
+
+KV_REST_API_URL=https://amused-rattler-51576.upstash.io
+KV_REST_API_TOKEN=Acl4AAIjcDE5NGQ3MzVkYTQyZmM0MjYzOGUyMGI1MDU1MWNmYTUyMHAxMA
+
+NEXT_PUBLIC_APP_URL=https://your-app-name.vercel.app

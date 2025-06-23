@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/lib/db/db';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { prisma } from '@/server/db/prisma';
+import { redisCache } from '@/server/db/redis';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { 

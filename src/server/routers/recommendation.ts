@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { RecommendationEngine } from '@/lib/recommendations/engine';
+import { RecommendationEngine } from '@/lib/recommendations/recommendation-engine';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
-import { kv } from '@/lib/cache/vercel-kv';
+import { redis as kv } from '@/server/db/redis';
 import { Supertype, Rarity } from '@prisma/client';
 
 // Input schemas
@@ -72,7 +72,7 @@ export const recommendationRouter = createTRPCRouter({
 
       try {
         // Get the source card
-        const sourceCard = await ctx.db.card.findUnique({
+        const sourceCard = await ctx.prisma.card.findUnique({
           where: { id: input.cardId },
           include: {
             set: true,
@@ -130,7 +130,7 @@ export const recommendationRouter = createTRPCRouter({
         // If deckId provided, base recommendations on that deck
         let baseDeck = null;
         if (input.deckId) {
-          baseDeck = await ctx.db.deck.findUnique({
+          baseDeck = await ctx.prisma.deck.findUnique({
             where: { id: input.deckId },
             include: {
               cards: {
@@ -169,7 +169,7 @@ export const recommendationRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         // Check if user owns the deck
-        const deck = await ctx.db.deck.findFirst({
+        const deck = await ctx.prisma.deck.findFirst({
           where: {
             id: input.deckId,
             userId: ctx.userId
@@ -233,7 +233,7 @@ export const recommendationRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         // Get user's collection
-        const collection = await ctx.db.userCollection.findMany({
+        const collection = await ctx.prisma.userCollection.findMany({
           where: {
             userId: ctx.userId,
             onWishlist: false
@@ -321,11 +321,11 @@ export const recommendationRouter = createTRPCRouter({
       try {
         // Get user's play history and preferences
         const [collection, decks, recentActivity] = await Promise.all([
-          ctx.db.userCollection.findMany({
+          ctx.prisma.userCollection.findMany({
             where: { userId: ctx.userId },
             include: { card: true }
           }),
-          ctx.db.deck.findMany({
+          ctx.prisma.deck.findMany({
             where: { userId: ctx.userId },
             include: {
               cards: { include: { card: true } },
@@ -334,7 +334,7 @@ export const recommendationRouter = createTRPCRouter({
             orderBy: { lastPlayedAt: 'desc' },
             take: 10
           }),
-          ctx.db.user.findUnique({
+          ctx.prisma.user.findUnique({
             where: { id: ctx.userId },
             select: { preferences: true }
           })

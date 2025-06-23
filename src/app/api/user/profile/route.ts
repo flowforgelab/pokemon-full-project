@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/server/db';
+import { prisma } from '@/server/db/prisma';
 import { getDbUser, getSubscriptionFeatures } from '@/lib/auth/clerk';
 import { UserProfile } from '@/types/auth';
 import { z } from 'zod';

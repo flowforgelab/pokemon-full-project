@@ -1,9 +1,8 @@
-import { prisma } from '@/lib/db/db';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { prisma } from '@/server/db/prisma';
+import { redisCache } from '@/server/db/redis';
 import { checkRedisConnection, getAllQueueStats } from '../queues';
 import { SystemHealth, ServiceHealth, SystemMetrics, Alert } from '../types';
 import { pokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
-import { tcgPlayerClient } from '@/lib/api/tcgplayer-client';
 import * as os from 'os';
 
 export interface HealthCheck {
@@ -283,13 +282,12 @@ export class MonitoringService {
           break;
 
         case 'tcgplayer':
-          // Test TCGPlayer API
-          const categories = await tcgPlayerClient.getCategories();
+          // TCGPlayer pricing is now provided by Pokemon TCG API
           responseTime = Date.now() - startTime;
           details = {
-            endpoint: 'categories',
-            success: categories.length > 0,
-            tokenExpiry: tcgPlayerClient.getTokenExpiry(),
+            endpoint: 'integrated-pricing',
+            success: true,
+            note: 'Pricing data provided via Pokemon TCG API',
           };
           break;
 

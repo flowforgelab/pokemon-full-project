@@ -16,7 +16,7 @@ const wantListItemSchema = z.object({
 // GET /api/collection/want-list - Get want list
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 // POST /api/collection/want-list - Add to want list
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 // DELETE /api/collection/want-list - Remove from want list
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

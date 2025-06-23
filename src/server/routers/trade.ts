@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { TradeStatus, CardCondition, AcquisitionSource, StorageLocation } from '@prisma/client';
-import { kv } from '@/lib/cache/vercel-kv';
+import { redis as kv } from '@/server/db/redis';
 
 // Trade schemas
 const tradeCardSchema = z.object({
@@ -35,7 +35,7 @@ export const tradeRouter = createTRPCRouter({
   create: protectedProcedure
     .input(tradeOfferSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -48,7 +48,7 @@ export const tradeRouter = createTRPCRouter({
       }
 
       // Verify receiver exists
-      const receiver = await ctx.db.user.findUnique({
+      const receiver = await ctx.prisma.user.findUnique({
         where: { id: input.receiverId },
         select: { 
           id: true,
@@ -81,7 +81,7 @@ export const tradeRouter = createTRPCRouter({
 
       // Check if cards are available in user's collection
       const offeredCardIds = input.offeredCards.map(c => c.cardId);
-      const userCollection = await ctx.db.userCollection.findMany({
+      const userCollection = await ctx.prisma.userCollection.findMany({
         where: {
           userId: user.id,
           cardId: { in: offeredCardIds },
@@ -107,7 +107,7 @@ export const tradeRouter = createTRPCRouter({
       const expiresAt = new Date(Date.now() + expirations[input.expiresIn]);
 
       // Create trade offer
-      const tradeOffer = await ctx.db.tradeOffer.create({
+      const tradeOffer = await ctx.prisma.tradeOffer.create({
         data: {
           offererId: user.id,
           receiverId: input.receiverId,
@@ -158,7 +158,7 @@ export const tradeRouter = createTRPCRouter({
       const { status, direction, page, pageSize, sortBy, sortOrder } = input;
       const skip = (page - 1) * pageSize;
 
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -194,8 +194,8 @@ export const tradeRouter = createTRPCRouter({
       else if (sortBy === 'updated') orderBy.updatedAt = sortOrder;
       else if (sortBy === 'expires') orderBy.expiresAt = sortOrder;
 
-      const [trades, total] = await ctx.db.$transaction([
-        ctx.db.tradeOffer.findMany({
+      const [trades, total] = await ctx.prisma.$transaction([
+        ctx.prisma.tradeOffer.findMany({
           where,
           skip,
           take: pageSize,
@@ -218,7 +218,7 @@ export const tradeRouter = createTRPCRouter({
             counterOffer: true,
           }
         }),
-        ctx.db.tradeOffer.count({ where }),
+        ctx.prisma.tradeOffer.count({ where }),
       ]);
 
       // Enrich with card details
@@ -228,7 +228,7 @@ export const tradeRouter = createTRPCRouter({
           const requestedCardIds = (trade.requestedCards as any[]).map(c => c.cardId);
           
           const [offeredCards, requestedCards] = await Promise.all([
-            ctx.db.card.findMany({
+            ctx.prisma.card.findMany({
               where: { id: { in: offeredCardIds } },
               include: {
                 set: true,
@@ -238,7 +238,7 @@ export const tradeRouter = createTRPCRouter({
                 }
               }
             }),
-            ctx.db.card.findMany({
+            ctx.prisma.card.findMany({
               where: { id: { in: requestedCardIds } },
               include: {
                 set: true,
@@ -272,7 +272,7 @@ export const tradeRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.string())
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -284,7 +284,7 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const trade = await ctx.db.tradeOffer.findUnique({
+      const trade = await ctx.prisma.tradeOffer.findUnique({
         where: { id: input },
         include: {
           offerer: {
@@ -336,7 +336,7 @@ export const tradeRouter = createTRPCRouter({
       const requestedCardIds = (trade.requestedCards as any[]).map(c => c.cardId);
       
       const [offeredCards, requestedCards] = await Promise.all([
-        ctx.db.card.findMany({
+        ctx.prisma.card.findMany({
           where: { id: { in: offeredCardIds } },
           include: {
             set: true,
@@ -346,7 +346,7 @@ export const tradeRouter = createTRPCRouter({
             }
           }
         }),
-        ctx.db.card.findMany({
+        ctx.prisma.card.findMany({
           where: { id: { in: requestedCardIds } },
           include: {
             set: true,
@@ -376,7 +376,7 @@ export const tradeRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -388,7 +388,7 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const trade = await ctx.db.tradeOffer.findUnique({
+      const trade = await ctx.prisma.tradeOffer.findUnique({
         where: { id: input.id },
         select: {
           offererId: true,
@@ -426,7 +426,7 @@ export const tradeRouter = createTRPCRouter({
 
       // Check expiration
       if (trade.expiresAt && trade.expiresAt < new Date()) {
-        await ctx.db.tradeOffer.update({
+        await ctx.prisma.tradeOffer.update({
           where: { id: input.id },
           data: { status: TradeStatus.EXPIRED },
         });
@@ -458,7 +458,7 @@ export const tradeRouter = createTRPCRouter({
 
         // Verify both users have the cards
         for (const card of offeredCards) {
-          const userCard = await ctx.db.userCollection.findFirst({
+          const userCard = await ctx.prisma.userCollection.findFirst({
             where: {
               userId: trade.offererId,
               cardId: card.cardId,
@@ -476,7 +476,7 @@ export const tradeRouter = createTRPCRouter({
         }
 
         for (const card of requestedCards) {
-          const userCard = await ctx.db.userCollection.findFirst({
+          const userCard = await ctx.prisma.userCollection.findFirst({
             where: {
               userId: trade.receiverId,
               cardId: card.cardId,
@@ -494,7 +494,7 @@ export const tradeRouter = createTRPCRouter({
         }
 
         // Execute trade transaction
-        await ctx.db.$transaction(async (tx) => {
+        await ctx.prisma.$transaction(async (tx) => {
           // Update trade status
           await tx.tradeOffer.update({
             where: { id: input.id },
@@ -642,7 +642,7 @@ export const tradeRouter = createTRPCRouter({
         });
       } else {
         // Just update the status
-        await ctx.db.tradeOffer.update({
+        await ctx.prisma.tradeOffer.update({
           where: { id: input.id },
           data: { 
             status: input.status,
@@ -663,7 +663,7 @@ export const tradeRouter = createTRPCRouter({
       message: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -675,7 +675,7 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const originalOffer = await ctx.db.tradeOffer.findUnique({
+      const originalOffer = await ctx.prisma.tradeOffer.findUnique({
         where: { id: input.originalOfferId },
       });
 
@@ -703,7 +703,7 @@ export const tradeRouter = createTRPCRouter({
       }
 
       // Create counter offer
-      const counterOffer = await ctx.db.tradeOffer.create({
+      const counterOffer = await ctx.prisma.tradeOffer.create({
         data: {
           offererId: user.id,
           receiverId: originalOffer.offererId,
@@ -716,7 +716,7 @@ export const tradeRouter = createTRPCRouter({
       });
 
       // Link counter offer to original
-      await ctx.db.tradeOffer.update({
+      await ctx.prisma.tradeOffer.update({
         where: { id: input.originalOfferId },
         data: {
           counterOfferId: counterOffer.id,
@@ -733,7 +733,7 @@ export const tradeRouter = createTRPCRouter({
       sortBy: z.enum(['recent', 'frequent', 'trust']).default('recent'),
     }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -750,7 +750,7 @@ export const tradeRouter = createTRPCRouter({
       else if (input.sortBy === 'frequent') orderBy.totalTrades = 'desc';
       else if (input.sortBy === 'trust') orderBy.trustLevel = 'desc';
 
-      const partners = await ctx.db.tradingPartner.findMany({
+      const partners = await ctx.prisma.tradingPartner.findMany({
         where: { userId: user.id },
         orderBy,
         include: {
@@ -776,7 +776,7 @@ export const tradeRouter = createTRPCRouter({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -788,7 +788,7 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const updated = await ctx.db.tradingPartner.update({
+      const updated = await ctx.prisma.tradingPartner.update({
         where: {
           userId_partnerId: {
             userId: user.id,
@@ -807,7 +807,7 @@ export const tradeRouter = createTRPCRouter({
   // Get trade statistics
   getStatistics: protectedProcedure
     .query(async ({ ctx }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -820,17 +820,17 @@ export const tradeRouter = createTRPCRouter({
       }
 
       const [sent, received, partners] = await Promise.all([
-        ctx.db.tradeOffer.groupBy({
+        ctx.prisma.tradeOffer.groupBy({
           by: ['status'],
           where: { offererId: user.id },
           _count: true,
         }),
-        ctx.db.tradeOffer.groupBy({
+        ctx.prisma.tradeOffer.groupBy({
           by: ['status'],
           where: { receiverId: user.id },
           _count: true,
         }),
-        ctx.db.tradingPartner.aggregate({
+        ctx.prisma.tradingPartner.aggregate({
           where: { userId: user.id },
           _count: true,
           _sum: {
@@ -866,7 +866,7 @@ export const tradeRouter = createTRPCRouter({
       limit: z.number().min(1).max(20).default(10),
     }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
+      const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
         select: { id: true },
       });
@@ -878,7 +878,7 @@ export const tradeRouter = createTRPCRouter({
         });
       }
 
-      const users = await ctx.db.user.findMany({
+      const users = await ctx.prisma.user.findMany({
         where: {
           AND: [
             { id: { not: user.id } },

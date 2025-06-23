@@ -1,8 +1,9 @@
 import { Worker, Job } from 'bullmq';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { pokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
 import { tcgPlayerClient } from '@/lib/api/tcgplayer-client';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { redisCache } from '@/server/db/redis';
+import { transformAndValidateCard } from '@/lib/api/transformers';
 import { 
   SetImportJobData, 
   SetImportResult,
@@ -173,17 +174,79 @@ export class SetImportProcessor {
             
             if (existingCard) {
               // Update existing card
-              await prisma.card.update({
-                where: { id: cardData.id },
-                data: await this.transformCardData(cardData, dbSet.id),
-              });
-              cardsUpdated++;
+              const transformResult = await transformAndValidateCard(cardData);
+              
+              if (transformResult.isValid && transformResult.data) {
+                await prisma.$transaction(async (tx) => {
+                  await tx.card.update({
+                    where: { id: cardData.id },
+                    data: transformResult.data,
+                  });
+                  
+                  // Update pricing data
+                  if (transformResult.prices && transformResult.prices.length > 0) {
+                    await tx.cardPrice.deleteMany({
+                      where: { cardId: cardData.id }
+                    });
+                    
+                    await tx.cardPrice.createMany({
+                      data: transformResult.prices,
+                    });
+                    
+                    // Add to price history
+                    const priceHistoryData = transformResult.prices.map(price => ({
+                      cardId: price.cardId,
+                      source: price.source,
+                      priceType: price.priceType,
+                      amount: price.amount,
+                      currency: price.currency,
+                      foil: price.foil,
+                      condition: price.condition,
+                      date: new Date(),
+                    }));
+                    
+                    await tx.priceHistory.createMany({
+                      data: priceHistoryData,
+                    });
+                  }
+                });
+                cardsUpdated++;
+              }
             } else {
               // Create new card
-              await prisma.card.create({
-                data: await this.transformCardData(cardData, dbSet.id),
-              });
-              cardsImported++;
+              const transformResult = await transformAndValidateCard(cardData);
+              
+              if (transformResult.isValid && transformResult.data) {
+                await prisma.$transaction(async (tx) => {
+                  await tx.card.create({
+                    data: transformResult.data,
+                  });
+                  
+                  // Add pricing data
+                  if (transformResult.prices && transformResult.prices.length > 0) {
+                    await tx.cardPrice.createMany({
+                      data: transformResult.prices,
+                    });
+                    
+                    // Add to price history
+                    const priceHistoryData = transformResult.prices.map(price => ({
+                      cardId: price.cardId,
+                      source: price.source,
+                      priceType: price.priceType,
+                      amount: price.amount,
+                      currency: price.currency,
+                      foil: price.foil,
+                      condition: price.condition,
+                      date: new Date(),
+                    }));
+                    
+                    await tx.priceHistory.createMany({
+                      data: priceHistoryData,
+                    });
+                  }
+                });
+                cardsImported++;
+              }
             }
             
             // Process images if requested

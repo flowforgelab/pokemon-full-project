@@ -35,7 +35,8 @@ export const createTRPCContext = async (opts: {
   
   if (session?.userId) {
     user = await getDbUser(session.userId);
-    userRole = user ? await getUserRole(user.clerkUserId) : null;
+    const role = user ? await getUserRole(user.clerkUserId) : null;
+    userRole = role ? role.name : null;
   }
   
   return createInnerTRPCContext({
@@ -82,9 +83,12 @@ const loggerMiddleware = t.middleware(async ({ path, type, next }) => {
  */
 const rateLimitMiddleware = t.middleware(async ({ ctx, meta, next }) => {
   if (ctx.req && ctx.userId) {
+    // Default rate limit can be overridden by meta
+    const maxRequests = (meta as any)?.rateLimit?.requests || 100;
+    
     const rateLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
-      maxRequests: meta?.rateLimit?.requests || 100,
+      maxRequests,
     });
     
     const allowed = await rateLimiter.checkLimit(ctx.userId);

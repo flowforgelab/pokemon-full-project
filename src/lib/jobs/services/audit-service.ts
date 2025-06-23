@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { AuditLog } from '../types';
 import * as fs from 'fs/promises';
 import * as path from 'path';

@@ -319,6 +319,33 @@ export class QueueManager {
   }
 }
 
+// Get stats for all queues
+export async function getAllQueueStats() {
+  const stats: Record<string, any> = {};
+  
+  for (const [name, queue] of Object.entries(queues)) {
+    const [waiting, active, completed, failed, delayed, paused] = await Promise.all([
+      queue.getWaitingCount(),
+      queue.getActiveCount(),
+      queue.getCompletedCount(),
+      queue.getFailedCount(),
+      queue.getDelayedCount(),
+      queue.isPaused(),
+    ]);
+    
+    stats[name] = {
+      waiting,
+      active,
+      completed,
+      failed,
+      delayed,
+      paused,
+    };
+  }
+  
+  return stats;
+}
+
 // Health check for Redis connection
 export async function checkRedisConnection(): Promise<boolean> {
   try {

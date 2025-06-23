@@ -41,7 +41,7 @@ const searchSchema = z.object({
 // GET /api/collection/search - Search collection
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
 // POST /api/collection/search/save - Save a search
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

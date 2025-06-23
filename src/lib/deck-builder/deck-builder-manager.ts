@@ -286,6 +286,10 @@ export class DeckBuilderManager {
   async getPopularCards(format?: string) {
     return this.searchEngine.getPopularCards(format);
   }
+  
+  async getSearchSuggestions(query: string, limit?: number) {
+    return this.searchEngine.getSearchSuggestions(query, limit);
+  }
 
   // Statistics and analysis
   async analyzeDeck(composition: DeckComposition, userId?: string): Promise<DeckStatistics> {
@@ -710,5 +714,17 @@ export const deckBuilderManager = {
   
   async removeFromCollection(...args: Parameters<DeckBuilderManager['removeFromCollection']>) {
     return this.instance.removeFromCollection(...args);
+  },
+  
+  async getPopularCards(...args: Parameters<DeckBuilderManager['getPopularCards']>) {
+    return this.instance.getPopularCards(...args);
+  },
+  
+  async getRecentlyViewed(...args: Parameters<DeckBuilderManager['getRecentlyViewed']>) {
+    return this.instance.getRecentlyViewed(...args);
+  },
+  
+  async getSearchSuggestions(query: string, limit?: number) {
+    return this.instance.searchEngine.getSearchSuggestions(query, limit);
   }
 };

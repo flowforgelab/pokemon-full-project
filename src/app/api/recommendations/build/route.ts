@@ -29,7 +29,7 @@ const buildSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         card: {
           id: change.card.id,
           name: change.card.name,
-          imageUrl: change.card.imageUrl,
+          imageUrl: change.card.imageUrlSmall,
           supertype: change.card.supertype,
           types: change.card.types,
           hp: change.card.hp,

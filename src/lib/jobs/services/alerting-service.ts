@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { Alert } from '../types';
 import { QueueManager } from '../queues';
 import { JobQueue, JobPriority } from '../types';

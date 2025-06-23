@@ -1,7 +1,7 @@
 import { JobQueue, PriceUpdateJobData, JobPriority } from '../types';
 import { QueueManager } from '../queues';
-import { prisma } from '@/lib/db/db';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { prisma } from '@/server/db/prisma';
+import { redisCache } from '@/server/db/redis';
 
 export interface PriceUpdateOptions {
   type: 'full' | 'incremental' | 'specific' | 'popular';

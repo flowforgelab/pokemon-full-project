@@ -1,0 +1,44 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "functions": {
+    "src/app/api/cards/sync/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cards/import/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/collection/import/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/deck-builder/import/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/analysis/[deckId]/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/sync-cards",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "0 4 1 * *"
+    }
+  ]
+}

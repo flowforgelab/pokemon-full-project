@@ -23,7 +23,7 @@ const quickAddSchema = z.object({
 // POST /api/collection/quick-add - Quick add cards to collection
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 // GET /api/collection/quick-add/suggestions - Get card suggestions
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

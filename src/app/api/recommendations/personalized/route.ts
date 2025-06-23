@@ -23,7 +23,7 @@ import type { RecommendationFilter } from '@/lib/recommendations/types';
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
         card: {
           id: change.card.id,
           name: change.card.name,
-          imageUrl: change.card.imageUrl,
+          imageUrl: change.card.imageUrlSmallSmall,
           types: change.card.types,
           supertype: change.card.supertype,
         },

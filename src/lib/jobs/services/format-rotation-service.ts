@@ -1,6 +1,6 @@
 import { JobQueue, FormatRotationJobData, JobPriority } from '../types';
 import { QueueManager } from '../queues';
-import { prisma } from '@/lib/db/db';
+import { prisma } from '@/server/db/prisma';
 import { recommendationEngine } from '@/lib/recommendations/recommendation-engine';
 
 export interface FormatRotation {

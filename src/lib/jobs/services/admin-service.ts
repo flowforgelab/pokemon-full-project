@@ -1,7 +1,7 @@
 import { JobQueue, JobPriority } from '../types';
 import { QueueManager, queues } from '../queues';
-import { prisma } from '@/lib/db/db';
-import { redisCache } from '@/lib/cache/redis-cache';
+import { prisma } from '@/server/db/prisma';
+import { redisCache } from '@/server/db/redis';
 import { jobScheduler } from '../scheduler';
 import { priceUpdateService } from './price-update-service';
 import { setImportService } from './set-import-service';

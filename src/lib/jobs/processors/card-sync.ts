@@ -1,7 +1,7 @@
 import { Job } from 'bullmq';
 import { prisma } from '@/server/db/prisma';
 import { PokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
-import { normalizeCardData, normalizeSetData } from '@/lib/api/transformers';
+import { normalizeCardData, normalizeSetData, transformAndValidateCard } from '@/lib/api/transformers';
 import { cardCache, setCache } from '@/lib/api/cache';
 import type { JobData, JobResult } from '@/lib/api/types';
 
@@ -90,13 +90,52 @@ export async function processCardSyncJob(job: Job<JobData>): Promise<JobResult> 
           // Process cards in this page
           for (const cardData of cardsResult.data.data) {
             try {
-              const normalizedCard = normalizeCardData(cardData);
+              const transformResult = await transformAndValidateCard(cardData);
+              
+              if (!transformResult.isValid || !transformResult.data) {
+                totalErrors++;
+                errors.push(`Card ${cardData.id}: Validation failed - ${transformResult.errors?.join(', ')}`);
+                continue;
+              }
+              
               const isNew = !existingCardIds.has(cardData.id);
               
-              await prisma.card.upsert({
-                where: { id: cardData.id },
-                update: normalizedCard,
-                create: normalizedCard,
+              // Use transaction to save card and pricing data atomically
+              await prisma.$transaction(async (tx) => {
+                // Upsert card
+                await tx.card.upsert({
+                  where: { id: cardData.id },
+                  update: transformResult.data,
+                  create: transformResult.data,
+                });
+                
+                // Delete existing prices for this card
+                await tx.cardPrice.deleteMany({
+                  where: { cardId: cardData.id }
+                });
+                
+                // Insert new prices if available
+                if (transformResult.prices && transformResult.prices.length > 0) {
+                  await tx.cardPrice.createMany({
+                    data: transformResult.prices,
+                  });
+                  
+                  // Also add to price history
+                  const priceHistoryData = transformResult.prices.map(price => ({
+                    cardId: price.cardId,
+                    source: price.source,
+                    priceType: price.priceType,
+                    amount: price.amount,
+                    currency: price.currency,
+                    foil: price.foil,
+                    condition: price.condition,
+                    date: new Date(),
+                  }));
+                  
+                  await tx.priceHistory.createMany({
+                    data: priceHistoryData,
+                  });
+                }
               });
 
               await cardCache.delete(`card:${cardData.id}`);

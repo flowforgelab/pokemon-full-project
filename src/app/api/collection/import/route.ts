@@ -16,7 +16,7 @@ const importOptionsSchema = z.object({
 // POST /api/collection/import - Import collection data
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 // GET /api/collection/import/templates - Get import templates
 export async function GET(_req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

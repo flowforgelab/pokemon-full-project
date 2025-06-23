@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { CardCondition, Rarity, Supertype } from '@prisma/client';
-import { getCollectionCache } from '@/lib/cache/redis-cache';
+import { getCollectionCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue';
 
 // Validation schemas

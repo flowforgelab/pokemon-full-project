@@ -42,7 +42,7 @@ export async function GET(
 
     // Get deck details
     const deck = await prisma.deck.findUnique({
-      where: { id: params.deckId },
+      where: { id: deckId },
       include: {
         format: true,
         user: {
@@ -228,7 +228,7 @@ export async function DELETE(
 
     // Delete deck
     await prisma.deck.delete({
-      where: { id: params.deckId },
+      where: { id: deckId },
     });
 
     return NextResponse.json({
