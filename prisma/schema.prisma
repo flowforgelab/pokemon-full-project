@@ -114,7 +114,6 @@ model Set {
   
   // External API mappings
   ptcgoCode         String?
-  tcgplayerGroupId  Int?      @unique
   
   // Legalities
   isLegalStandard   Boolean   @default(false)

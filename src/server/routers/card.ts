@@ -4,7 +4,6 @@ import { Rarity, Supertype, DeckCategory } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { getCardCache } from '@/lib/cache/redis-cache';
 import { pokemonTCGQueue } from '@/lib/jobs/queue';
-import { TCGPlayerClient } from '@/lib/api/tcgplayer-client';
 
 // Validation schemas
 const paginationSchema = z.object({

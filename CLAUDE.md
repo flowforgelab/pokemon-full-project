@@ -298,8 +298,7 @@ KV_REST_API_TOKEN
 ### Optional Features
 ```env
 POKEMON_TCG_API_KEY      # Higher rate limits
-TCGPLAYER_API_PUBLIC_KEY # Price data
-TCGPLAYER_API_PRIVATE_KEY
+# TCGPlayer API has been removed - pricing features disabled
 NEXT_PUBLIC_APP_URL      # For sharing features
 ```
 

@@ -1,5 +1,5 @@
 import { Prisma, Rarity, Supertype } from '@prisma/client';
-import type { PokemonTCGCard, PokemonTCGSet, TCGPlayerProduct } from './types';
+import type { PokemonTCGCard, PokemonTCGSet } from './types';
 import { z } from 'zod';
 
 /**
@@ -127,20 +127,11 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
     regulationMark: apiCard.regulationMark,
     imageUrlSmall: apiCard.images.small,
     imageUrlLarge: apiCard.images.large,
-    tcgplayerId: apiCard.tcgplayer?.url ? extractTCGPlayerIdFromUrl(apiCard.tcgplayer.url) : null,
     cardmarketId: apiCard.cardmarket?.url ? extractCardMarketIdFromUrl(apiCard.cardmarket.url) : null,
     isLegalStandard: apiCard.legalities.standard === 'Legal',
     isLegalExpanded: apiCard.legalities.expanded === 'Legal',
     isLegalUnlimited: apiCard.legalities.unlimited === 'Legal',
   };
-}
-
-/**
- * Extract TCGPlayer product ID from URL
- */
-function extractTCGPlayerIdFromUrl(url: string): string | null {
-  const match = url.match(/\/product\/(\d+)/);
-  return match ? match[1] : null;
 }
 
 /**
@@ -151,52 +142,6 @@ function extractCardMarketIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-/**
- * Map TCGPlayer product IDs to Pokemon TCG card IDs
- */
-export function mapTCGPlayerIds(
-  cards: PokemonTCGCard[],
-  tcgPlayerProducts: TCGPlayerProduct[]
-): Map<string, number> {
-  const mapping = new Map<string, number>();
-  
-  // Create a name-to-product map for faster lookup
-  const productMap = new Map<string, TCGPlayerProduct[]>();
-  tcgPlayerProducts.forEach(product => {
-    const cleanName = product.cleanName.toLowerCase();
-    if (!productMap.has(cleanName)) {
-      productMap.set(cleanName, []);
-    }
-    productMap.get(cleanName)!.push(product);
-  });
-
-  cards.forEach(card => {
-    // Try to find exact match first
-    const cardName = card.name.toLowerCase();
-    const setName = card.set.name.toLowerCase();
-    
-    // Look for products matching this card
-    const potentialProducts = productMap.get(cardName) || [];
-    
-    // Try to match by set name as well
-    const matchingProduct = potentialProducts.find(product => {
-      const productName = product.name.toLowerCase();
-      return productName.includes(setName) || productName.includes(card.number);
-    });
-
-    if (matchingProduct) {
-      mapping.set(card.id, matchingProduct.productId);
-    } else if (card.tcgplayer?.url) {
-      // Try to extract from URL if available
-      const tcgPlayerId = extractTCGPlayerIdFromUrl(card.tcgplayer.url);
-      if (tcgPlayerId) {
-        mapping.set(card.id, parseInt(tcgPlayerId));
-      }
-    }
-  });
-
-  return mapping;
-}
 
 /**
  * Validate card data before insertion
@@ -248,97 +193,6 @@ export function handleImageUrls(imageUrl: string): { isValid: boolean; url: stri
   }
 }
 
-/**
- * Format pricing data from TCGPlayer
- */
-export function formatPricingData(
-  cardId: string,
-  tcgPlayerPrice: any
-): Prisma.CardPriceCreateManyInput[] {
-  const prices: Prisma.CardPriceCreateManyInput[] = [];
-  
-  // Normal prices
-  if (tcgPlayerPrice.prices?.normal) {
-    const normal = tcgPlayerPrice.prices.normal;
-    
-    if (normal.low) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'LOW',
-        price: new Prisma.Decimal(normal.low),
-        currency: 'USD',
-      });
-    }
-    
-    if (normal.mid) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'MID',
-        price: new Prisma.Decimal(normal.mid),
-        currency: 'USD',
-      });
-    }
-    
-    if (normal.high) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'HIGH',
-        price: new Prisma.Decimal(normal.high),
-        currency: 'USD',
-      });
-    }
-    
-    if (normal.market) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'MARKET',
-        price: new Prisma.Decimal(normal.market),
-        currency: 'USD',
-      });
-    }
-  }
-  
-  // Holofoil prices
-  if (tcgPlayerPrice.prices?.holofoil) {
-    const holofoil = tcgPlayerPrice.prices.holofoil;
-    
-    if (holofoil.low) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'FOIL_LOW',
-        price: new Prisma.Decimal(holofoil.low),
-        currency: 'USD',
-      });
-    }
-    
-    if (holofoil.market) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'FOIL_MARKET',
-        price: new Prisma.Decimal(holofoil.market),
-        currency: 'USD',
-      });
-    }
-    
-    if (holofoil.high) {
-      prices.push({
-        cardId,
-        source: 'TCGPLAYER',
-        priceType: 'FOIL_HIGH',
-        price: new Prisma.Decimal(holofoil.high),
-        currency: 'USD',
-      });
-    }
-  }
-  
-  return prices;
-}
 
 /**
  * Transform API response to database format with error handling

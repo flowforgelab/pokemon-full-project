@@ -42,7 +42,6 @@ export interface Card {
   imageUrlSmall: string;
   imageUrlLarge: string;
   
-  tcgplayerId?: string | null;
   cardmarketId?: string | null;
   
   isLegalStandard: boolean;

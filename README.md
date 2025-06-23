@@ -291,7 +291,6 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - Pokemon TCG API for card data
-- TCGPlayer for pricing information
 - The Pokemon TCG community for inspiration
 
 ---

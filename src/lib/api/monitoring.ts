@@ -207,7 +207,7 @@ export class MetricsCollector {
     limit: number;
     percentage: number;
   }>> {
-    const apis = ['pokemon-tcg', 'tcgplayer'];
+    const apis = ['pokemon-tcg'];
     const usage: Record<string, any> = {};
     
     for (const api of apis) {
@@ -217,7 +217,6 @@ export class MetricsCollector {
       // Get configured limits (these should match your rate limiter config)
       const limits: Record<string, number> = {
         'pokemon-tcg': 1000,
-        'tcgplayer': 1000,
       };
       
       const limit = limits[api] || 1000;

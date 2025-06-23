@@ -1,5 +1,4 @@
 import { PokemonTCGClient } from './pokemon-tcg-client';
-import { TCGPlayerClient } from './tcgplayer-client';
 import { redis } from '@/server/db/redis';
 import { prisma } from '@/server/db/prisma';
 import { scheduleRecurringJobs } from '../jobs/queue';
@@ -77,37 +76,12 @@ export async function initializeServices(): Promise<InitializationResult> {
     console.error('⚠️  Pokemon TCG API connection failed:', error);
   }
 
-  // 4. Test TCGPlayer API
-  if (process.env.TCGPLAYER_API_PUBLIC_KEY && process.env.TCGPLAYER_API_PRIVATE_KEY) {
-    try {
-      const tcgPlayerClient = new TCGPlayerClient(
-        process.env.TCGPLAYER_API_PUBLIC_KEY,
-        process.env.TCGPLAYER_API_PRIVATE_KEY
-      );
-      
-      const authResult = await tcgPlayerClient.authenticateAPI();
-      
-      if (authResult.error) {
-        throw authResult.error;
-      }
-      
-      result.services.tcgPlayer = { status: 'success' };
-      console.log('✅ TCGPlayer API authentication successful');
-    } catch (error) {
-      result.services.tcgPlayer = { 
-        status: 'failed', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
-      };
-      result.warnings.push('TCGPlayer API authentication failed - pricing data will be unavailable');
-      console.error('⚠️  TCGPlayer API authentication failed:', error);
-    }
-  } else {
-    result.services.tcgPlayer = { 
-      status: 'failed', 
-      message: 'API keys not configured' 
-    };
-    result.warnings.push('TCGPlayer API keys not configured - pricing features disabled');
-  }
+  // 4. Pricing data notice
+  result.services.pricing = { 
+    status: 'failed', 
+    message: 'Pricing integration disabled - TCGPlayer API no longer available' 
+  };
+  result.warnings.push('Pricing features are currently unavailable');
 
   // 5. Initialize background jobs (only if core services are available)
   if (result.services.database.status === 'success' && result.services.redis.status === 'success') {
