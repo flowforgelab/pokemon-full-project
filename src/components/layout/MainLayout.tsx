@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { SignedIn, UserButton } from '@clerk/nextjs';
 import {
   HomeIcon,
-  CollectionIcon,
+  RectangleStackIcon,
   SparklesIcon,
   ChartBarIcon,
   UserGroupIcon,
@@ -42,7 +42,7 @@ export function MainLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Collection', href: '/collection', icon: CollectionIcon },
+    { name: 'Collection', href: '/collection', icon: RectangleStackIcon },
     { name: 'Decks', href: '/decks', icon: SparklesIcon },
     { name: 'Cards', href: '/cards', icon: ChartBarIcon },
     { name: 'Community', href: '/community', icon: UserGroupIcon },

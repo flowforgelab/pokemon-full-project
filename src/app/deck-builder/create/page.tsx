@@ -10,7 +10,7 @@ import {
   PlusIcon,
   MinusIcon,
   ChartBarIcon,
-  SaveIcon,
+  DocumentArrowDownIcon,
   PlayIcon,
   SparklesIcon,
   InformationCircleIcon,
@@ -265,7 +265,7 @@ export default function DeckBuilderPage() {
                   disabled={!deckName || totalCards === 0 || isSaving}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  <SaveIcon className="h-5 w-5" />
+                  <DocumentArrowDownIcon className="h-5 w-5" />
                   {isSaving ? 'Saving...' : 'Save Deck'}
                 </button>
               </div>

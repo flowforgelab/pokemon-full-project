@@ -13,6 +13,7 @@ import {
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
   ChartBarIcon,
+  RectangleStackIcon,
 } from '@heroicons/react/24/outline';
 
 type ViewMode = 'grid' | 'list';
@@ -347,7 +348,7 @@ export default function CollectionPage() {
           )
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
-            <CollectionIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <RectangleStackIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               No cards in your collection yet
             </h3>

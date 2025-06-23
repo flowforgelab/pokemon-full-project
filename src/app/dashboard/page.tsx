@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
   CurrencyDollarIcon,
-  CollectionIcon,
+  RectangleStackIcon,
   SparklesIcon,
   TrophyIcon,
   PlusIcon,
@@ -48,7 +48,7 @@ export default function DashboardPage() {
           <DashboardStat
             title="Total Cards"
             value={stats?.totalCards?.toLocaleString() || '0'}
-            icon={<CollectionIcon className="h-8 w-8" />}
+            icon={<RectangleStackIcon className="h-8 w-8" />}
           />
           <DashboardStat
             title="Complete Decks"
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex-shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                    <CollectionIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <RectangleStackIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Add Cards</p>
