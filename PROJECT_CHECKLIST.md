@@ -145,13 +145,14 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
     - [x] Performance statistics over time
     - [x] Scheduled analysis (premium)
     - [x] Export reports (JSON, Markdown)
-  - [x] Pricing router for market data:
-    - [x] Real-time price fetching
-    - [x] Price history with aggregation
-    - [x] Market trends and movers
-    - [x] Price alerts with thresholds
-    - [x] Portfolio value tracking
-    - [x] Manual price refresh (premium)
+  - [x] Pricing router (currently non-functional):
+    - [x] Infrastructure exists but returns empty data
+    - [ ] Real-time price fetching (needs alternative API)
+    - [ ] Price history tracking (no data source)
+    - [ ] Market trends analysis (no data source)
+    - [x] Price alert system (ready but no data)
+    - [ ] Portfolio value tracking (returns zero)
+    - [ ] Manual price refresh (no API to refresh from)
   - [x] Recommendation router with AI features:
     - [x] Card recommendations based on context
     - [x] Deck recommendations with variants
@@ -177,11 +178,10 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
   - [x] Advanced search with multiple filters
   - [x] Batch operations for efficiency
   - [x] Response validation with Zod schemas
-- [x] TCGPlayer API Client:
-  - [x] OAuth authentication with token refresh
-  - [x] Bulk price fetching (up to 250 products)
-  - [x] Price history tracking
-  - [x] Product search and mapping
+- [ ] Pricing Data Integration:
+  - [ ] Alternative pricing source integration needed
+  - [ ] TCGPlayer API removed (no longer available for new access)
+  - [ ] Price data features currently disabled
 - [x] Data Transformation Layer:
   - [x] API response to Prisma schema mapping
   - [x] Data validation and sanitization
@@ -472,12 +472,11 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
   - [x] Image URL validation and handling
   - [x] Advanced search with filters
   - [x] Batch operations support
-- [x] TCGPlayer API:
-  - [x] OAuth authentication flow
-  - [x] Price data fetching (bulk and individual)
-  - [x] Market price updates
-  - [x] Price history tracking
-  - [x] Product search and mapping
+  - [ ] Note: Pokemon TCG API does not provide pricing data
+- [ ] Pricing API Integration:
+  - [ ] TCGPlayer API removed (no longer available for new access)
+  - [ ] Alternative pricing source needed (e.g., CardMarket, eBay, etc.)
+  - [ ] Price update features currently non-functional
 - [x] Implement data sync jobs with Bull/BullMQ:
   - [x] Price update processor
   - [x] Set import processor
@@ -556,12 +555,12 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - [ ] Contributing guidelines
 
 ### Automated Data Maintenance System
-- [x] Weekly Price Update System:
-  - [x] TCGPlayer API integration with bulk pricing
-  - [x] Incremental updates with change detection
-  - [x] Anomaly detection and automatic rollback
-  - [x] Rate limiting and retry logic
-  - [x] Price history tracking
+- [ ] Weekly Price Update System:
+  - [ ] Pricing integration removed (TCGPlayer no longer available)
+  - [ ] Alternative pricing source integration needed
+  - [ ] Price update infrastructure exists but non-functional
+  - [ ] Anomaly detection and rollback ready for future integration
+  - [ ] Price history tracking infrastructure preserved
 - [x] New Set Detection & Import:
   - [x] Automated Pokemon TCG API monitoring
   - [x] Bulk card import with validation
@@ -619,6 +618,12 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - ESLint warnings for unused variables (converted to warnings for build)
 - Some TypeScript strict checks temporarily disabled for MVP
 - PDF and image export formats not yet implemented (returns 501)
+- **Pricing features are currently non-functional**:
+  - TCGPlayer API integration removed (no longer available for new access)
+  - Pokemon TCG API does not provide pricing data
+  - All pricing endpoints return empty data with notices
+  - Collection value tracking returns zero values
+  - Price alerts and market trends features disabled
 
 ## 📝 Notes
 - Using Clerk test keys (need production keys for launch)
@@ -628,12 +633,12 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - Project is live and deployable with automatic CI/CD
 
 ## 🔄 Last Updated
-- Date: 2025-06-22
-- Version: 0.9.6
+- Date: 2025-06-23
+- Version: 0.9.7
 - Latest Updates:
   - Implemented comprehensive automated data maintenance system:
     - Job scheduling infrastructure with Bull/BullMQ and Redis
-    - Weekly price update system with TCGPlayer integration
+    - Weekly price update system (currently disabled - TCGPlayer removed)
     - Automated new set detection and import
     - Data validation with 12 rules and auto-fix capabilities
     - Format rotation handling with deck migration suggestions
@@ -641,6 +646,10 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
     - Real-time monitoring with multi-channel alerting
     - Admin intervention tools with full audit trail
     - Compliance-ready audit logging system
+  - Removed TCGPlayer API integration:
+    - TCGPlayer API no longer available for new access
+    - All pricing features currently disabled
+    - Pricing infrastructure preserved for future integration
   - Added data maintenance models to Prisma schema:
     - Notification, BackupMetadata, AdminAction models
     - Alert and OnCallSchedule for alerting system
