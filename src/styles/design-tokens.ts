@@ -1,6 +1,9 @@
 // Design tokens for the Pokemon TCG deck building application
 // This file contains all design system variables for consistent styling
 
+// Import color conversion utility
+import { hexToHSL } from '@/lib/utils/color-conversion';
+
 export const designTokens = {
   colors: {
     // Primary brand colors inspired by Pokemon energy types
@@ -251,16 +254,22 @@ export const designTokens = {
 };
 
 // CSS custom properties generator
-export const generateCSSVariables = () => {
+export const generateCSSVariables = (useHSL = true) => {
   const cssVars: Record<string, string> = {};
   
   // Colors
   Object.entries(designTokens.colors).forEach(([colorKey, colorValue]) => {
     if (typeof colorValue === 'string') {
-      cssVars[`--color-${colorKey}`] = colorValue;
+      // Convert hex to HSL for consistency with globals.css
+      const value = useHSL && colorValue.startsWith('#') ? hexToHSL(colorValue) : colorValue;
+      cssVars[`--color-${colorKey}`] = value;
     } else if (typeof colorValue === 'object') {
       Object.entries(colorValue).forEach(([shade, value]) => {
-        cssVars[`--color-${colorKey}-${shade}`] = value;
+        if (typeof value === 'string') {
+          // Convert hex to HSL for consistency
+          const convertedValue = useHSL && value.startsWith('#') ? hexToHSL(value) : value;
+          cssVars[`--color-${colorKey}-${shade}`] = convertedValue;
+        }
       });
     }
   });

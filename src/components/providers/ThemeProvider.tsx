@@ -211,7 +211,7 @@ export const ThemeStyleInjector: React.FC = () => {
   useEffect(() => {
     // Import design tokens and generate CSS variables
     import('@/styles/design-tokens').then(({ generateCSSVariables }) => {
-      const cssVars = generateCSSVariables();
+      const cssVars = generateCSSVariables(true); // Use HSL format for consistency
       const style = document.createElement('style');
       style.id = 'theme-variables';
       
