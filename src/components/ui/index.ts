@@ -20,6 +20,8 @@ export {
   Skeleton, 
   CardSkeleton, 
   ListSkeleton, 
+  DeckCardSkeleton,
+  TableRowSkeleton,
   LoadingOverlay, 
   ProgressBar 
 } from './LoadingStates';
@@ -31,6 +33,19 @@ export { PremiumHero, SplitHero } from './PremiumHero';
 export { PremiumModal, Drawer } from './PremiumModal';
 
 export { Tooltip, Popover } from './Tooltip';
+
+// Form components
+export { Input } from './Input';
+export type { InputProps } from './Input';
+
+export { Select } from './Select';
+export type { SelectProps } from './Select';
+
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';
+
+export { FormField } from './FormField';
+export type { FormFieldProps } from './FormField';
 
 // Re-export design tokens
 export { designTokens } from '@/styles/design-tokens';

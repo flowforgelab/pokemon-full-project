@@ -44,6 +44,54 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   );
 };
 
+// Pokeball loading spinner
+interface PokeballSpinnerProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
+}
+
+export const PokeballSpinner: React.FC<PokeballSpinnerProps> = ({
+  size = 'md',
+  className,
+}) => {
+  const sizeMap = {
+    sm: 32,
+    md: 48,
+    lg: 64,
+    xl: 96,
+  };
+
+  const actualSize = sizeMap[size];
+
+  return (
+    <div className={cn('flex items-center justify-center', className)}>
+      <motion.div
+        className="relative"
+        style={{ width: actualSize, height: actualSize }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+      >
+        {/* Top half */}
+        <div
+          className="absolute inset-0 bg-red-500 rounded-t-full"
+          style={{ height: '50%' }}
+        />
+        {/* Bottom half */}
+        <div
+          className="absolute bottom-0 inset-x-0 bg-white dark:bg-gray-200 rounded-b-full"
+          style={{ height: '50%' }}
+        />
+        {/* Center line */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-gray-900 dark:bg-gray-800" />
+        {/* Center circle */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-gray-900 dark:bg-gray-800 rounded-full">
+          <div className="absolute inset-2 bg-white dark:bg-gray-200 rounded-full" />
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // Pulse loading animation
 interface PulseLoaderProps {
   count?: number;
@@ -262,5 +310,55 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         </span>
       )}
     </div>
+  );
+};
+
+// Deck Card Skeleton - for deck listing cards
+export const DeckCardSkeleton: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <div className={cn('bg-gray-50 dark:bg-gray-700 rounded-lg p-6', className)}>
+      <div className="space-y-3">
+        <div className="flex justify-between">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-5 w-5" variant="circular" />
+        </div>
+        <Skeleton className="h-4 w-24" />
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-full" />
+        </div>
+        <div className="flex gap-2 mt-4">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-9 w-9" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Table Row Skeleton - for table loading states
+export const TableRowSkeleton: React.FC<{ columns?: number; className?: string }> = ({ 
+  columns = 5, 
+  className 
+}) => {
+  return (
+    <tr className={className}>
+      <td className="px-6 py-4">
+        <div className="flex items-center">
+          <Skeleton className="h-10 w-8 mr-4" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      </td>
+      {Array.from({ length: columns - 1 }).map((_, index) => (
+        <td key={index} className="px-6 py-4">
+          <Skeleton className="h-4 w-24" />
+        </td>
+      ))}
+    </tr>
   );
 };

@@ -616,6 +616,36 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
   - [x] Export capabilities (CSV, JSON)
   - [x] Security event tracking
 
+### Visual Issues Fix Plan (Priority)
+- [x] **Week 1 - Critical CSS Issues** (Completed 2025-06-24):
+  - [x] Consolidate all animations into animations.css
+  - [x] Remove duplicate keyframes from globals.css
+  - [x] Unify color system to use HSL format consistently
+  - [x] Update design tokens to generate CSS variables
+  - [x] Add missing --radius variable in dark mode
+  - [x] Fix CSS import path from '@/styles/animations.css' to './animations.css'
+- [x] **Week 2 - Component Consistency** (Completed 2025-06-24):
+  - [x] Create standardized Input, Select, and Textarea components
+  - [x] Merge duplicate Skeleton components
+  - [x] Standardize button focus states across all variants
+  - [x] Consolidate card components (CardItem, PremiumCard)
+  - [x] Create consistent form field wrapper component
+- [ ] **Week 3 - Responsive Design**:
+  - [ ] Add responsive breakpoints to MainLayout sidebar
+  - [ ] Implement mobile navigation pattern
+  - [ ] Convert fixed values to responsive units
+  - [ ] Use clamp() for responsive text sizing
+  - [ ] Ensure all touch targets are 44x44px minimum
+  - [ ] Add switching logic between desktop/mobile deck builders
+- [ ] **Week 4 - Assets & Design System**:
+  - [ ] Create PWA manifest.json and app icons
+  - [ ] Add Open Graph and Twitter card images
+  - [ ] Create proper logo file
+  - [ ] Add robots.txt and sitemap.xml
+  - [ ] Activate design tokens with generateCSSVariables()
+  - [ ] Replace hardcoded values with design tokens
+  - [ ] Consolidate energy colors to single source
+
 ### Future Features (Post-MVP)
 - [ ] Trading System UI:
   - [ ] Trade offer creation interface
@@ -642,6 +672,28 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - Some TypeScript strict checks temporarily disabled for MVP
 - PDF and image export formats not yet implemented (returns 501)
 
+### Visual/CSS Issues (Identified 2025-06-24)
+- **Duplicate Animation Definitions**: Same animations defined in both globals.css and animations.css
+- **Inconsistent Color System**: Multiple color formats (HSL custom properties vs hex in design tokens)
+- **Missing Dark Mode Variables**: `--radius` CSS variable only defined in light theme
+- **Design Tokens Not Active**: `generateCSSVariables()` function exists but not called
+- **CSS Import Path Issue**: `@import '@/styles/animations.css'` may not work correctly
+- **Component Inconsistencies**:
+  - Duplicate Skeleton components in different files
+  - Multiple card components with overlapping functionality
+  - No standardized Input/Select/Textarea components
+  - Inconsistent button focus states across variants
+- **Responsive Design Issues**:
+  - Fixed widths/heights in some components (progress bars, card min-heights)
+  - MainLayout sidebar not responsive (fixed 256px)
+  - Some grids start with only 2 columns on mobile
+  - Hardcoded pixel values throughout
+- **Missing Assets**:
+  - No PWA manifest.json or icons
+  - No Open Graph/Twitter card images
+  - No proper logo file (uses CSS-styled div)
+  - Missing robots.txt and sitemap.xml
+
 ## 📝 Notes
 - Using Clerk test keys (need production keys for launch)
 - Database successfully deployed to Neon PostgreSQL
@@ -653,9 +705,30 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - Stripe payment processing infrastructure ready, implementation deferred
 
 ## 🔄 Last Updated
-- Date: 2025-06-23
-- Version: 1.0.1-MVP
+- Date: 2025-06-24
+- Version: 1.0.4-MVP
 - Latest Updates:
+  - Week 2 Component Consistency completed (2025-06-24):
+    - ✅ Created standardized Input, Select, and Textarea components
+    - ✅ Created FormField wrapper for consistent form layouts
+    - ✅ Merged duplicate Skeleton components into LoadingStates.tsx
+    - ✅ Added DeckCardSkeleton and TableRowSkeleton to LoadingStates
+    - ✅ Standardized button focus states with ring-offset-background
+    - ✅ Created unified PokemonCard component consolidating CardItem and CardListItem
+  - Week 1 CSS fixes completed (2025-06-24):
+    - ✅ Consolidated all animations into animations.css
+    - ✅ Removed duplicate keyframes from globals.css
+    - ✅ Fixed CSS import path to use relative paths
+    - ✅ Added missing --radius variable in dark mode
+    - ✅ Unified color system to use HSL format consistently
+    - ✅ Created color conversion utilities (hexToHSL)
+    - ✅ Updated design tokens to generate CSS variables in HSL format
+  - Comprehensive visual audit completed (2025-06-24):
+    - Identified duplicate CSS animations and inconsistent color systems
+    - Found responsive design issues and missing breakpoints
+    - Discovered component inconsistencies and duplicate implementations
+    - Located missing PWA assets and meta images
+    - Created 4-week fix plan prioritizing critical CSS issues first
   - Fixed production deployment issues:
     - Fixed missing dependencies (lucide-react, framer-motion)
     - Fixed async/await issues with Clerk auth in Next.js 15

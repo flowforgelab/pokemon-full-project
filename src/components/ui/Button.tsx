@@ -55,7 +55,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const baseClasses = cn(
       'inline-flex items-center justify-center font-semibold transition-all duration-200',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+      'focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed',
       'relative overflow-hidden group select-none',
       fullWidth && 'w-full'
     );
@@ -64,36 +65,42 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary: cn(
         'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
         'text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-        'focus:ring-blue-500 active:transform active:translate-y-0',
-        'dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700'
+        'focus-visible:ring-blue-500 active:transform active:translate-y-0',
+        'dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700',
+        'dark:focus-visible:ring-blue-400'
       ),
       secondary: cn(
         'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600',
         'text-gray-900 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-        'focus:ring-yellow-500 active:transform active:translate-y-0'
+        'focus-visible:ring-yellow-500 active:transform active:translate-y-0',
+        'dark:focus-visible:ring-yellow-400'
       ),
       outline: cn(
         'border-2 border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50',
         'text-gray-700 hover:text-blue-600 shadow-sm hover:shadow-md',
-        'focus:ring-blue-500 focus:border-blue-500',
+        'focus-visible:ring-blue-500 focus-visible:border-blue-500',
         'dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700',
-        'dark:text-gray-300 dark:hover:text-blue-400 dark:hover:border-blue-400'
+        'dark:text-gray-300 dark:hover:text-blue-400 dark:hover:border-blue-400',
+        'dark:focus-visible:ring-blue-400'
       ),
       ghost: cn(
         'text-gray-600 hover:text-blue-600 hover:bg-blue-50',
-        'focus:ring-blue-500',
-        'dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-800'
+        'focus-visible:ring-blue-500',
+        'dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-800',
+        'dark:focus-visible:ring-blue-400'
       ),
       destructive: cn(
         'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
         'text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-        'focus:ring-red-500 active:transform active:translate-y-0'
+        'focus-visible:ring-red-500 active:transform active:translate-y-0',
+        'dark:focus-visible:ring-red-400'
       ),
       premium: cn(
         'bg-gradient-to-r from-purple-600 via-blue-600 to-blue-700',
         'hover:from-purple-700 hover:via-blue-700 hover:to-blue-800',
         'text-white shadow-xl hover:shadow-2xl transform hover:-translate-y-1',
-        'focus:ring-purple-500 active:transform active:translate-y-0',
+        'focus-visible:ring-purple-500 active:transform active:translate-y-0',
+        'dark:focus-visible:ring-purple-400',
         'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent',
         'before:via-white before:to-transparent before:opacity-0 hover:before:opacity-20',
         'before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700'
