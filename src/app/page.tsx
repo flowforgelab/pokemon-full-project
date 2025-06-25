@@ -35,7 +35,7 @@ export default function Home() {
               <Link href="/cards" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Cards
               </Link>
-              <Link href="/decks/discover" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              <Link href="/decks" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                 Discover
               </Link>
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
@@ -84,7 +84,7 @@ export default function Home() {
               <Link href="/cards" className="block px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded">
                 Cards
               </Link>
-              <Link href="/decks/discover" className="block px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded">
+              <Link href="/decks" className="block px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded">
                 Discover
               </Link>
               <Link href="/pricing" className="block px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded">

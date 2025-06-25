@@ -672,6 +672,18 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - Some TypeScript strict checks temporarily disabled for MVP
 - PDF and image export formats not yet implemented (returns 501)
 
+### ~~Navigation/Routing Issues~~ (Resolved 2025-06-25)
+- ✅ **Missing Pages** - All created:
+  - ✅ `/community` - Created community hub page with forums, tournaments, guides sections
+  - ✅ `/onboarding` - Created 3-step onboarding flow for new users
+  - ✅ `/privacy` - Created comprehensive privacy policy page
+  - ✅ `/terms` - Created terms of service page
+  - ✅ `/contact` - Created contact form with FAQ section
+- ✅ **Incorrect Routes** - Fixed:
+  - ✅ Landing page now correctly links to `/decks` instead of `/decks/discover`
+- ✅ **Configuration Issues** - Resolved:
+  - ✅ Clerk `afterSignUpUrl` now points to `/onboarding` page (better UX than direct to dashboard)
+
 ### Visual/CSS Issues (Updated 2025-06-24)
 #### ✅ Resolved Issues (Week 1 & 2):
 - ~~**Duplicate Animation Definitions**~~ - Consolidated into animations.css
@@ -711,8 +723,15 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 
 ## 🔄 Last Updated
 - Date: 2025-06-25
-- Version: 1.0.5-MVP
+- Version: 1.0.6-MVP
 - Latest Updates:
+  - Navigation/Routing Issues resolved (2025-06-25):
+    - ✅ Created all missing pages (/community, /onboarding, /privacy, /terms, /contact)
+    - ✅ Fixed incorrect route /decks/discover → /decks in landing page
+    - ✅ Created comprehensive onboarding flow with user preferences
+    - ✅ Added community hub with forums, tournaments, and trading sections
+    - ✅ Implemented contact form with FAQ section
+    - ✅ Added privacy policy and terms of service pages
   - Week 3 Responsive Design completed (2025-06-25):
     - ✅ Created useMediaQuery hook for consistent breakpoint handling
     - ✅ MainLayout sidebar now responsive (w-60 tablet, w-64 default, w-72 large)
