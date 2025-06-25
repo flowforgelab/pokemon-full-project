@@ -3,27 +3,141 @@ import { redis } from '@/server/db/redis';
 import type { JobData, JobResult } from '@/lib/api/types';
 
 // Redis connection configuration for BullMQ
-const connection = {
-  host: process.env.KV_REST_API_URL?.replace('https://', '').split('.')[0],
-  port: 6379,
-  password: process.env.KV_REST_API_TOKEN,
+const createConnection = () => {
+  // During build time or when KV is not configured, return a dummy connection
+  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    console.warn('Redis configuration missing. Using dummy connection for build.');
+    return {
+      host: 'localhost',
+      port: 6379,
+      password: 'dummy',
+      // Add these options to prevent connection attempts during build
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 0,
+    };
+  }
+
+  // For Upstash Redis, we should use the REST API, not direct Redis connection
+  // BullMQ doesn't support REST APIs directly, so we need to use localhost with SSH tunnel
+  // or use a different queue solution. For now, return a non-connecting config.
+  return {
+    host: 'localhost',
+    port: 6379,
+    password: process.env.KV_REST_API_TOKEN,
+    lazyConnect: true,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 0,
+  };
 };
 
-// Create queues for different job types
-export const priceUpdateQueue = new Queue('price-updates', { connection });
-export const setImportQueue = new Queue('set-imports', { connection });
-export const cardSyncQueue = new Queue('card-sync', { connection });
-export const dataCleanupQueue = new Queue('data-cleanup', { connection });
-export const reportQueue = new Queue('reports', { connection });
-export const collectionIndexQueue = new Queue('collection-index', { connection });
+const connection = createConnection();
+
+// Lazy initialization of queues to prevent connection attempts during build
+let _priceUpdateQueue: Queue | null = null;
+let _setImportQueue: Queue | null = null;
+let _cardSyncQueue: Queue | null = null;
+let _dataCleanupQueue: Queue | null = null;
+let _reportQueue: Queue | null = null;
+let _collectionIndexQueue: Queue | null = null;
+let _pokemonTCGQueue: Queue | null = null;
+
+// Lazy getters for queues
+export const priceUpdateQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_priceUpdateQueue && process.env.KV_REST_API_URL) {
+      _priceUpdateQueue = new Queue('price-updates', { connection });
+    }
+    return _priceUpdateQueue ? (_priceUpdateQueue as any)[prop] : () => Promise.resolve();
+  }
+});
+
+export const setImportQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_setImportQueue && process.env.KV_REST_API_URL) {
+      _setImportQueue = new Queue('set-imports', { connection });
+    }
+    return _setImportQueue ? (_setImportQueue as any)[prop] : () => Promise.resolve();
+  }
+});
+
+export const cardSyncQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_cardSyncQueue && process.env.KV_REST_API_URL) {
+      _cardSyncQueue = new Queue('card-sync', { connection });
+    }
+    return _cardSyncQueue ? (_cardSyncQueue as any)[prop] : () => Promise.resolve();
+  }
+});
+
+export const dataCleanupQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_dataCleanupQueue && process.env.KV_REST_API_URL) {
+      _dataCleanupQueue = new Queue('data-cleanup', { connection });
+    }
+    return _dataCleanupQueue ? (_dataCleanupQueue as any)[prop] : () => Promise.resolve();
+  }
+});
+
+export const reportQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_reportQueue && process.env.KV_REST_API_URL) {
+      _reportQueue = new Queue('reports', { connection });
+    }
+    return _reportQueue ? (_reportQueue as any)[prop] : () => Promise.resolve();
+  }
+});
+
+export const collectionIndexQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_collectionIndexQueue && process.env.KV_REST_API_URL) {
+      _collectionIndexQueue = new Queue('collection-index', { connection });
+    }
+    return _collectionIndexQueue ? (_collectionIndexQueue as any)[prop] : () => Promise.resolve();
+  }
+});
 
 // Main Pokemon TCG queue for general jobs
-export const pokemonTCGQueue = new Queue('pokemon-tcg', { connection });
+export const pokemonTCGQueue = new Proxy({} as Queue, {
+  get(target, prop) {
+    if (!_pokemonTCGQueue && process.env.KV_REST_API_URL) {
+      _pokemonTCGQueue = new Queue('pokemon-tcg', { connection });
+    }
+    return _pokemonTCGQueue ? (_pokemonTCGQueue as any)[prop] : () => Promise.resolve();
+  }
+});
 
-// Queue events for monitoring
-export const priceUpdateEvents = new QueueEvents('price-updates', { connection });
-export const setImportEvents = new QueueEvents('set-imports', { connection });
-export const cardSyncEvents = new QueueEvents('card-sync', { connection });
+// Queue events for monitoring - also lazy initialized
+let _priceUpdateEvents: QueueEvents | null = null;
+let _setImportEvents: QueueEvents | null = null;
+let _cardSyncEvents: QueueEvents | null = null;
+
+export const priceUpdateEvents = new Proxy({} as QueueEvents, {
+  get(target, prop) {
+    if (!_priceUpdateEvents && process.env.KV_REST_API_URL) {
+      _priceUpdateEvents = new QueueEvents('price-updates', { connection });
+    }
+    return _priceUpdateEvents ? (_priceUpdateEvents as any)[prop] : () => {};
+  }
+});
+
+export const setImportEvents = new Proxy({} as QueueEvents, {
+  get(target, prop) {
+    if (!_setImportEvents && process.env.KV_REST_API_URL) {
+      _setImportEvents = new QueueEvents('set-imports', { connection });
+    }
+    return _setImportEvents ? (_setImportEvents as any)[prop] : () => {};
+  }
+});
+
+export const cardSyncEvents = new Proxy({} as QueueEvents, {
+  get(target, prop) {
+    if (!_cardSyncEvents && process.env.KV_REST_API_URL) {
+      _cardSyncEvents = new QueueEvents('card-sync', { connection });
+    }
+    return _cardSyncEvents ? (_cardSyncEvents as any)[prop] : () => {};
+  }
+});
 
 // Job scheduling utilities
 export async function scheduleRecurringJobs(): Promise<void> {
@@ -292,7 +406,9 @@ export function setupJobEventListeners(queueEvents: QueueEvents, queueName: stri
   });
 }
 
-// Initialize event listeners
-setupJobEventListeners(priceUpdateEvents, 'price-updates');
-setupJobEventListeners(setImportEvents, 'set-imports');
-setupJobEventListeners(cardSyncEvents, 'card-sync');
+// Initialize event listeners only if Redis is configured
+if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  setupJobEventListeners(priceUpdateEvents, 'price-updates');
+  setupJobEventListeners(setImportEvents, 'set-imports');
+  setupJobEventListeners(cardSyncEvents, 'card-sync');
+}
