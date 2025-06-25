@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
@@ -123,13 +124,15 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ position }) => {
         getPositionClasses()
       )}
     >
-      {toasts.map((toast) => (
-        <ToastItem
-          key={toast.id}
-          toast={toast}
-          onDismiss={() => removeToast(toast.id)}
-        />
-      ))}
+      <AnimatePresence mode="sync">
+        {toasts.map((toast) => (
+          <ToastItem
+            key={toast.id}
+            toast={toast}
+            onDismiss={() => removeToast(toast.id)}
+          />
+        ))}
+      </AnimatePresence>
     </div>,
     document.body
   );
@@ -172,35 +175,75 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-destructive" />;
+        return <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+        return <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
       case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />;
+        return <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+    }
+  };
+
+  const getToastStyles = () => {
+    switch (toast.type) {
+      case 'success':
+        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+      case 'error':
+        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      case 'warning':
+        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+      case 'info':
+        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
     }
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.9 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       className={cn(
         'pointer-events-auto min-w-[300px] max-w-[90vw] md:max-w-[420px]',
-        'bg-background border rounded-lg shadow-lg p-4',
-        'transform transition-all duration-200',
-        isExiting && 'opacity-0 scale-95',
-        !isExiting && 'animate-slide-in'
+        'border rounded-lg shadow-lg p-4 backdrop-blur-sm',
+        'relative overflow-hidden',
+        getToastStyles()
       )}
       style={{
-        transform: `translateX(${touchDelta}px)`,
+        transform: touchDelta ? `translateX(${touchDelta}px)` : undefined,
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       role="alert"
     >
+      {/* Progress Bar */}
+      {!toast.persistent && (
+        <motion.div
+          initial={{ scaleX: 1 }}
+          animate={{ scaleX: 0 }}
+          transition={{ duration: (toast.duration || 5000) / 1000, ease: 'linear' }}
+          className={cn(
+            'absolute top-0 left-0 h-1 origin-left',
+            toast.type === 'success' && 'bg-green-500',
+            toast.type === 'error' && 'bg-red-500',
+            toast.type === 'warning' && 'bg-yellow-500',
+            toast.type === 'info' && 'bg-blue-500'
+          )}
+          style={{ width: '100%' }}
+        />
+      )}
+
       <div className="flex gap-3">
-        <div className="shrink-0">{getIcon()}</div>
+        <motion.div 
+          initial={{ rotate: -180, scale: 0 }}
+          animate={{ rotate: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          className="shrink-0"
+        >
+          {getIcon()}
+        </motion.div>
         
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-sm">{toast.title}</h4>
@@ -212,7 +255,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
           {toast.action && (
             <button
               onClick={toast.action.onClick}
-              className="text-sm font-medium text-primary hover:text-primary/80 mt-2"
+              className="text-sm font-medium text-primary hover:text-primary/80 mt-2 transition-colors py-2 px-3 -m-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               {toast.action.label}
             </button>
@@ -221,12 +264,15 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
         
         <button
           onClick={handleDismiss}
-          className="shrink-0 p-1 rounded hover:bg-accent transition-colors"
+          className="shrink-0 p-2.5 -m-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           aria-label="Dismiss notification"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
-    </div>
+
+      {/* Shimmer Effect */}
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+    </motion.div>
   );
 };

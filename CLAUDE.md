@@ -20,6 +20,9 @@ npx dotenv -e .env.local -- prisma db push      # Apply schema changes to databa
 npx dotenv -e .env.local -- prisma migrate dev  # Create new migration
 npx dotenv -e .env.local -- prisma studio       # Open Prisma Studio GUI
 npx prisma generate                              # Regenerate Prisma client after schema changes
+
+# Testing (when checking specific components)
+npm run dev                                      # Then navigate to /design-system for component showcase
 ```
 
 ## Architecture Overview
@@ -59,6 +62,8 @@ tRPC procedure types:
 
 ```typescript
 // Protected API route pattern
+import { protectedApiRoute } from '@/lib/auth/api-middleware';
+
 export const GET = protectedApiRoute(
   async (req, context) => {
     // context.userId and context.userRole available
@@ -161,10 +166,29 @@ NEXT_PUBLIC_APP_URL                  # For sharing features
 - Test suite (no tests written)
 - Some production environment variables
 
-### Known Issues
-- ESLint warnings converted to warnings for build
-- TypeScript strict checks temporarily disabled for some files
-- PDF/image export returns 501 (not implemented)
+### Recently Resolved Issues (Week 1 & 2 - 2025-06-24)
+- ✅ CSS animations consolidated into animations.css
+- ✅ Color system unified to HSL format with conversion utilities
+- ✅ Dark mode CSS variables fixed (added missing --radius)
+- ✅ Design tokens now generate CSS variables in HSL format
+- ✅ Component inconsistencies resolved:
+  - Merged duplicate Skeleton components into LoadingStates.tsx
+  - Created standardized Input, Select, Textarea, and FormField components
+  - Created unified PokemonCard component
+  - Standardized button focus states
+
+### Remaining Visual Issues (Week 3 & 4)
+- Responsive design issues (fixed widths, non-responsive sidebar)
+- Missing PWA assets (manifest.json, icons)
+- Missing meta images (Open Graph, Twitter cards)
+- No proper logo file (uses CSS-styled div)
+
+### Visual Issues Fix Plan
+The project follows a 4-week plan to fix visual issues (see PROJECT_CHECKLIST.md):
+- **Week 1** ✅: Critical CSS issues (animations, colors, dark mode)
+- **Week 2** ✅: Component consistency (forms, skeletons, buttons, cards)
+- **Week 3** ⏳: Responsive design (breakpoints, mobile navigation, responsive units)
+- **Week 4** ⏳: Assets & design system (PWA, meta images, logo, design tokens)
 
 ## Design System
 
@@ -176,6 +200,20 @@ The app uses a comprehensive design system (`/src/styles/design-tokens.ts`) with
 - Touch-friendly interfaces (44px minimum targets)
 - Framer Motion animations
 
+### Standardized UI Components
+After Week 2 improvements, use these standardized components:
+```typescript
+// Form components with consistent styling
+import { Input, Select, Textarea, FormField } from '@/components/ui';
+
+// Unified card component for Pokemon cards
+import PokemonCard from '@/components/cards/PokemonCard';
+// Supports: layout='grid'|'list'|'compact', viewMode='minimal'|'compact'|'detailed'
+
+// Loading states
+import { Skeleton, CardSkeleton, DeckCardSkeleton, TableRowSkeleton } from '@/components/ui';
+```
+
 ## Deployment
 
 Configured for Vercel deployment:
@@ -183,3 +221,15 @@ Configured for Vercel deployment:
 - Automated cron jobs
 - Build includes Prisma generation
 - See `DEPLOYMENT.md` for detailed instructions
+
+## Common Gotchas
+
+1. **Prisma Client Generation**: Always run `npx prisma generate` after schema changes
+2. **Environment Variables**: Use `dotenv -e .env.local --` prefix for Prisma commands
+3. **Client Components**: Import React hooks from `@/lib/performance/client`
+4. **Dynamic Routes**: Always await params in Next.js 15
+5. **CSS Imports**: Use relative paths in CSS files, not Next.js aliases (e.g., `../styles/animations.css`)
+6. **Rate Limiting**: API routes use in-memory rate limiting (should use Redis in production)
+7. **Price Data**: Extract from Pokemon TCG API response, not separate pricing API
+8. **Color System**: All colors are in HSL format. Use `hexToHSL()` from `/lib/utils/color-conversion` when needed
+9. **Animations**: All keyframe animations are in `/src/styles/animations.css` - do not duplicate in other files

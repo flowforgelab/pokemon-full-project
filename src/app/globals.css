@@ -27,6 +27,17 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    
+    /* Responsive typography */
+    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+    --text-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 1.875rem);
+    --text-3xl: clamp(1.875rem, 1.5rem + 1.875vw, 2.25rem);
+    --text-4xl: clamp(2.25rem, 1.8rem + 2.25vw, 3rem);
+    --text-5xl: clamp(3rem, 2.25rem + 3.75vw, 4rem);
   }
 
   .dark {
@@ -61,6 +72,17 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+  
+  /* Responsive text utilities */
+  .text-responsive-xs { font-size: var(--text-xs); }
+  .text-responsive-sm { font-size: var(--text-sm); }
+  .text-responsive-base { font-size: var(--text-base); }
+  .text-responsive-lg { font-size: var(--text-lg); }
+  .text-responsive-xl { font-size: var(--text-xl); }
+  .text-responsive-2xl { font-size: var(--text-2xl); }
+  .text-responsive-3xl { font-size: var(--text-3xl); }
+  .text-responsive-4xl { font-size: var(--text-4xl); }
+  .text-responsive-5xl { font-size: var(--text-5xl); }
 }
 
 @layer components {
@@ -151,13 +173,13 @@
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(180px, 12rem, 220px), 1fr));
+    gap: clamp(0.75rem, 2vw, 1.25rem);
   }
 
   .deck-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 17rem, 320px), 1fr));
+    gap: clamp(1rem, 3vw, 2rem);
   }
 }

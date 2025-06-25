@@ -68,7 +68,7 @@
 /* Slide animations */
 @keyframes slideInUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(1.25rem);
     opacity: 0;
   }
   to {
@@ -79,7 +79,7 @@
 
 @keyframes slideInDown {
   from {
-    transform: translateY(-20px);
+    transform: translateY(-1.25rem);
     opacity: 0;
   }
   to {
@@ -90,7 +90,7 @@
 
 @keyframes slideInLeft {
   from {
-    transform: translateX(-20px);
+    transform: translateX(-1.25rem);
     opacity: 0;
   }
   to {
@@ -101,7 +101,7 @@
 
 @keyframes slideInRight {
   from {
-    transform: translateX(20px);
+    transform: translateX(1.25rem);
     opacity: 0;
   }
   to {
@@ -146,7 +146,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-0.625rem);
   }
 }
 
@@ -232,17 +232,17 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-0.3125rem);
   }
 }
 
 /* Glow animation */
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0.3125rem rgba(59, 130, 246, 0.5);
   }
   50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+    box-shadow: 0 0 1.25rem rgba(59, 130, 246, 0.8);
   }
 }
 

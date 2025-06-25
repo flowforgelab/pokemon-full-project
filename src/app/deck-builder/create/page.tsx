@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { MobileDeckBuilder } from '@/components/decks/MobileDeckBuilder';
 import { api } from '@/utils/api';
 import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -17,6 +18,8 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useToastNotification } from '@/hooks/useToastNotification';
+import { useBreakpoint } from '@/hooks/useMediaQuery';
 
 interface DeckCard {
   id: string;
@@ -33,6 +36,7 @@ interface DeckSection {
 
 export default function DeckBuilderPage() {
   const router = useRouter();
+  const toast = useToastNotification();
   const [deckName, setDeckName] = useState('');
   const [format, setFormat] = useState('standard');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +46,8 @@ export default function DeckBuilderPage() {
     energy: [],
   });
   const [isSaving, setIsSaving] = useState(false);
-
+  
+  const { isMobile } = useBreakpoint();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data: searchResults, isLoading: searchLoading } = api.card.search.useQuery(
@@ -104,6 +109,9 @@ export default function DeckBuilderPage() {
               : c
           ),
         });
+        toast.success(`Added ${card.name}`, `${existingCard.quantity + 1} copies in deck`);
+      } else {
+        toast.warning('Card limit reached', 'Maximum 4 copies allowed (except basic energy)');
       }
     } else {
       // Add new card
@@ -116,6 +124,7 @@ export default function DeckBuilderPage() {
           quantity: 1,
         }],
       });
+      toast.success(`Added ${card.name}`, 'Card added to deck');
     }
   };
 
@@ -142,7 +151,20 @@ export default function DeckBuilderPage() {
   };
 
   const saveDeck = async () => {
-    if (!deckName || totalCards === 0) return;
+    if (!deckName) {
+      toast.error('Deck name required', 'Please enter a name for your deck');
+      return;
+    }
+    
+    if (totalCards === 0) {
+      toast.error('No cards in deck', 'Add some cards before saving');
+      return;
+    }
+
+    if (totalCards !== 60) {
+      toast.warning('Invalid deck size', `Deck must have exactly 60 cards (currently ${totalCards})`);
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -152,18 +174,41 @@ export default function DeckBuilderPage() {
         ...deck.energy.map(c => ({ cardId: c.cardId, quantity: c.quantity })),
       ];
 
-      await createDeckMutation.mutateAsync({
-        name: deckName,
-        format,
-        cards,
-      });
+      await toast.promise(
+        createDeckMutation.mutateAsync({
+          name: deckName,
+          format,
+          cards,
+        }),
+        {
+          loading: 'Saving deck...',
+          success: 'Deck saved successfully!',
+          error: 'Failed to save deck',
+        }
+      );
     } catch (error) {
-      console.error('Failed to save deck:', error);
+      // Error already handled by toast.promise
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Mobile version
+  if (isMobile) {
+    return (
+      <MobileDeckBuilder
+        deck={deck}
+        onAddCard={addCardToDeck}
+        onRemoveCard={removeCard}
+        onUpdateQuantity={updateCardQuantity}
+        searchResults={searchResults?.cards}
+        onSearch={setSearchQuery}
+        isSearching={searchLoading}
+      />
+    );
+  }
+
+  // Desktop version
   return (
     <MainLayout title="Deck Builder" showSidebar={false}>
       <div className="flex h-[calc(100vh-8rem)]">
@@ -178,7 +223,7 @@ export default function DeckBuilderPage() {
               <input
                 type="text"
                 placeholder="Search cards..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus-ring"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -241,12 +286,12 @@ export default function DeckBuilderPage() {
                 <input
                   type="text"
                   placeholder="Deck Name"
-                  className="text-xl font-semibold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 outline-none px-1"
+                  className="text-xl font-semibold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus-visible:outline-none focus-visible:border-blue-500 px-1"
                   value={deckName}
                   onChange={(e) => setDeckName(e.target.value)}
                 />
                 <select
-                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus-ring"
                   value={format}
                   onChange={(e) => setFormat(e.target.value)}
                 >
@@ -263,7 +308,7 @@ export default function DeckBuilderPage() {
                 <button
                   onClick={saveDeck}
                   disabled={!deckName || totalCards === 0 || isSaving}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 focus-ring transition-colors"
                 >
                   <DocumentArrowDownIcon className="h-5 w-5" />
                   {isSaving ? 'Saving...' : 'Save Deck'}

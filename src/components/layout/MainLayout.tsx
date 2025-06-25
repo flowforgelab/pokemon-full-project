@@ -17,6 +17,7 @@ import {
   SunIcon,
 } from '@heroicons/react/24/outline';
 import { useTheme } from 'next-themes';
+import { useBreakpoint } from '@/hooks/useMediaQuery';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -39,6 +40,7 @@ export function MainLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { isTablet, isLargeDesktop } = useBreakpoint();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -62,8 +64,10 @@ export function MainLayout({
       {/* Sidebar */}
       {showSidebar && (
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 transform transition-transform lg:translate-x-0 lg:static lg:inset-0 ${
+          className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 transform transition-all duration-300 lg:translate-x-0 lg:static lg:inset-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } ${
+            isLargeDesktop ? 'w-72' : isTablet ? 'w-60' : 'w-64'
           }`}
         >
           <div className="flex h-full flex-col">
@@ -78,8 +82,9 @@ export function MainLayout({
                 </span>
               </Link>
               <button
-                className="lg:hidden"
+                className="lg:hidden p-2 -m-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => setSidebarOpen(false)}
+                aria-label="Close sidebar"
               >
                 <XMarkIcon className="h-6 w-6 text-gray-500" />
               </button>
@@ -131,14 +136,15 @@ export function MainLayout({
       )}
 
       {/* Main content area */}
-      <div className={showSidebar ? 'lg:pl-64' : ''}>
+      <div className={showSidebar ? `${isLargeDesktop ? 'lg:pl-72' : isTablet ? 'lg:pl-60' : 'lg:pl-64'}` : ''}>
         {/* Top header */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
           <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
             {showSidebar && (
               <button
-                className="lg:hidden"
+                className="lg:hidden p-2.5 -m-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
               >
                 <Bars3Icon className="h-6 w-6 text-gray-500" />
               </button>
@@ -168,7 +174,8 @@ export function MainLayout({
             {/* Theme toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="p-2.5 -m-1 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? (
                 <SunIcon className="h-5 w-5" />
@@ -184,7 +191,7 @@ export function MainLayout({
         </header>
 
         {/* Page content */}
-        <main>
+        <main id="main-content">
           {title && (
             <div className="border-b dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="px-4 sm:px-6 lg:px-8 py-6">

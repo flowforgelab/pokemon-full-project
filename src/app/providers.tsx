@@ -6,6 +6,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
 import { api } from '@/utils/api';
 import superjson from 'superjson';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -55,7 +56,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <api.Provider client={trpcClient} queryClient={queryClient}>
-        {children}
+        <ToastProvider position="bottom-right">
+          {children}
+        </ToastProvider>
       </api.Provider>
     </QueryClientProvider>
   );

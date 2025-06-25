@@ -71,14 +71,14 @@ export const DeckCardItem: React.FC<DeckCardItemProps> = ({
           onClick={() => handleQuantityChange(-1)}
           disabled={deckCard.quantity <= 1}
           className={cn(
-            'w-8 h-8 rounded-md flex items-center justify-center transition-colors',
+            'min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center transition-colors',
             deckCard.quantity <= 1
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : 'hover:bg-accent active:scale-95'
           )}
           aria-label="Decrease quantity"
         >
-          <Minus className="w-4 h-4" />
+          <Minus className="w-5 h-5" />
         </button>
 
         <div className="w-8 text-center font-medium text-sm">
@@ -89,22 +89,22 @@ export const DeckCardItem: React.FC<DeckCardItemProps> = ({
           onClick={() => handleQuantityChange(1)}
           disabled={deckCard.quantity >= 4}
           className={cn(
-            'w-8 h-8 rounded-md flex items-center justify-center transition-colors',
+            'min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center transition-colors',
             deckCard.quantity >= 4
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : 'hover:bg-accent active:scale-95'
           )}
           aria-label="Increase quantity"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
         </button>
 
         <button
           onClick={() => onRemove(deckCard.cardId)}
-          className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors ml-1"
+          className="min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors ml-1"
           aria-label="Remove card"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
@@ -24,110 +25,101 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   defaultSnapPoint = 0.5,
   className,
 }) => {
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const [currentHeight, setCurrentHeight] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const [startHeight, setStartHeight] = useState(0);
+  const [currentSnapIndex, setCurrentSnapIndex] = useState(
+    snapPoints.indexOf(defaultSnapPoint) !== -1 ? snapPoints.indexOf(defaultSnapPoint) : 1
+  );
   
   useBodyScrollLock(isOpen);
 
-  useEffect(() => {
-    if (isOpen && sheetRef.current) {
-      const windowHeight = window.innerHeight;
-      const initialHeight = windowHeight * defaultSnapPoint;
-      setCurrentHeight(initialHeight);
-    }
-  }, [isOpen, defaultSnapPoint]);
+  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const currentHeight = windowHeight * snapPoints[currentSnapIndex];
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setStartY(e.touches[0].clientY);
-    setStartHeight(currentHeight);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    const velocity = info.velocity.y;
+    const offset = info.offset.y;
     
-    const deltaY = startY - e.touches[0].clientY;
-    const newHeight = Math.max(0, Math.min(window.innerHeight, startHeight + deltaY));
-    setCurrentHeight(newHeight);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    
-    const windowHeight = window.innerHeight;
-    const currentPercent = currentHeight / windowHeight;
-    
-    // Close if dragged below minimum threshold
-    if (currentPercent < 0.1) {
-      onClose();
-      return;
-    }
-    
-    // Snap to nearest point
-    let nearestSnapPoint = snapPoints[0];
-    let minDistance = Math.abs(currentPercent - snapPoints[0]);
-    
-    snapPoints.forEach((point) => {
-      const distance = Math.abs(currentPercent - point);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestSnapPoint = point;
+    // Determine drag direction and snap
+    if (velocity > 500 || (velocity > 0 && offset > 100)) {
+      // Dragging down
+      if (currentSnapIndex === 0) {
+        onClose();
+      } else {
+        setCurrentSnapIndex(Math.max(0, currentSnapIndex - 1));
       }
-    });
-    
-    setCurrentHeight(windowHeight * nearestSnapPoint);
+    } else if (velocity < -500 || (velocity < 0 && offset < -100)) {
+      // Dragging up
+      setCurrentSnapIndex(Math.min(snapPoints.length - 1, currentSnapIndex + 1));
+    }
   };
 
   const handleBackdropClick = () => {
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return createPortal(
-    <div className="fixed inset-0 z-50 animate-fade-in">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleBackdropClick}
-      />
-      
-      <div
-        ref={sheetRef}
-        className={cn(
-          'absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl',
-          'shadow-2xl transition-transform',
-          isDragging ? '' : 'transition-all duration-300',
-          className
-        )}
-        style={{
-          height: `${currentHeight}px`,
-          transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
-        }}
-      >
-        <div
-          className="flex justify-center pt-2 pb-4"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={handleBackdropClick}
+          />
+          
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: windowHeight - currentHeight }}
+            exit={{ y: '100%' }}
+            transition={{ 
+              type: 'spring', 
+              damping: 30, 
+              stiffness: 300 
+            }}
+            drag="y"
+            dragElastic={0.2}
+            dragConstraints={{ top: 0, bottom: windowHeight }}
+            onDragEnd={handleDragEnd}
+            className={cn(
+              'absolute bottom-0 left-0 right-0',
+              'bg-white dark:bg-gray-800 rounded-t-2xl',
+              'shadow-2xl',
+              className
+            )}
+            style={{
+              height: windowHeight,
+            }}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-4 cursor-grab active:cursor-grabbing">
+              <motion.div 
+                className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              />
+            </div>
+            
+            {/* Header */}
+            {title && (
+              <div className="px-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {title}
+                </h2>
+              </div>
+            )}
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="p-6">
+                {children}
+              </div>
+            </div>
+          </motion.div>
         </div>
-        
-        {title && (
-          <div className="px-4 pb-4 border-b">
-            <h2 className="text-lg font-semibold">{title}</h2>
-          </div>
-        )}
-        
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-          {children}
-        </div>
-      </div>
-    </div>,
+      )}
+    </AnimatePresence>,
     document.body
   );
 };

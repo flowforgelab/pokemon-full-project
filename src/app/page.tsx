@@ -4,14 +4,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronRightIcon, StarIcon, CheckIcon, XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { ThemeToggle } from '@/components/providers/ThemeProvider';
+import { BackgroundPattern } from '@/components/ui/BackgroundPattern';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative">
+      {/* Background Pattern */}
+      <BackgroundPattern variant="pokeball" opacity={0.03} />
+      
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg backdrop-saturate-150 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
@@ -114,21 +119,40 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 lg:py-24">
+      <section className="container mx-auto px-4 py-16 lg:py-24 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.h2 
+              className="text-4xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
               Build Winning Pokemon TCG Decks with AI
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+            </motion.h2>
+            <motion.p 
+              className="text-xl text-gray-600 dark:text-gray-400 mb-8"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
               Advanced deck analysis, collection tracking, and AI-powered recommendations 
               to help you dominate tournaments and optimize your gameplay.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            </motion.p>
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
               <SignedOut>
                 <Link
                   href="/sign-up"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105 focus-ring"
                 >
                   Start Building Free
                 </Link>
@@ -136,18 +160,18 @@ export default function Home() {
               <SignedIn>
                 <Link
                   href="/deck-builder/create"
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105 focus-ring"
                 >
                   Create New Deck
                 </Link>
               </SignedIn>
               <Link
                 href="/cards"
-                className="px-6 py-3 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg hover:bg-white dark:hover:bg-gray-600 transition-all duration-300 text-lg font-medium text-center border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transform hover:scale-105"
+                className="px-6 py-3 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg hover:bg-white dark:hover:bg-gray-600 transition-all duration-300 text-lg font-medium text-center border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transform hover:scale-105 focus-ring"
               >
                 Browse Cards
               </Link>
-            </div>
+            </motion.div>
             <div className="mt-8 flex items-center gap-8">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
@@ -171,11 +195,20 @@ export default function Home() {
                 </span>
               </div>
             </div>
-          </div>
-          <div className="relative lg:h-[600px]">
+          </motion.div>
+          <motion.div 
+            className="relative lg:h-[600px]"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl blur-xl" />
             <div className="relative h-full flex items-center justify-center">
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/10 p-8 max-w-md w-full border border-gray-200 dark:border-gray-700">
+              <motion.div 
+                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/10 p-8 max-w-md w-full border border-gray-200 dark:border-gray-700"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
                 <h3 className="text-xl font-bold mb-4">Quick Deck Stats</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
@@ -204,9 +237,9 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
