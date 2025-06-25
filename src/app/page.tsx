@@ -50,7 +50,7 @@ export default function Home() {
                     </button>
                   </SignInButton>
                   <Link
-                    href="/sign-up"
+                    href="/get-started"
                     className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     Get Started
@@ -98,7 +98,7 @@ export default function Home() {
                     </button>
                   </SignInButton>
                   <Link
-                    href="/sign-up"
+                    href="/get-started"
                     className="block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
                   >
                     Get Started
@@ -151,7 +151,7 @@ export default function Home() {
             >
               <SignedOut>
                 <Link
-                  href="/sign-up"
+                  href="/get-started"
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 text-lg font-medium text-center shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform hover:scale-105 focus-ring"
                 >
                   Start Building Free
@@ -351,7 +351,7 @@ export default function Home() {
               "Community features"
             ]}
             cta="Start Free"
-            ctaLink="/sign-up"
+            ctaLink="/get-started"
           />
           <PricingCard
             name="Pro"
@@ -367,7 +367,7 @@ export default function Home() {
               "Export tools"
             ]}
             cta="Start Pro Trial"
-            ctaLink="/sign-up?plan=pro"
+            ctaLink="/get-started?plan=pro"
             highlighted
           />
           <PricingCard
@@ -432,7 +432,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/sign-up"
+              href="/get-started"
               className="px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-all duration-300 text-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Get Started Free
