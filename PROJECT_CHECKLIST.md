@@ -257,6 +257,44 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - [x] Fixed build-time singleton initialization with lazy loading
 - [x] Added .env.production for build-time environment variables
 - [x] Fixed Next.js 15 dynamic route parameters (async params)
+- [x] Fixed BullMQ Redis connection errors during build with queue-wrapper module
+
+### Vercel Environment Variables Required
+To deploy successfully on Vercel, configure these environment variables:
+
+#### Required Variables:
+- **DATABASE_URL**: PostgreSQL connection string
+  - Format: `postgresql://username:password@host/database?sslmode=require`
+  - Get from: Neon, Supabase, or other PostgreSQL provider
+
+- **NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY**: Clerk public key
+  - Format: `pk_live_xxxxx`
+  - Get from: [Clerk Dashboard](https://dashboard.clerk.com)
+
+- **CLERK_SECRET_KEY**: Clerk secret key
+  - Format: `sk_live_xxxxx`
+  - Get from: [Clerk Dashboard](https://dashboard.clerk.com)
+
+- **KV_REST_API_URL**: Redis REST API URL
+  - Format: `https://xxx.upstash.io`
+  - Get from: Vercel KV or Upstash directly
+
+- **KV_REST_API_TOKEN**: Redis REST API token
+  - Get from: Vercel KV or Upstash directly
+
+#### Optional but Recommended:
+- **POKEMON_TCG_API_KEY**: Pokemon TCG API key
+  - Increases rate limit from 1,000 to 20,000 requests/day
+  - Get from: [Pokemon TCG Developer Portal](https://dev.pokemontcg.io)
+
+- **NEXT_PUBLIC_APP_URL**: Your deployed app URL
+  - Format: `https://your-app.vercel.app`
+  - Needed for: Sharing features and OAuth callbacks
+
+#### Important Notes:
+- BullMQ requires direct Redis connection (incompatible with Upstash REST API)
+- Options: Use Redis provider with direct connections, disable job queues, or replace BullMQ
+- After adding variables, redeploy for changes to take effect
 
 ## 📋 To-Do Items
 
@@ -723,8 +761,14 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 
 ## 🔄 Last Updated
 - Date: 2025-06-25
-- Version: 1.0.6-MVP
+- Version: 1.0.7-MVP
 - Latest Updates:
+  - Vercel Deployment Support (2025-06-25):
+    - ✅ Created user-friendly /get-started page with clear sign-up and sign-in options
+    - ✅ Fixed BullMQ Redis connection errors during build with queue-wrapper module
+    - ✅ Added comprehensive Vercel environment variables documentation
+    - ✅ Improved build-time detection with BUILDING environment variable
+    - ✅ Updated all queue imports to prevent BullMQ loading during build
   - Navigation/Routing Issues resolved (2025-06-25):
     - ✅ Created all missing pages (/community, /onboarding, /privacy, /terms, /contact)
     - ✅ Fixed incorrect route /decks/discover → /decks in landing page
