@@ -11,7 +11,12 @@ const createRedisClient = () => {
     return {
       get: async () => null,
       set: async () => 'OK',
+      setex: async () => 'OK',
       del: async () => 0,
+      exists: async () => 0,
+      ttl: async () => -1,
+      keys: async () => [],
+      mget: async () => [],
       zadd: async () => 0,
       zrangebyscore: async () => [],
       zremrangebyscore: async () => 0,
@@ -21,6 +26,12 @@ const createRedisClient = () => {
       info: async () => '',
       zcard: async () => 0,
       ping: async () => 'PONG',
+      connect: async () => {},
+      disconnect: async () => {},
+      on: () => {},
+      off: () => {},
+      once: () => {},
+      emit: () => false,
     } as any;
   }
 

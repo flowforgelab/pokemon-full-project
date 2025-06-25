@@ -1,27 +1,50 @@
-import { Queue, Worker, Job, QueueEvents } from 'bullmq';
-import { redis } from '@/server/db/redis';
+import type { Queue, Worker, Job, QueueEvents } from 'bullmq';
 import type { JobData, JobResult } from '@/lib/api/types';
 
-// Redis connection configuration for BullMQ
-const createConnection = () => {
-  // During build time or when KV is not configured, return a dummy connection
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    console.warn('Redis configuration missing. Using dummy connection for build.');
-    return {
-      host: 'localhost',
-      port: 6379,
-      password: 'dummy',
-      // Add these options to prevent connection attempts during build
-      lazyConnect: true,
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 0,
-    };
-  }
+// Check if we're in a build environment
+const IS_BUILD = process.env.NODE_ENV === 'production' && !process.env.KV_REST_API_URL;
 
-  // For Upstash Redis, we should use the REST API, not direct Redis connection
-  // BullMQ doesn't support REST APIs directly, so we need to use localhost with SSH tunnel
-  // or use a different queue solution. For now, return a non-connecting config.
-  return {
+// Mock queue implementation for build time
+class MockQueue {
+  constructor(public name: string) {}
+  async add() { return { id: 'mock' } as any; }
+  async addBulk() { return []; }
+  async getWaitingCount() { return 0; }
+  async getActiveCount() { return 0; }
+  async getCompletedCount() { return 0; }
+  async getFailedCount() { return 0; }
+  async getDelayedCount() { return 0; }
+  async isPaused() { return false; }
+  async pause() {}
+  async resume() {}
+  async clean() {}
+  async obliterate() {}
+}
+
+class MockQueueEvents {
+  constructor(public name: string) {}
+  on() {}
+  off() {}
+  once() {}
+}
+
+// Lazy load BullMQ only when needed
+let BullMQ: any = null;
+const getBullMQ = async () => {
+  if (!BullMQ && !IS_BUILD) {
+    BullMQ = await import('bullmq');
+  }
+  return BullMQ;
+};
+
+// Create queue instances - will be either mock or real based on environment
+const createQueue = async (name: string): Promise<Queue> => {
+  if (IS_BUILD) {
+    return new MockQueue(name) as any;
+  }
+  
+  const { Queue } = await getBullMQ();
+  const connection = {
     host: 'localhost',
     port: 6379,
     password: process.env.KV_REST_API_TOKEN,
@@ -29,122 +52,68 @@ const createConnection = () => {
     enableOfflineQueue: false,
     maxRetriesPerRequest: 0,
   };
+  
+  return new Queue(name, { connection });
 };
 
-const connection = createConnection();
-
-// Lazy initialization of queues to prevent connection attempts during build
-let _priceUpdateQueue: Queue | null = null;
-let _setImportQueue: Queue | null = null;
-let _cardSyncQueue: Queue | null = null;
-let _dataCleanupQueue: Queue | null = null;
-let _reportQueue: Queue | null = null;
-let _collectionIndexQueue: Queue | null = null;
-let _pokemonTCGQueue: Queue | null = null;
-
-// Lazy getters for queues
-export const priceUpdateQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_priceUpdateQueue && process.env.KV_REST_API_URL) {
-      _priceUpdateQueue = new Queue('price-updates', { connection });
-    }
-    return _priceUpdateQueue ? (_priceUpdateQueue as any)[prop] : () => Promise.resolve();
+const createQueueEvents = async (name: string): Promise<QueueEvents> => {
+  if (IS_BUILD) {
+    return new MockQueueEvents(name) as any;
   }
-});
+  
+  const { QueueEvents } = await getBullMQ();
+  const connection = {
+    host: 'localhost',
+    port: 6379,
+    password: process.env.KV_REST_API_TOKEN,
+    lazyConnect: true,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 0,
+  };
+  
+  return new QueueEvents(name, { connection });
+};
 
-export const setImportQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_setImportQueue && process.env.KV_REST_API_URL) {
-      _setImportQueue = new Queue('set-imports', { connection });
-    }
-    return _setImportQueue ? (_setImportQueue as any)[prop] : () => Promise.resolve();
-  }
-});
+// Export queue getters that return promises
+export const priceUpdateQueue = IS_BUILD ? Promise.resolve(new MockQueue('price-updates') as any) : createQueue('price-updates');
+export const setImportQueue = IS_BUILD ? Promise.resolve(new MockQueue('set-imports') as any) : createQueue('set-imports');
+export const cardSyncQueue = IS_BUILD ? Promise.resolve(new MockQueue('card-sync') as any) : createQueue('card-sync');
+export const dataCleanupQueue = IS_BUILD ? Promise.resolve(new MockQueue('data-cleanup') as any) : createQueue('data-cleanup');
+export const reportQueue = IS_BUILD ? Promise.resolve(new MockQueue('reports') as any) : createQueue('reports');
+export const collectionIndexQueue = IS_BUILD ? Promise.resolve(new MockQueue('collection-index') as any) : createQueue('collection-index');
+export const pokemonTCGQueue = IS_BUILD ? Promise.resolve(new MockQueue('pokemon-tcg') as any) : createQueue('pokemon-tcg');
 
-export const cardSyncQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_cardSyncQueue && process.env.KV_REST_API_URL) {
-      _cardSyncQueue = new Queue('card-sync', { connection });
-    }
-    return _cardSyncQueue ? (_cardSyncQueue as any)[prop] : () => Promise.resolve();
-  }
-});
-
-export const dataCleanupQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_dataCleanupQueue && process.env.KV_REST_API_URL) {
-      _dataCleanupQueue = new Queue('data-cleanup', { connection });
-    }
-    return _dataCleanupQueue ? (_dataCleanupQueue as any)[prop] : () => Promise.resolve();
-  }
-});
-
-export const reportQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_reportQueue && process.env.KV_REST_API_URL) {
-      _reportQueue = new Queue('reports', { connection });
-    }
-    return _reportQueue ? (_reportQueue as any)[prop] : () => Promise.resolve();
-  }
-});
-
-export const collectionIndexQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_collectionIndexQueue && process.env.KV_REST_API_URL) {
-      _collectionIndexQueue = new Queue('collection-index', { connection });
-    }
-    return _collectionIndexQueue ? (_collectionIndexQueue as any)[prop] : () => Promise.resolve();
-  }
-});
-
-// Main Pokemon TCG queue for general jobs
-export const pokemonTCGQueue = new Proxy({} as Queue, {
-  get(target, prop) {
-    if (!_pokemonTCGQueue && process.env.KV_REST_API_URL) {
-      _pokemonTCGQueue = new Queue('pokemon-tcg', { connection });
-    }
-    return _pokemonTCGQueue ? (_pokemonTCGQueue as any)[prop] : () => Promise.resolve();
-  }
-});
-
-// Queue events for monitoring - also lazy initialized
-let _priceUpdateEvents: QueueEvents | null = null;
-let _setImportEvents: QueueEvents | null = null;
-let _cardSyncEvents: QueueEvents | null = null;
-
-export const priceUpdateEvents = new Proxy({} as QueueEvents, {
-  get(target, prop) {
-    if (!_priceUpdateEvents && process.env.KV_REST_API_URL) {
-      _priceUpdateEvents = new QueueEvents('price-updates', { connection });
-    }
-    return _priceUpdateEvents ? (_priceUpdateEvents as any)[prop] : () => {};
-  }
-});
-
-export const setImportEvents = new Proxy({} as QueueEvents, {
-  get(target, prop) {
-    if (!_setImportEvents && process.env.KV_REST_API_URL) {
-      _setImportEvents = new QueueEvents('set-imports', { connection });
-    }
-    return _setImportEvents ? (_setImportEvents as any)[prop] : () => {};
-  }
-});
-
-export const cardSyncEvents = new Proxy({} as QueueEvents, {
-  get(target, prop) {
-    if (!_cardSyncEvents && process.env.KV_REST_API_URL) {
-      _cardSyncEvents = new QueueEvents('card-sync', { connection });
-    }
-    return _cardSyncEvents ? (_cardSyncEvents as any)[prop] : () => {};
-  }
-});
+// Export queue events
+export const priceUpdateEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('price-updates') as any) : createQueueEvents('price-updates');
+export const setImportEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('set-imports') as any) : createQueueEvents('set-imports');
+export const cardSyncEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('card-sync') as any) : createQueueEvents('card-sync');
 
 // Job scheduling utilities
 export async function scheduleRecurringJobs(): Promise<void> {
+  if (IS_BUILD) {
+    console.log('Skipping job scheduling in build environment');
+    return;
+  }
+
   console.log('Scheduling recurring jobs...');
 
+  // Get queue instances
+  const [
+    priceQueue,
+    syncQueue,
+    cleanupQueue,
+    reportQ,
+    indexQueue
+  ] = await Promise.all([
+    priceUpdateQueue,
+    cardSyncQueue,
+    dataCleanupQueue,
+    reportQueue,
+    collectionIndexQueue
+  ]);
+
   // Weekly price updates - Every Sunday at 2 AM
-  await priceUpdateQueue.add(
+  await priceQueue.add(
     'weekly-price-update',
     { type: 'UPDATE_PRICES', payload: { scope: 'all' } },
     {
@@ -157,7 +126,7 @@ export async function scheduleRecurringJobs(): Promise<void> {
   );
 
   // Daily card sync - Every day at 3 AM
-  await cardSyncQueue.add(
+  await syncQueue.add(
     'daily-card-sync',
     { type: 'SYNC_CARDS', payload: { scope: 'recent' } },
     {
@@ -170,7 +139,7 @@ export async function scheduleRecurringJobs(): Promise<void> {
   );
 
   // Monthly data cleanup - First day of month at 4 AM
-  await dataCleanupQueue.add(
+  await cleanupQueue.add(
     'monthly-cleanup',
     { type: 'CLEANUP_DATA', payload: { olderThan: 90 } },
     {
@@ -183,7 +152,7 @@ export async function scheduleRecurringJobs(): Promise<void> {
   );
 
   // Weekly usage report - Every Monday at 9 AM
-  await reportQueue.add(
+  await reportQ.add(
     'weekly-usage-report',
     { type: 'GENERATE_REPORT', payload: { reportType: 'usage', period: 'week' } },
     {
@@ -196,7 +165,7 @@ export async function scheduleRecurringJobs(): Promise<void> {
   );
 
   // Daily collection index update - Every day at 1 AM
-  await collectionIndexQueue.add(
+  await indexQueue.add(
     'daily-index-update',
     { type: 'INDEX_COLLECTIONS', payload: { scope: 'all' } },
     {
@@ -223,11 +192,26 @@ export interface JobProcessor {
 }
 
 // Helper function to create a worker
-export function createWorker(
+export async function createWorker(
   queueName: string,
   processor: (job: Job<JobData>) => Promise<JobResult>,
   concurrency = 1
-): Worker {
+): Promise<Worker | null> {
+  if (IS_BUILD) {
+    console.log(`Skipping worker creation for ${queueName} in build environment`);
+    return null;
+  }
+
+  const { Worker } = await getBullMQ();
+  const connection = {
+    host: 'localhost',
+    port: 6379,
+    password: process.env.KV_REST_API_TOKEN,
+    lazyConnect: true,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 0,
+  };
+
   return new Worker(
     queueName,
     async (job: Job<JobData>) => {
@@ -284,13 +268,33 @@ export async function getQueueStats(queue: Queue): Promise<{
 }
 
 export async function getAllQueuesStats(): Promise<Record<string, any>> {
+  if (IS_BUILD) {
+    return {};
+  }
+
+  const [
+    priceQueue,
+    setQueue,
+    syncQueue,
+    cleanupQueue,
+    reportQ,
+    indexQueue
+  ] = await Promise.all([
+    priceUpdateQueue,
+    setImportQueue,
+    cardSyncQueue,
+    dataCleanupQueue,
+    reportQueue,
+    collectionIndexQueue
+  ]);
+
   const queues = {
-    priceUpdates: priceUpdateQueue,
-    setImports: setImportQueue,
-    cardSync: cardSyncQueue,
-    dataCleanup: dataCleanupQueue,
-    reports: reportQueue,
-    collectionIndex: collectionIndexQueue,
+    priceUpdates: priceQueue,
+    setImports: setQueue,
+    cardSync: syncQueue,
+    dataCleanup: cleanupQueue,
+    reports: reportQ,
+    collectionIndex: indexQueue,
   };
 
   const stats: Record<string, any> = {};
@@ -406,9 +410,22 @@ export function setupJobEventListeners(queueEvents: QueueEvents, queueName: stri
   });
 }
 
-// Initialize event listeners only if Redis is configured
-if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-  setupJobEventListeners(priceUpdateEvents, 'price-updates');
-  setupJobEventListeners(setImportEvents, 'set-imports');
-  setupJobEventListeners(cardSyncEvents, 'card-sync');
+// Initialize event listeners only if Redis is configured and not in build
+if (!IS_BUILD && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  // Set up event listeners asynchronously
+  (async () => {
+    try {
+      const [priceEvents, setEvents, syncEvents] = await Promise.all([
+        priceUpdateEvents,
+        setImportEvents,
+        cardSyncEvents
+      ]);
+      
+      setupJobEventListeners(priceEvents, 'price-updates');
+      setupJobEventListeners(setEvents, 'set-imports');
+      setupJobEventListeners(syncEvents, 'card-sync');
+    } catch (error) {
+      console.error('Failed to set up job event listeners:', error);
+    }
+  })();
 }

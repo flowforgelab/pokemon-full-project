@@ -4,20 +4,33 @@ import { processSetImportJob } from './set-import';
 import { processCardSyncJob } from './card-sync';
 import { processDataCleanupJob } from './data-cleanup';
 import { processReportJob } from './report-generator';
+import type { Worker } from 'bullmq';
 
-// Create and export workers
-export const priceUpdateWorker = createWorker('price-updates', processPriceUpdateJob, 2);
-export const setImportWorker = createWorker('set-imports', processSetImportJob, 1);
-export const cardSyncWorker = createWorker('card-sync', processCardSyncJob, 1);
-export const dataCleanupWorker = createWorker('data-cleanup', processDataCleanupJob, 1);
-export const reportWorker = createWorker('reports', processReportJob, 1);
+// Worker instances
+let priceUpdateWorker: Worker | null = null;
+let setImportWorker: Worker | null = null;
+let cardSyncWorker: Worker | null = null;
+let dataCleanupWorker: Worker | null = null;
+let reportWorker: Worker | null = null;
 
 // Start all workers
-export function startAllWorkers(): void {
+export async function startAllWorkers(): Promise<void> {
   console.log('Starting all job workers...');
   
-  // Workers are automatically started when created
-  // This function is here for explicit initialization if needed
+  // Create workers asynchronously
+  const [priceWorker, setWorker, syncWorker, cleanupWorker, reportW] = await Promise.all([
+    createWorker('price-updates', processPriceUpdateJob, 2),
+    createWorker('set-imports', processSetImportJob, 1),
+    createWorker('card-sync', processCardSyncJob, 1),
+    createWorker('data-cleanup', processDataCleanupJob, 1),
+    createWorker('reports', processReportJob, 1),
+  ]);
+  
+  priceUpdateWorker = priceWorker;
+  setImportWorker = setWorker;
+  cardSyncWorker = syncWorker;
+  dataCleanupWorker = cleanupWorker;
+  reportWorker = reportW;
   
   console.log('All job workers started');
 }
@@ -26,13 +39,15 @@ export function startAllWorkers(): void {
 export async function stopAllWorkers(): Promise<void> {
   console.log('Stopping all job workers...');
   
-  await Promise.all([
-    priceUpdateWorker.close(),
-    setImportWorker.close(),
-    cardSyncWorker.close(),
-    dataCleanupWorker.close(),
-    reportWorker.close(),
-  ]);
+  const workers = [
+    priceUpdateWorker,
+    setImportWorker,
+    cardSyncWorker,
+    dataCleanupWorker,
+    reportWorker,
+  ].filter(Boolean);
+  
+  await Promise.all(workers.map(worker => worker!.close()));
   
   console.log('All job workers stopped');
 }
