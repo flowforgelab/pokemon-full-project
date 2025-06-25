@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure
 import { Rarity, Supertype, DeckCategory } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { getCardCache } from '@/server/db/redis';
-import { pokemonTCGQueue } from '@/lib/jobs/queue';
+import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 
 // Validation schemas
 const paginationSchema = z.object({

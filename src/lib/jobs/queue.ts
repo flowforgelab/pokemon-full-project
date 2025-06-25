@@ -1,8 +1,13 @@
-import type { Queue, Worker, Job, QueueEvents } from 'bullmq';
 import type { JobData, JobResult } from '@/lib/api/types';
 
 // Check if we're in a build environment
-const IS_BUILD = process.env.NODE_ENV === 'production' && !process.env.KV_REST_API_URL;
+const IS_BUILD = process.env.NODE_ENV === 'production' && (!process.env.KV_REST_API_URL || process.env.VERCEL_ENV === 'production');
+
+// Type imports only - won't trigger actual module loading
+type Queue = any;
+type Worker = any;
+type Job = any;
+type QueueEvents = any;
 
 // Mock queue implementation for build time
 class MockQueue {
@@ -32,7 +37,12 @@ class MockQueueEvents {
 let BullMQ: any = null;
 const getBullMQ = async () => {
   if (!BullMQ && !IS_BUILD) {
-    BullMQ = await import('bullmq');
+    try {
+      BullMQ = await import('bullmq');
+    } catch (error) {
+      console.error('Failed to load BullMQ:', error);
+      throw new Error('BullMQ is required for queue operations but Redis is not available');
+    }
   }
   return BullMQ;
 };
@@ -44,14 +54,46 @@ const createQueue = async (name: string): Promise<Queue> => {
   }
   
   const { Queue } = await getBullMQ();
-  const connection = {
-    host: 'localhost',
-    port: 6379,
-    password: process.env.KV_REST_API_TOKEN,
-    lazyConnect: true,
-    enableOfflineQueue: false,
-    maxRetriesPerRequest: 0,
-  };
+  // Extract Redis connection details from environment
+  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+  let connection: any;
+  
+  if (REDIS_URL) {
+    // Parse Redis URL if available
+    try {
+      const url = new URL(REDIS_URL);
+      connection = {
+        host: url.hostname,
+        port: parseInt(url.port || '6379'),
+        password: url.password || process.env.KV_REST_API_TOKEN,
+        username: url.username || undefined,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    } catch (error) {
+      console.error('Failed to parse Redis URL:', error);
+      // Fallback to localhost
+      connection = {
+        host: 'localhost',
+        port: 6379,
+        password: process.env.KV_REST_API_TOKEN,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    }
+  } else {
+    // Default connection
+    connection = {
+      host: 'localhost',
+      port: 6379,
+      password: process.env.KV_REST_API_TOKEN,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 0,
+    };
+  }
   
   return new Queue(name, { connection });
 };
@@ -62,31 +104,63 @@ const createQueueEvents = async (name: string): Promise<QueueEvents> => {
   }
   
   const { QueueEvents } = await getBullMQ();
-  const connection = {
-    host: 'localhost',
-    port: 6379,
-    password: process.env.KV_REST_API_TOKEN,
-    lazyConnect: true,
-    enableOfflineQueue: false,
-    maxRetriesPerRequest: 0,
-  };
+  // Extract Redis connection details from environment
+  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+  let connection: any;
+  
+  if (REDIS_URL) {
+    // Parse Redis URL if available
+    try {
+      const url = new URL(REDIS_URL);
+      connection = {
+        host: url.hostname,
+        port: parseInt(url.port || '6379'),
+        password: url.password || process.env.KV_REST_API_TOKEN,
+        username: url.username || undefined,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    } catch (error) {
+      console.error('Failed to parse Redis URL:', error);
+      // Fallback to localhost
+      connection = {
+        host: 'localhost',
+        port: 6379,
+        password: process.env.KV_REST_API_TOKEN,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    }
+  } else {
+    // Default connection
+    connection = {
+      host: 'localhost',
+      port: 6379,
+      password: process.env.KV_REST_API_TOKEN,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 0,
+    };
+  }
   
   return new QueueEvents(name, { connection });
 };
 
 // Export queue getters that return promises
-export const priceUpdateQueue = IS_BUILD ? Promise.resolve(new MockQueue('price-updates') as any) : createQueue('price-updates');
-export const setImportQueue = IS_BUILD ? Promise.resolve(new MockQueue('set-imports') as any) : createQueue('set-imports');
-export const cardSyncQueue = IS_BUILD ? Promise.resolve(new MockQueue('card-sync') as any) : createQueue('card-sync');
-export const dataCleanupQueue = IS_BUILD ? Promise.resolve(new MockQueue('data-cleanup') as any) : createQueue('data-cleanup');
-export const reportQueue = IS_BUILD ? Promise.resolve(new MockQueue('reports') as any) : createQueue('reports');
-export const collectionIndexQueue = IS_BUILD ? Promise.resolve(new MockQueue('collection-index') as any) : createQueue('collection-index');
-export const pokemonTCGQueue = IS_BUILD ? Promise.resolve(new MockQueue('pokemon-tcg') as any) : createQueue('pokemon-tcg');
+export const priceUpdateQueue = createQueue('price-updates');
+export const setImportQueue = createQueue('set-imports');
+export const cardSyncQueue = createQueue('card-sync');
+export const dataCleanupQueue = createQueue('data-cleanup');
+export const reportQueue = createQueue('reports');
+export const collectionIndexQueue = createQueue('collection-index');
+export const pokemonTCGQueue = createQueue('pokemon-tcg');
 
-// Export queue events
-export const priceUpdateEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('price-updates') as any) : createQueueEvents('price-updates');
-export const setImportEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('set-imports') as any) : createQueueEvents('set-imports');
-export const cardSyncEvents = IS_BUILD ? Promise.resolve(new MockQueueEvents('card-sync') as any) : createQueueEvents('card-sync');
+// Export queue events  
+export const priceUpdateEvents = createQueueEvents('price-updates');
+export const setImportEvents = createQueueEvents('set-imports');
+export const cardSyncEvents = createQueueEvents('card-sync');
 
 // Job scheduling utilities
 export async function scheduleRecurringJobs(): Promise<void> {
@@ -203,14 +277,46 @@ export async function createWorker(
   }
 
   const { Worker } = await getBullMQ();
-  const connection = {
-    host: 'localhost',
-    port: 6379,
-    password: process.env.KV_REST_API_TOKEN,
-    lazyConnect: true,
-    enableOfflineQueue: false,
-    maxRetriesPerRequest: 0,
-  };
+  // Extract Redis connection details from environment
+  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+  let connection: any;
+  
+  if (REDIS_URL) {
+    // Parse Redis URL if available
+    try {
+      const url = new URL(REDIS_URL);
+      connection = {
+        host: url.hostname,
+        port: parseInt(url.port || '6379'),
+        password: url.password || process.env.KV_REST_API_TOKEN,
+        username: url.username || undefined,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    } catch (error) {
+      console.error('Failed to parse Redis URL:', error);
+      // Fallback to localhost
+      connection = {
+        host: 'localhost',
+        port: 6379,
+        password: process.env.KV_REST_API_TOKEN,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+      };
+    }
+  } else {
+    // Default connection
+    connection = {
+      host: 'localhost',
+      port: 6379,
+      password: process.env.KV_REST_API_TOKEN,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 0,
+    };
+  }
 
   return new Worker(
     queueName,
@@ -411,7 +517,7 @@ export function setupJobEventListeners(queueEvents: QueueEvents, queueName: stri
 }
 
 // Initialize event listeners only if Redis is configured and not in build
-if (!IS_BUILD && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+if (!IS_BUILD && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN && typeof window === 'undefined') {
   // Set up event listeners asynchronously
   (async () => {
     try {
@@ -421,9 +527,11 @@ if (!IS_BUILD && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
         cardSyncEvents
       ]);
       
-      setupJobEventListeners(priceEvents, 'price-updates');
-      setupJobEventListeners(setEvents, 'set-imports');
-      setupJobEventListeners(syncEvents, 'card-sync');
+      if (priceEvents && setEvents && syncEvents) {
+        setupJobEventListeners(priceEvents, 'price-updates');
+        setupJobEventListeners(setEvents, 'set-imports');
+        setupJobEventListeners(syncEvents, 'card-sync');
+      }
     } catch (error) {
       console.error('Failed to set up job event listeners:', error);
     }

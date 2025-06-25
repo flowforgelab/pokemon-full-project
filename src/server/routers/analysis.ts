@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure
 import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
 import { getAnalysisCache } from '@/server/db/redis';
-import { pokemonTCGQueue } from '@/lib/jobs/queue';
+import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 
 // Validation schemas
 const analysisModeSchema = z.enum(['quick', 'standard', 'comprehensive']).default('standard');

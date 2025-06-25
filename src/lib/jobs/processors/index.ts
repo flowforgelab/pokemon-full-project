@@ -1,4 +1,4 @@
-import { createWorker } from '../queue';
+import { createWorker } from '../queue-wrapper';
 import { processPriceUpdateJob } from './price-update';
 import { processSetImportJob } from './set-import';
 import { processCardSyncJob } from './card-sync';

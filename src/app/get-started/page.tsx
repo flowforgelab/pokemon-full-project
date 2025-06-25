@@ -8,7 +8,8 @@ import {
   RectangleStackIcon, 
   ChartBarIcon,
   RocketLaunchIcon,
-  CheckIcon
+  CheckIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 
 export default function GetStartedPage() {

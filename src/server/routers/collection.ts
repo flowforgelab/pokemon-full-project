@@ -3,7 +3,7 @@ import { createTRPCRouter, protectedProcedure, premiumProcedure } from '@/server
 import { TRPCError } from '@trpc/server';
 import { CardCondition, Rarity, Supertype } from '@prisma/client';
 import { getCollectionCache } from '@/server/db/redis';
-import { pokemonTCGQueue } from '@/lib/jobs/queue';
+import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 
 // Validation schemas
 const collectionFilterSchema = z.object({
