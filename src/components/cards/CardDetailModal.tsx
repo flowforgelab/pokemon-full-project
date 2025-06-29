@@ -59,6 +59,14 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl">
+                {/* Close button - positioned outside content */}
+                <button
+                  onClick={onClose}
+                  className="absolute right-4 top-4 z-50 p-2 bg-white dark:bg-gray-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  aria-label="Close modal"
+                >
+                  <XMarkIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                </button>
 
                 {isLoading ? (
                   <div className="flex items-center justify-center h-96">
@@ -111,19 +119,12 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-3 ml-4">
-                          {card.rarity && (
-                            <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium">
-                              {card.rarity}
-                            </span>
-                          )}
-                          <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <XMarkIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-                          </button>
-                        </div>
+                        {card.rarity && (
+                          <span className="ml-4 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium">
+                            {card.rarity}
+                          </span>
+                        )}
+                      </div>
                       
                       <div className="grid grid-cols-2 gap-4 mt-4">
                           <div>
