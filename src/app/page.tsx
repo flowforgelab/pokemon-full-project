@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRightIcon, StarIcon, CheckIcon, XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
@@ -44,12 +44,11 @@ export default function Home() {
               <ThemeToggle />
               <div className="flex items-center gap-4">
                 <SignedOut>
-                  <Link
-                    href="/sign-in"
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                  >
-                    Sign In
-                  </Link>
+                  <SignInButton mode="modal">
+                    <button className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                      Sign In
+                    </button>
+                  </SignInButton>
                   <Link
                     href="/get-started"
                     className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
@@ -93,12 +92,11 @@ export default function Home() {
               </Link>
               <SignedOut>
                 <div className="pt-2 space-y-2">
-                  <Link
-                    href="/sign-in"
-                    className="block w-full px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-center"
-                  >
-                    Sign In
-                  </Link>
+                  <SignInButton mode="modal">
+                    <button className="w-full px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                      Sign In
+                    </button>
+                  </SignInButton>
                   <Link
                     href="/get-started"
                     className="block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"

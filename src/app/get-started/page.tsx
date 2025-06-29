@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { SignInButton } from '@clerk/nextjs';
 import { 
   UserCircleIcon, 
   RectangleStackIcon, 
@@ -152,12 +153,11 @@ export default function GetStartedPage() {
                     <span className="px-3 py-1 bg-white dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-400">Discord</span>
                   </div>
                 </div>
-                <Link
-                  href="/sign-in"
-                  className="block w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-medium text-center"
-                >
-                  Sign In
-                </Link>
+                <SignInButton mode="modal">
+                  <button className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-medium">
+                    Sign In
+                  </button>
+                </SignInButton>
               </motion.div>
             </div>
           </div>
