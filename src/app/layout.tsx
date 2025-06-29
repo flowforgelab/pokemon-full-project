@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from '@/components/providers/clerk-provider';
+import { ClerkProvider } from '@clerk/nextjs';
 import { TRPCProvider } from './providers';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Geist, Geist_Mono } from "next/font/google";

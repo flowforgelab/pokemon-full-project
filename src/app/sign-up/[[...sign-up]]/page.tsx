@@ -1,5 +1,4 @@
-import { SignUp } from '@clerk/nextjs';
-import Link from 'next/link';
+import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
@@ -16,14 +15,7 @@ export default function SignUpPage() {
             </Link>
           </div>
           
-          <div className="w-full">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Create your account</h2>
-            <SignUp 
-              path="/sign-up"
-              routing="path"
-              signInUrl="/sign-in"
-            />
-          </div>
+          <SignUp />
           
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
