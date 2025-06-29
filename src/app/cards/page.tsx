@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
-import Link from 'next/link';
 import { useDebounce } from '@/hooks/useDebounce';
+import CardDetailModal from '@/components/cards/CardDetailModal';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -32,6 +32,7 @@ interface CardFilters {
 export default function CardsPage() {
   const [view, setView] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [filters, setFilters] = useState<CardFilters>({
     search: '',
     types: [],
@@ -347,10 +348,10 @@ export default function CardsPage() {
                 {view === 'grid' ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {allCards.map((card) => (
-                      <Link
+                      <div
                         key={card.id}
-                        href={`/cards/${card.id}`}
-                        className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all"
+                        onClick={() => setSelectedCardId(card.id)}
+                        className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all cursor-pointer"
                       >
                         <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-700">
                           {card.imageUrlLarge ? (
@@ -374,7 +375,7 @@ export default function CardsPage() {
                             {card.set.name} • {card.number}
                           </p>
                         </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -401,7 +402,7 @@ export default function CardsPage() {
                           <tr
                             key={card.id}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                            onClick={() => window.location.href = `/cards/${card.id}`}
+                            onClick={() => setSelectedCardId(card.id)}
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
@@ -477,6 +478,15 @@ export default function CardsPage() {
           </div>
         </div>
       </div>
+
+      {/* Card Detail Modal */}
+      {selectedCardId && (
+        <CardDetailModal
+          cardId={selectedCardId}
+          isOpen={!!selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+        />
+      )}
     </MainLayout>
   );
 }
