@@ -54,6 +54,17 @@ The app uses Clerk for authentication with a mapping system:
 - Role hierarchy: `user` → `premium_user` → `moderator` → `admin` → `senior_admin` → `super_admin`
 - Subscription tiers: `FREE`, `BASIC`, `PREMIUM`, `ULTIMATE`
 
+**Current Implementation (Development Mode)**:
+- Using `SignInButton mode="modal"` for authentication
+- Modal popup approach works in Clerk development mode
+- Sign-in redirects to `/dashboard` after success
+- Embedded sign-in pages (`/sign-in`, `/sign-up`) are ready but not used due to dev mode limitations
+
+**Production Plan**:
+- Upgrade to Clerk production instance
+- Switch from modal to embedded sign-in pages
+- Enable full Clerk features including SSO providers
+
 tRPC procedure types:
 - `publicProcedure`: No auth required
 - `protectedProcedure`: Requires authentication
@@ -135,6 +146,23 @@ The Pokemon TCG API provides both card data AND pricing:
 
 Price extraction happens in `transformAndValidateCard()` which returns both card data and pricing data.
 
+### Card Data Import Process
+To populate the database with Pokemon cards:
+1. Use the existing `card-import-service.ts` to fetch cards from Pokemon TCG API
+2. The service handles pagination and rate limiting automatically
+3. Cards are transformed and validated before database insertion
+4. Prices are extracted during import if available
+5. Import can be triggered via:
+   - Admin API endpoint: `POST /api/admin/import-cards`
+   - Background job: `cardSyncQueue` (requires Redis connection)
+   - Direct service call in development
+
+Example import command (development):
+```bash
+# Create a temporary script or use the API endpoint
+# The service will import all sets and cards with progress logging
+```
+
 ## Background Jobs & Build Issues
 
 ### BullMQ Redis Requirements
@@ -177,12 +205,23 @@ REDIS_URL                            # Direct Redis connection for BullMQ
 - Card browser with advanced search
 - User profiles and subscription system
 - Background job infrastructure
+- Clerk authentication with modal sign-in (temporary solution for development mode)
 
 ### Not Implemented
 - Trading UI (API exists, no frontend)
 - Stripe payment processing (infrastructure ready)
 - Test suite (no tests written)
 - Direct Redis connection for BullMQ in production
+- Card data import (Pokemon TCG API integration exists but cards need to be imported)
+
+### Recent Updates (December 2024)
+- **Authentication**: Implemented Clerk authentication with temporary modal sign-in approach
+  - Currently using `SignInButton mode="modal"` due to Clerk development mode limitations
+  - Will switch to integrated sign-in pages when moving to production with Clerk upgrade
+  - Sign-in redirects to dashboard after successful authentication
+- **Database**: Connected to Neon PostgreSQL database, schema is ready
+- **Environment**: All required environment variables configured in Vercel
+- **Next Steps**: Import Pokemon card data to populate the database
 
 ### Build-Time Considerations
 - Prisma client is generated during build via `postinstall` script
