@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import { Dialog, Transition, TransitionChild } from '@headlessui/react';
 import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { api } from '@/utils/api';
 
@@ -33,9 +33,9 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
   };
 
   return (
-    <Transition.Root show={isOpen} as={Fragment}>
+    <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
+        <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
           enterFrom="opacity-0"
@@ -45,11 +45,11 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
           leaveTo="opacity-0"
         >
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-        </Transition.Child>
+        </TransitionChild>
 
         <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <Transition.Child
+            <TransitionChild
               as={Fragment}
               enter="ease-out duration-300"
               enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -326,10 +326,10 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                   </div>
                 )}
               </Dialog.Panel>
-            </Transition.Child>
+            </TransitionChild>
           </div>
         </div>
       </Dialog>
-    </Transition.Root>
+    </Transition>
   );
 }

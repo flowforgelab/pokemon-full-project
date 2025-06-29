@@ -63,6 +63,7 @@ enum DeckCategory {
 }
 
 enum PriceSource {
+  TCGPLAYER
   CARDMARKET
   EBAY
   LOCAL
