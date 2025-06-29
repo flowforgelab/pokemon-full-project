@@ -21,26 +21,38 @@ const publicRoutes = [
 ];
 
 export function ClerkProvider({ children }: PropsWithChildren) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  
+  if (!publishableKey) {
     console.warn('Clerk publishable key not found. Authentication disabled.');
-    return <>{children}</>;
+    return (
+      <div>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Clerk Authentication Error:</strong>
+          <span className="block sm:inline"> NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set.</span>
+        </div>
+        {children}
+      </div>
+    );
   }
 
+  console.log('Clerk initialized with key:', publishableKey.substring(0, 10) + '...');
+
   return (
-    <ClerkProviderWithTheme>
+    <ClerkProviderWithTheme publishableKey={publishableKey}>
       {children}
     </ClerkProviderWithTheme>
   );
 }
 
-function ClerkProviderWithTheme({ children }: PropsWithChildren) {
+function ClerkProviderWithTheme({ children, publishableKey }: PropsWithChildren & { publishableKey: string }) {
   // Try to use theme context, but fallback if not available
   const themeContext = useContext(ThemeContext);
   const resolvedTheme = themeContext?.resolvedTheme || 'light';
   
   return (
     <BaseClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      publishableKey={publishableKey}
       signInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/sign-in'}
       signUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || '/sign-up'}
       afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || '/dashboard'}
