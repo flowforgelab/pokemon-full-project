@@ -297,4 +297,4 @@ This project is licensed under the MIT License.
 
 **Current Version**: v0.8.0
 
-Built with ❤️ by the Pokemon TCG community
+Built with ❤️ by the Pokemon TCG community# Trigger deployment
