@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { Rarity, Supertype, DeckCategory } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
-import { getCardCache } from '@/server/db/redis';
+import { getCardCache, redis } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 
 // Validation schemas
@@ -295,7 +295,7 @@ export const cardRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // Check cache first
       const cacheKey = `card:${input}`;
-      const cached = await getCardCache().get(cacheKey);
+      const cached = await getCardCache(cacheKey);
       if (cached) {
         return cached;
       }
@@ -304,20 +304,9 @@ export const cardRouter = createTRPCRouter({
         where: { id: input },
         include: {
           set: true,
-          attacks: true,
-          abilities: true,
-          weaknesses: true,
-          resistances: true,
           prices: {
             orderBy: { updatedAt: 'desc' },
             take: 5, // Last 5 price points
-          },
-          legalities: true,
-          _count: {
-            select: {
-              userCollections: true,
-              deckCards: true,
-            },
           },
         },
       });
@@ -330,7 +319,7 @@ export const cardRouter = createTRPCRouter({
       }
       
       // Cache for 24 hours
-      await getCardCache().set(cacheKey, card, 24 * 60 * 60);
+      await redis.setex(cacheKey, 24 * 60 * 60, JSON.stringify(card));
       
       return card;
     }),

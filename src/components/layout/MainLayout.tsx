@@ -136,7 +136,7 @@ export function MainLayout({
       )}
 
       {/* Main content area */}
-      <div className={showSidebar ? `${isLargeDesktop ? 'lg:pl-72' : isTablet ? 'lg:pl-60' : 'lg:pl-64'}` : ''}>
+      <div className={`flex flex-col min-h-screen ${showSidebar ? `${isLargeDesktop ? 'lg:pl-72' : isTablet ? 'lg:pl-60' : 'lg:pl-64'}` : ''}`}>
         {/* Top header */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
           <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
@@ -191,7 +191,7 @@ export function MainLayout({
         </header>
 
         {/* Page content */}
-        <main id="main-content">
+        <main id="main-content" className="flex-1">
           {title && (
             <div className="border-b dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="px-4 sm:px-6 lg:px-8 py-6">
