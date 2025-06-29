@@ -31,7 +31,7 @@ export default function GetStartedPage() {
       </header>
       
       <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
-      <div className="max-w-4xl w-full">
+        <div className="max-w-4xl w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,6 +190,7 @@ export default function GetStartedPage() {
             Privacy Policy
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );
