@@ -212,9 +212,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.LOW,
-          amount: tcgPrices.normal.low,
+          price: tcgPrices.normal.low,
           currency: 'USD',
-          foil: false,
           updatedAt,
         });
       }
@@ -223,9 +222,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.MID,
-          amount: tcgPrices.normal.mid,
+          price: tcgPrices.normal.mid,
           currency: 'USD',
-          foil: false,
           updatedAt,
         });
       }
@@ -234,9 +232,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.HIGH,
-          amount: tcgPrices.normal.high,
+          price: tcgPrices.normal.high,
           currency: 'USD',
-          foil: false,
           updatedAt,
         });
       }
@@ -245,9 +242,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.MARKET,
-          amount: tcgPrices.normal.market,
+          price: tcgPrices.normal.market,
           currency: 'USD',
-          foil: false,
           updatedAt,
         });
       }
@@ -260,9 +256,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.LOW,
-          amount: tcgPrices.holofoil.low,
+          price: tcgPrices.holofoil.low,
           currency: 'USD',
-          foil: true,
           updatedAt,
         });
       }
@@ -271,9 +266,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.MID,
-          amount: tcgPrices.holofoil.mid,
+          price: tcgPrices.holofoil.mid,
           currency: 'USD',
-          foil: true,
           updatedAt,
         });
       }
@@ -282,9 +276,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.HIGH,
-          amount: tcgPrices.holofoil.high,
+          price: tcgPrices.holofoil.high,
           currency: 'USD',
-          foil: true,
           updatedAt,
         });
       }
@@ -293,9 +286,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.MARKET,
-          amount: tcgPrices.holofoil.market,
+          price: tcgPrices.holofoil.market,
           currency: 'USD',
-          foil: true,
           updatedAt,
         });
       }
@@ -308,7 +300,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.LOW,
-          amount: tcgPrices.reverseHolofoil.low,
+          price: tcgPrices.reverseHolofoil.low,
           currency: 'USD',
           foil: true,
           condition: 'reverseHolofoil',
@@ -320,7 +312,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           cardId: apiCard.id,
           source: PriceSource.TCGPLAYER,
           priceType: PriceType.MARKET,
-          amount: tcgPrices.reverseHolofoil.market,
+          price: tcgPrices.reverseHolofoil.market,
           currency: 'USD',
           foil: true,
           condition: 'reverseHolofoil',
@@ -339,9 +331,8 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
         cardId: apiCard.id,
         source: PriceSource.CARDMARKET,
         priceType: PriceType.MARKET,
-        amount: cmPrices.averageSellPrice,
+        price: cmPrices.averageSellPrice,
         currency: 'EUR',
-        foil: false,
         updatedAt,
       });
     }
@@ -351,38 +342,14 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
         cardId: apiCard.id,
         source: PriceSource.CARDMARKET,
         priceType: PriceType.LOW,
-        amount: cmPrices.lowPrice,
+        price: cmPrices.lowPrice,
         currency: 'EUR',
-        foil: false,
         updatedAt,
       });
     }
     
-    if (cmPrices.trendPrice) {
-      prices.push({
-        cardId: apiCard.id,
-        source: PriceSource.CARDMARKET,
-        priceType: PriceType.MARKET,
-        amount: cmPrices.trendPrice,
-        currency: 'EUR',
-        foil: false,
-        condition: 'trend',
-        updatedAt,
-      });
-    }
-    
-    if (cmPrices.reverseHoloTrend) {
-      prices.push({
-        cardId: apiCard.id,
-        source: PriceSource.CARDMARKET,
-        priceType: PriceType.MARKET,
-        amount: cmPrices.reverseHoloTrend,
-        currency: 'EUR',
-        foil: true,
-        condition: 'reverseHolo',
-        updatedAt,
-      });
-    }
+    // Skip trendPrice and reverseHoloTrend as they would need different handling
+    // (no condition field in schema)
   }
 
   return prices;

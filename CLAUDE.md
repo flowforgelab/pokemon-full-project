@@ -23,6 +23,13 @@ npx dotenv -e .env.local -- prisma migrate dev  # Create new migration
 npx dotenv -e .env.local -- prisma studio       # Open Prisma Studio GUI
 npx prisma generate                              # Regenerate Prisma client after schema changes
 
+# Data Import
+npx tsx src/scripts/test-import.ts               # Test import (2 sets, 10 cards each)
+npx tsx src/scripts/import-cards.ts              # Full import (all sets and cards)
+
+# Deployment
+./deploy.sh                                      # Automated Vercel deployment
+
 # Testing Components
 npm run dev                                      # Then navigate to /design-system for component showcase
 ```
@@ -37,6 +44,8 @@ npm run dev                                      # Then navigate to /design-syst
 - **Caching**: Redis (Vercel KV/Upstash REST API)
 - **Jobs**: Bull/BullMQ for background processing (requires direct Redis connection)
 - **Styling**: Tailwind CSS + custom design system
+- **Monitoring**: Web Vitals and performance tracking
+- **PWA**: Service Worker for offline support
 
 ### Request Flow
 ```
@@ -59,11 +68,20 @@ The app uses Clerk for authentication with a mapping system:
 - Modal popup approach works in Clerk development mode
 - Sign-in redirects to `/dashboard` after success
 - Embedded sign-in pages (`/sign-in`, `/sign-up`) are ready but not used due to dev mode limitations
+- Multiple test implementations exist for debugging:
+  - `/clerk-debug` - Debug page with Clerk status
+  - `/clerk-config` - Configuration testing
+  - `/test-clerk`, `/test-signin` - Alternative test implementations
+  - `/simple-signin`, `/basic-signin`, `/temp-signin` - Simplified approaches
+  - `/hosted-signin`, `/manual-signin` - Different authentication methods
+  - `/activate-clerk` - Clerk activation page
+- SSO callback (`/sso-callback`) handles new user onboarding
 
 **Production Plan**:
 - Upgrade to Clerk production instance
 - Switch from modal to embedded sign-in pages
 - Enable full Clerk features including SSO providers
+- Remove test authentication pages
 
 tRPC procedure types:
 - `publicProcedure`: No auth required
@@ -157,11 +175,27 @@ To populate the database with Pokemon cards:
    - Background job: `cardSyncQueue` (requires Redis connection)
    - Direct service call in development
 
-Example import command (development):
+Example import commands:
 ```bash
-# Create a temporary script or use the API endpoint
-# The service will import all sets and cards with progress logging
+# Test import - imports only 2 sets with 10 cards each
+npx tsx src/scripts/test-import.ts
+
+# Full import - imports all sets and cards (respect rate limits)
+npx tsx src/scripts/import-cards.ts
+
+# Or use the admin API endpoint
+curl -X POST http://localhost:3000/api/admin/import-cards \
+  -H "Content-Type: application/json" \
+  -d '{"action": "import-sets"}'
 ```
+
+Import script features:
+- Batch processing (250 cards per request)
+- Rate limiting (500ms delay between requests)
+- Progress tracking with detailed logging
+- Price data extraction from Pokemon TCG API
+- Transaction-based imports for data integrity
+- Configurable limits for testing
 
 ## Background Jobs & Build Issues
 
@@ -206,22 +240,37 @@ REDIS_URL                            # Direct Redis connection for BullMQ
 - User profiles and subscription system
 - Background job infrastructure
 - Clerk authentication with modal sign-in (temporary solution for development mode)
+- Performance monitoring dashboard (development only)
+- PWA support with service worker
+- Card data import scripts with rate limiting
+- SSO callback flow with new user detection
 
 ### Not Implemented
 - Trading UI (API exists, no frontend)
 - Stripe payment processing (infrastructure ready)
 - Test suite (no tests written)
 - Direct Redis connection for BullMQ in production
-- Card data import (Pokemon TCG API integration exists but cards need to be imported)
+- Collection export/import functionality (buttons exist, logic missing)
+- Deck deletion and cloning (UI exists, functionality missing)
+- Email/push notifications for price alerts
+- Some admin management features
+- User management routers (marked as TODO)
 
 ### Recent Updates (December 2024)
 - **Authentication**: Implemented Clerk authentication with temporary modal sign-in approach
   - Currently using `SignInButton mode="modal"` due to Clerk development mode limitations
   - Will switch to integrated sign-in pages when moving to production with Clerk upgrade
   - Sign-in redirects to dashboard after successful authentication
+  - Created multiple test pages for debugging Clerk integration issues
+  - SSO callback implemented with new user onboarding flow
 - **Database**: Connected to Neon PostgreSQL database, schema is ready
 - **Environment**: All required environment variables configured in Vercel
-- **Next Steps**: Import Pokemon card data to populate the database
+- **Data Import**: Created scripts for importing Pokemon card data
+  - Test import script for development (2 sets, 10 cards)
+  - Full import script with rate limiting and progress tracking
+  - Admin API endpoint for controlled imports
+- **Performance**: Added performance monitoring dashboard for development
+- **PWA**: Implemented service worker for offline support
 
 ### Build-Time Considerations
 - Prisma client is generated during build via `postinstall` script
@@ -274,6 +323,71 @@ Configured for Vercel deployment:
 3. BullMQ jobs won't work without direct Redis connection
 4. Build process uses dummy environment variables from `.env.production`
 
+## TODOs and Unimplemented Features
+
+Based on code analysis, the following features need implementation:
+
+### Collection Management
+- Export collection functionality (`/app/(dashboard)/collection/page.tsx`)
+- Import collection functionality
+- Set filter dropdown needs actual set data
+
+### Deck Management
+- Delete deck functionality (`/components/decks/DeckList.tsx`)
+- Clone deck functionality
+
+### API Routers
+- User management routers marked as TODO (`/server/api/routers/user.ts`)
+- Admin router marked as TODO
+
+### Notifications
+- Email notifications for price updates
+- Push notifications for set imports
+- System monitoring alerts
+
+### Admin Features
+- Proper admin authentication check in import-cards route
+- Admin management dashboard
+
+## Scripts and Data Management
+
+### Card Import Scripts
+The project includes standalone scripts for importing Pokemon card data:
+
+```typescript
+// Test import - limited data for development
+npx tsx src/scripts/test-import.ts
+// Imports: 2 sets, 10 cards per set
+// Shows progress, statistics, and sample data
+
+// Full import - complete database population
+npx tsx src/scripts/import-cards.ts
+// Features:
+// - Batch processing (250 cards per request)
+// - Rate limiting (500ms between requests)
+// - Progress tracking with statistics
+// - Transaction-based for data integrity
+// - Automatic price extraction
+```
+
+### Deployment Automation
+Use the deployment script for Vercel:
+```bash
+./deploy.sh
+# Checks environment variables
+# Runs build
+# Deploys to Vercel
+```
+
+## Performance Monitoring
+
+Development includes a performance dashboard:
+- Access via floating button (bottom-right corner)
+- Shows Web Vitals (LCP, FID, CLS, etc.)
+- Cache performance metrics
+- API response times
+- Memory usage statistics
+
 ## Common Gotchas
 
 1. **Prisma Client Generation**: Always run `npx prisma generate` after schema changes
@@ -289,3 +403,21 @@ Configured for Vercel deployment:
 11. **Touch Targets**: Ensure all interactive elements are at least 44x44px for accessibility
 12. **BullMQ Build**: Import from `queue-wrapper` instead of `queue` to prevent build errors
 13. **Missing StarIcon**: Import from `@heroicons/react/24/outline`, not `lucide-react`
+14. **Card Import**: Use test import first to verify configuration before full import
+15. **Clerk Test Pages**: Multiple test pages exist in development - will be removed in production
+
+## Project Status
+
+- **Current Version**: v0.8.0 (per README.md)
+- **Project Checklist Version**: 1.0.8-MVP (per PROJECT_CHECKLIST.md)
+- **Status**: MVP ready, needs card data import and production Clerk upgrade
+- **Deployment**: Automated via `deploy.sh` script to Vercel
+- **Authentication**: Working with modal approach in development mode
+- **Database**: Schema complete, awaiting card data import
+- **Next Steps**:
+  1. Run card import script to populate database
+  2. Test all core functionality
+  3. Upgrade to Clerk production instance
+  4. Switch to embedded authentication pages
+  5. Implement remaining TODO features
+  6. Add test coverage

@@ -41,7 +41,7 @@ async function testImport() {
     
     // Fetch recent sets
     console.log('\n📦 Fetching recent Pokemon sets...');
-    const setsResult = await client.sets.all();
+    const setsResult = await client.getAllSets(1, 50); // Get first 50 sets
     
     if (setsResult.error || !setsResult.data) {
       throw new Error(`Failed to fetch sets: ${setsResult.error}`);
@@ -120,15 +120,21 @@ async function testImport() {
                 where: { cardId: apiCard.id }
               });
               
-              await tx.cardPrice.createMany({
-                data: transformResult.prices,
-              });
+              // Filter out prices with undefined source (TCGPlayer prices have this issue)
+              const validPrices = transformResult.prices.filter(price => price.source !== undefined);
               
-              totalPricesImported += transformResult.prices.length;
+              if (validPrices.length > 0) {
+                await tx.cardPrice.createMany({
+                  data: validPrices,
+                });
+                
+                totalPricesImported += validPrices.length;
+              }
             }
           });
           
-          console.log(`  ✅ ${apiCard.name} (${apiCard.id}) - ${transformResult.prices?.length || 0} prices`);
+          const validPriceCount = transformResult.prices?.filter(p => p.source !== undefined).length || 0;
+          console.log(`  ✅ ${apiCard.name} (${apiCard.id}) - ${validPriceCount} valid prices`);
           totalCardsImported++;
         } catch (error) {
           console.error(`  ❌ Failed to import ${apiCard.name}:`, error);
@@ -171,7 +177,7 @@ async function testImport() {
       console.log(`  - Set: ${sampleCard.set.name}`);
       console.log(`  - Prices:`);
       sampleCard.prices.forEach(price => {
-        console.log(`    - ${price.source} ${price.priceType}: ${price.currency} ${price.amount}`);
+        console.log(`    - ${price.source} ${price.priceType}: ${price.currency} ${price.price}`);
       });
     }
     
