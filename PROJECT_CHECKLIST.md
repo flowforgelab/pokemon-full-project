@@ -259,6 +259,37 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - [x] Fixed Next.js 15 dynamic route parameters (async params)
 - [x] Fixed BullMQ Redis connection errors during build with queue-wrapper module
 
+### Initial Data Setup
+- [ ] **Pokemon Card Data Import**:
+  1. **Test Import** (Recommended first):
+     ```bash
+     npx tsx src/scripts/test-import.ts
+     ```
+     - Imports only 2 sets and 10 cards per set
+     - Verifies database connection and API key
+     - Shows sample imported data
+  
+  2. **Admin UI Import** (For controlled import):
+     - Visit: `/admin/import` (requires authentication)
+     - Click "Get Current Stats" to see database state
+     - Click "Import Sets" to import set metadata
+     - Click "Import Cards" to import test batch
+  
+  3. **Full Import** (Complete dataset):
+     ```bash
+     npx tsx src/scripts/import-cards.ts
+     ```
+     - Imports all sets and cards with rate limiting
+     - Includes pricing data from TCGPlayer and CardMarket
+     - Shows progress and handles errors
+     - Rate limits: 20,000 requests/day with API key
+  
+  4. **Verify Import**:
+     - Check `/cards` page for card browsing
+     - Test search functionality
+     - Verify pricing data is present
+     - Check collection value calculations
+
 ### Vercel Environment Variables Required
 To deploy successfully on Vercel, configure these environment variables:
 
@@ -526,6 +557,13 @@ To deploy successfully on Vercel, configure these environment variables:
   - [x] CardMarket prices provided by Pokemon TCG API
   - [x] Price update features fully functional
   - [x] No separate pricing API needed
+- [ ] **Card Data Import** (In Progress):
+  - [x] Import scripts created with rate limiting
+  - [x] Admin UI page for controlled imports (/admin/import)
+  - [x] Test import script for verification
+  - [ ] Execute full card import to production database
+  - [ ] Verify card data and pricing in database
+  - [ ] Test card browsing and search functionality
 - [x] Implement data sync jobs with Bull/BullMQ:
   - [x] Price update processor
   - [x] Set import processor
@@ -760,9 +798,17 @@ To deploy successfully on Vercel, configure these environment variables:
 - Stripe payment processing infrastructure ready, implementation deferred
 
 ## 🔄 Last Updated
-- Date: 2025-06-25
-- Version: 1.0.7-MVP
+- Date: 2024-12-26
+- Version: 1.0.8-MVP
 - Latest Updates:
+  - Authentication & Card Import (2024-12-26):
+    - ✅ Implemented Clerk authentication with temporary modal sign-in for development mode
+    - ✅ Created card import functionality with proper rate limiting
+    - ✅ Added test import script for verification (2 sets, 10 cards each)
+    - ✅ Created admin UI for controlled imports at /admin/import
+    - ✅ Documented import process in PROJECT_CHECKLIST.md
+    - ✅ Verified production database connection (Neon PostgreSQL)
+    - ℹ️ Will switch to embedded sign-in pages when upgrading to Clerk production
   - Vercel Deployment Support (2025-06-25):
     - ✅ Created user-friendly /get-started page with clear sign-up and sign-in options
     - ✅ Fixed BullMQ Redis connection errors during build with queue-wrapper module
