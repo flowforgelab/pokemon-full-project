@@ -52,7 +52,7 @@ export function MainLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -67,8 +67,8 @@ export function MainLayout({
           className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 transform transition-all duration-300 lg:translate-x-0 lg:static lg:inset-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } ${
-            isLargeDesktop ? 'w-72' : isTablet ? 'w-60' : 'w-64'
-          }`}
+            isLargeDesktop ? 'lg:w-72' : isTablet ? 'lg:w-60' : 'lg:w-64'
+          } w-64`}
         >
           <div className="flex h-full flex-col">
             {/* Logo */}
@@ -136,7 +136,7 @@ export function MainLayout({
       )}
 
       {/* Main content area */}
-      <div className={`flex flex-col min-h-screen ${showSidebar ? `${isLargeDesktop ? 'lg:pl-72' : isTablet ? 'lg:pl-60' : 'lg:pl-64'}` : ''}`}>
+      <div className="flex flex-col min-h-screen flex-1">
         {/* Top header */}
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
           <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
