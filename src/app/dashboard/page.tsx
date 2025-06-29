@@ -24,10 +24,10 @@ export default function DashboardPage() {
   const { data: recommendations } = api.recommendation.getQuickRecommendations.useQuery();
 
   return (
-    <MainLayout title="Dashboard">
-      <div className="space-y-8">
+    <MainLayout>
+      <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+        <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome back, {user?.firstName || 'Trainer'}!
           </h1>
