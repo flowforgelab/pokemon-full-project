@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { SignInButton } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { 
   UserCircleIcon, 
@@ -14,7 +13,24 @@ import {
 
 export default function GetStartedPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <header className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <span className="text-white font-bold text-xl">P</span>
+              </div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                Pokemon TCG Deck Builder
+              </h1>
+            </Link>
+          </nav>
+        </div>
+      </header>
+      
+      <div className="flex items-center justify-center p-4" style={{ minHeight: 'calc(100vh - 73px)' }}>
       <div className="max-w-4xl w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -136,11 +152,12 @@ export default function GetStartedPage() {
                     <span className="px-3 py-1 bg-white dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-400">Discord</span>
                   </div>
                 </div>
-                <SignInButton mode="redirect" redirectUrl="/dashboard">
-                  <button className="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-medium">
-                    Sign In
-                  </button>
-                </SignInButton>
+                <Link
+                  href="/sign-in"
+                  className="block w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-medium text-center"
+                >
+                  Sign In
+                </Link>
               </motion.div>
             </div>
           </div>
