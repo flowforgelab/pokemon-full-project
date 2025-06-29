@@ -11,24 +11,20 @@ Pokemon TCG Deck Builder - A Next.js 14 application for building, analyzing, and
 ```bash
 # Development
 npm run dev                                      # Start dev server (http://localhost:3000)
-npm run build                                    # Production build
+npm run build                                    # Production build (includes BUILDING=true env var)
 npm run lint                                     # Run ESLint
 npm run type-check                               # TypeScript type checking
 npm run format                                   # Format code with Prettier
 npm run format:check                             # Check code formatting
 
-# Database Operations  
+# Database Operations (requires .env.local)
 npx dotenv -e .env.local -- prisma db push      # Apply schema changes to database
 npx dotenv -e .env.local -- prisma migrate dev  # Create new migration
 npx dotenv -e .env.local -- prisma studio       # Open Prisma Studio GUI
 npx prisma generate                              # Regenerate Prisma client after schema changes
 
-# Testing (when checking specific components)
+# Testing Components
 npm run dev                                      # Then navigate to /design-system for component showcase
-
-# Common Development Tasks
-git add -A && git commit -m "message"           # Stage and commit all changes
-git push origin main                             # Push to remote repository
 ```
 
 ## Architecture Overview
@@ -38,8 +34,8 @@ git push origin main                             # Push to remote repository
 - **Database**: PostgreSQL (Neon) + Prisma ORM
 - **API**: tRPC for type-safe APIs
 - **Auth**: Clerk with role-based access
-- **Caching**: Redis (Vercel KV)
-- **Jobs**: Bull/BullMQ for background processing
+- **Caching**: Redis (Vercel KV/Upstash REST API)
+- **Jobs**: Bull/BullMQ for background processing (requires direct Redis connection)
 - **Styling**: Tailwind CSS + custom design system
 
 ### Request Flow
@@ -139,8 +135,14 @@ The Pokemon TCG API provides both card data AND pricing:
 
 Price extraction happens in `transformAndValidateCard()` which returns both card data and pricing data.
 
-## Background Jobs
+## Background Jobs & Build Issues
 
+### BullMQ Redis Requirements
+- BullMQ requires direct Redis connections (incompatible with Upstash REST API)
+- During build, use `queue-wrapper.ts` instead of `queue.ts` to prevent connection attempts
+- The wrapper detects build environment via `BUILDING=true` env var
+
+### Job Processing
 Jobs are processed using Bull/BullMQ with Redis:
 - Card sync: Daily at 3 AM UTC
 - Price updates: Automatic during card sync
@@ -149,7 +151,7 @@ Jobs are processed using Bull/BullMQ with Redis:
 
 ## Environment Variables
 
-### Required
+### Required for Development
 ```env
 DATABASE_URL                          # PostgreSQL connection
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY    # Clerk auth
@@ -162,6 +164,7 @@ KV_REST_API_TOKEN                    # Redis/Vercel KV
 ```env
 POKEMON_TCG_API_KEY                  # For 20k requests/day (vs 1k)
 NEXT_PUBLIC_APP_URL                  # For sharing features
+REDIS_URL                            # Direct Redis connection for BullMQ
 ```
 
 ## Current Status & Limitations
@@ -179,37 +182,13 @@ NEXT_PUBLIC_APP_URL                  # For sharing features
 - Trading UI (API exists, no frontend)
 - Stripe payment processing (infrastructure ready)
 - Test suite (no tests written)
-- Some production environment variables
+- Direct Redis connection for BullMQ in production
 
-### Recently Resolved Issues (Week 1-3, 2025-06-25)
-- ✅ CSS animations consolidated into animations.css
-- ✅ Color system unified to HSL format with conversion utilities
-- ✅ Dark mode CSS variables fixed (added missing --radius)
-- ✅ Design tokens now generate CSS variables in HSL format
-- ✅ Component inconsistencies resolved:
-  - Merged duplicate Skeleton components into LoadingStates.tsx
-  - Created standardized Input, Select, Textarea, and FormField components
-  - Created unified PokemonCard component
-  - Standardized button focus states
-- ✅ Responsive design improvements:
-  - Created useMediaQuery hook for breakpoint handling
-  - MainLayout sidebar now responsive (w-60 tablet, w-64 default, w-72 large)
-  - All touch targets meet 44x44px minimum requirement
-  - Added responsive text sizing with CSS clamp()
-  - Converted fixed pixel values to responsive units
-
-### Remaining Visual Issues (Week 4)
-- Missing PWA assets (manifest.json, icons)
-- Missing meta images (Open Graph, Twitter cards)  
-- No proper logo file (uses CSS-styled div)
-- Missing robots.txt and sitemap.xml
-
-### Visual Issues Fix Plan
-The project follows a 4-week plan to fix visual issues (see PROJECT_CHECKLIST.md):
-- **Week 1** ✅: Critical CSS issues (animations, colors, dark mode)
-- **Week 2** ✅: Component consistency (forms, skeletons, buttons, cards)
-- **Week 3** ✅: Responsive design (breakpoints, mobile navigation, responsive units)
-- **Week 4** ⏳: Assets & design system (PWA, meta images, logo, design tokens)
+### Build-Time Considerations
+- Prisma client is generated during build via `postinstall` script
+- BullMQ connections are mocked during build using `queue-wrapper.ts`
+- Build command sets `BUILDING=true` to indicate build environment
+- `.env.production` contains dummy values for build-time requirements
 
 ## Design System
 
@@ -222,7 +201,6 @@ The app uses a comprehensive design system (`/src/styles/design-tokens.ts`) with
 - Framer Motion animations
 
 ### Standardized UI Components
-After Week 2 & 3 improvements, use these standardized components:
 ```typescript
 // Form components with consistent styling (44px min-height for accessibility)
 import { Input, Select, Textarea, FormField } from '@/components/ui';
@@ -251,6 +229,12 @@ Configured for Vercel deployment:
 - Build includes Prisma generation
 - See `DEPLOYMENT.md` for detailed instructions
 
+### Vercel-Specific Requirements
+1. Set all required environment variables in Vercel dashboard
+2. Enable Vercel KV for Redis caching
+3. BullMQ jobs won't work without direct Redis connection
+4. Build process uses dummy environment variables from `.env.production`
+
 ## Common Gotchas
 
 1. **Prisma Client Generation**: Always run `npx prisma generate` after schema changes
@@ -264,3 +248,5 @@ Configured for Vercel deployment:
 9. **Animations**: All keyframe animations are in `/src/styles/animations.css` - do not duplicate in other files
 10. **Responsive Design**: Use `useMediaQuery` hook from `/hooks/useMediaQuery` for responsive behavior
 11. **Touch Targets**: Ensure all interactive elements are at least 44x44px for accessibility
+12. **BullMQ Build**: Import from `queue-wrapper` instead of `queue` to prevent build errors
+13. **Missing StarIcon**: Import from `@heroicons/react/24/outline`, not `lucide-react`
