@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function BasicSignInPage() {
   // Extract domain from publishable key for Clerk hosted pages
-  const CLERK_DOMAIN = 'central-bengal-16.clerk.accounts.dev';
+  const CLERK_DOMAIN = 'tolerant-bream-18.clerk.accounts.dev';
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
