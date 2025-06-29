@@ -45,7 +45,7 @@ export default function Home() {
               <div className="flex items-center gap-4">
                 <SignedOut>
                   <Link
-                    href="/basic-signin"
+                    href="/temp-signin"
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                   >
                     Sign In
@@ -94,7 +94,7 @@ export default function Home() {
               <SignedOut>
                 <div className="pt-2 space-y-2">
                   <Link
-                    href="/basic-signin"
+                    href="/temp-signin"
                     className="block w-full px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-center"
                   >
                     Sign In
