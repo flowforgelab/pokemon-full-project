@@ -47,48 +47,38 @@ export default function CardsPage() {
 
   const debouncedSearch = useDebounce(filters.search, 300);
 
-  const { data: cards, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = 
-    api.card.search.useInfiniteQuery(
-      {
-        query: debouncedSearch,
-        filters: {
-          types: filters.types.length > 0 ? filters.types : undefined,
-          subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
-          supertype: filters.supertype || undefined,
-          rarity: filters.rarity.length > 0 ? filters.rarity : undefined,
-          setId: filters.set || undefined,
-          hp: filters.hp,
-          retreatCost: filters.retreatCost,
-        },
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
-        limit: 20,
-      },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
-      }
-    );
+  const [page, setPage] = useState(1);
+
+  const { data: searchResult, isLoading } = api.card.search.useQuery({
+    query: debouncedSearch,
+    filters: {
+      types: filters.types.length > 0 ? filters.types : undefined,
+      subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
+      supertype: filters.supertype || undefined,
+      rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
+      setId: filters.set || undefined,
+      hp: filters.hp,
+      retreatCost: filters.retreatCost,
+    },
+    pagination: {
+      page,
+      limit: 20,
+    },
+    sort: {
+      field: filters.sortBy as any,
+      direction: filters.sortOrder,
+    },
+  });
 
   const { data: sets } = api.card.getSets.useQuery();
 
-  const allCards = cards?.pages.flatMap((page) => page.cards) || [];
+  const allCards = searchResult?.cards || [];
+  const totalPages = searchResult?.totalPages || 0;
 
-  // Load more on scroll
+  // Reset page when filters change
   useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop
-        >= document.documentElement.offsetHeight - 100
-      ) {
-        if (hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    setPage(1);
+  }, [debouncedSearch, filters.types, filters.subtypes, filters.supertype, filters.rarity, filters.set, filters.sortBy, filters.sortOrder]);
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -171,7 +161,7 @@ export default function CardsPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               {filters.supertype && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                  {filters.supertype}
+                  {filters.supertype === 'POKEMON' ? 'Pokémon' : filters.supertype === 'TRAINER' ? 'Trainer' : 'Energy'}
                   <button
                     onClick={() => setFilters({ ...filters, supertype: '' })}
                     className="hover:text-blue-600"
@@ -238,17 +228,21 @@ export default function CardsPage() {
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Card Type</h3>
                   <div className="space-y-2">
-                    {['Pokémon', 'Trainer', 'Energy'].map((type) => (
-                      <label key={type} className="flex items-center">
+                    {[
+                      { label: 'Pokémon', value: 'POKEMON' },
+                      { label: 'Trainer', value: 'TRAINER' },
+                      { label: 'Energy', value: 'ENERGY' }
+                    ].map((type) => (
+                      <label key={type.value} className="flex items-center">
                         <input
                           type="radio"
                           name="supertype"
-                          value={type}
-                          checked={filters.supertype === type}
+                          value={type.value}
+                          checked={filters.supertype === type.value}
                           onChange={(e) => setFilters({ ...filters, supertype: e.target.value })}
                           className="mr-2"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{type}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{type.label}</span>
                       </label>
                     ))}
                   </div>
@@ -446,15 +440,25 @@ export default function CardsPage() {
                   </div>
                 )}
 
-                {/* Load More */}
-                {hasNextPage && (
-                  <div className="mt-8 text-center">
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex justify-center gap-2">
                     <button
-                      onClick={() => fetchNextPage()}
-                      disabled={isFetchingNextPage}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isFetchingNextPage ? 'Loading...' : 'Load More'}
+                      Previous
+                    </button>
+                    <span className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                      Page {page} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
                     </button>
                   </div>
                 )}
