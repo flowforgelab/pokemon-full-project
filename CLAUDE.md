@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Pokemon TCG Deck Builder - A Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks. Features include AI-powered deck analysis, collection management with value tracking, drag-and-drop deck building, and real-time card pricing from the Pokemon TCG API.
 
-**Current Status**: v1.0.14-MVP with 11,033+ cards imported (57.6% of 19,136 total)
+**Current Status**: v1.0.14-MVP with 13,622 cards imported (71.19% of 19,136 total)
 
 ## Essential Commands
 
@@ -170,7 +170,7 @@ Price extraction happens in `transformAndValidateCard()` which returns both card
 
 ### Card Import System
 
-**Current Progress**: 11,033+ cards imported (57.6% of 19,136 total cards in API)
+**Current Progress**: 13,622 cards imported (71.19% of 19,136 total cards in API)
 
 The project has multiple import scripts for different scenarios:
 
@@ -260,7 +260,7 @@ CRON_SECRET                          # Protect cron endpoints
 - User profiles and subscription system
 - Background job infrastructure
 - Clerk authentication with modal sign-in
-- Card data import (2,408 cards from 14+ sets imported)
+- Card data import (13,622 cards from 111 sets imported)
 - Auto-import system that switches between full and smart updates
 - Smart daily import system with priority tiers
 - TCGPlayer search links for all cards
@@ -277,7 +277,10 @@ CRON_SECRET                          # Protect cron endpoints
 - Created auto-import system that intelligently switches modes
 - Created batch import for Vercel's 5-minute limit
 - Fixed TCGPlayer URL format (combined query instead of separate set param)
-- Import progress: 11,033+ cards (57.6% of 19,136 total)
+- Import progress: 13,622 cards (71.19% of 19,136 total)
+- TCGPlayer URL format improved to use + instead of %20 for better results
+- Performance optimizations: Added database indexes for search (queries now ~0.2ms)
+- Fixed SQL parameter ordering issues for complex search queries
 
 ### Not Implemented
 - Trading UI (API exists, no frontend)
@@ -358,9 +361,10 @@ Configured for Vercel deployment:
 
 - **Current Version**: v0.8.0 (per README.md)
 - **Project Checklist Version**: 1.0.14-MVP (updated)
-- **Status**: MVP ready with advanced search and 57%+ card data imported
-- **Database**: 11,033+ cards from 85+ sets with 65,000+ prices
-- **Import Progress**: 57.6% complete (11,033 of 19,136 cards)
+- **Status**: MVP ready with advanced search and 71%+ card data imported
+- **Database**: 13,622 cards from 111 sets with 78,000+ prices
+- **Import Progress**: 71.19% complete (13,622 of 19,136 cards)
+- **Search Performance**: Optimized with database indexes (queries ~0.2ms)
 - **Next Steps**:
   1. Monitor auto-import progress (runs daily at 5 AM UTC)
   2. Configure CRON_SECRET in Vercel
@@ -368,6 +372,47 @@ Configured for Vercel deployment:
   4. Implement missing TODO features
   5. Upgrade to Clerk production instance
   6. Add test coverage
+
+## MVP Priority List (21 Tasks Remaining)
+
+### Critical for Launch (12 items)
+1. **Visual/PWA Issues** (7 items):
+   - Create PWA manifest.json and app icons
+   - Add Open Graph/Twitter card images
+   - Create proper logo file
+   - Add robots.txt and sitemap.xml
+   - Activate design tokens with generateCSSVariables()
+   - Replace hardcoded values with design tokens
+   - Consolidate energy colors to single source
+
+2. **Security** (3 items):
+   - Input validation on all forms
+   - XSS protection
+   - User permission checks
+
+3. **Testing Foundation** (2 items):
+   - Unit tests setup (currently no tests exist)
+   - Integration tests for API routes
+
+### Important but Can Deploy Without (9 items)
+- API documentation (2 items)
+- Type-safe client hooks and optimistic updates (2 items)
+- E2E and performance testing (2 items)
+- Contributing guidelines (1 item)
+
+### Search Optimization Details
+
+**Database Indexes Created**:
+- `idx_card_name_lower` - Case-insensitive name searches
+- `idx_card_number` - Card number searches
+- `idx_card_name_trgm` - Fuzzy/contains searches (uses pg_trgm)
+- `idx_card_name_pattern` - LIKE pattern matching
+- `idx_card_number_pattern` - Number pattern matching
+
+**Search Performance Script**:
+```bash
+npx tsx src/scripts/test-search-performance.ts  # Test various search scenarios
+```
 
 ## Quick Reference
 
@@ -389,4 +434,9 @@ npx tsx src/scripts/fix-tcgplayer-search-urls.ts
 ### Monitor Logs
 ```bash
 tail -f import.log  # Watch import progress
+```
+
+### Test Search Performance
+```bash
+npx tsx src/scripts/test-search-performance.ts
 ```
