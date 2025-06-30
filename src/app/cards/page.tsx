@@ -58,8 +58,8 @@ export default function CardsPage() {
       supertype: filters.supertype ? filters.supertype as any : undefined,
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
       setId: filters.set || undefined,
-      hp: filters.hp,
-      retreatCost: filters.retreatCost,
+      hp: Object.keys(filters.hp).length > 0 ? filters.hp : undefined,
+      retreatCost: Object.keys(filters.retreatCost).length > 0 ? filters.retreatCost : undefined,
     },
     pagination: {
       page,
@@ -72,6 +72,10 @@ export default function CardsPage() {
   }, {
     keepPreviousData: true,
     staleTime: 30000, // Cache for 30 seconds
+    retry: 1,
+    onError: (err) => {
+      console.error('Search query error:', err);
+    },
   });
 
   const { data: sets } = api.card.getSets.useQuery();
@@ -337,8 +341,10 @@ export default function CardsPage() {
                     <option value="name-desc">Name (Z-A)</option>
                     <option value="number-asc">Number (Low-High)</option>
                     <option value="number-desc">Number (High-Low)</option>
-                    <option value="release-desc">Newest First</option>
-                    <option value="release-asc">Oldest First</option>
+                    <option value="releaseDate-desc">Newest First</option>
+                    <option value="releaseDate-asc">Oldest First</option>
+                    <option value="price-asc">Price (Low-High)</option>
+                    <option value="price-desc">Price (High-Low)</option>
                   </select>
                 </div>
               </div>

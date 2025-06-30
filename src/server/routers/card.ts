@@ -12,7 +12,7 @@ const paginationSchema = z.object({
 });
 
 const sortSchema = z.object({
-  field: z.enum(['name', 'price', 'rarity', 'set', 'releaseDate', 'hp', 'retreatCost']).default('name'),
+  field: z.enum(['name', 'number', 'price', 'rarity', 'set', 'releaseDate', 'hp', 'retreatCost']).default('name'),
   direction: z.enum(['asc', 'desc']).default('asc'),
 });
 
@@ -96,8 +96,6 @@ export const cardRouter = createTRPCRouter({
           where.OR = [
             { name: { contains: query, mode: 'insensitive' } },
             { set: { name: { contains: query, mode: 'insensitive' } } },
-            { attacks: { some: { name: { contains: query, mode: 'insensitive' } } } },
-            { abilities: { some: { name: { contains: query, mode: 'insensitive' } } } },
           ];
         }
       
@@ -246,6 +244,9 @@ export const cardRouter = createTRPCRouter({
         case 'retreatCost':
           orderBy.convertedRetreatCost = sort.direction;
           break;
+        case 'number':
+          orderBy.number = sort.direction;
+          break;
         default:
           orderBy[sort.field] = sort.direction;
       }
@@ -288,9 +289,20 @@ export const cardRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error('Card search error:', error);
+        console.error('Query:', query);
+        console.error('Where clause:', JSON.stringify(where, null, 2));
+        
+        if (error instanceof Error && error.message.includes('Invalid')) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Search query error: ${error.message}`,
+          });
+        }
+        
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to search cards',
+          message: error instanceof Error ? error.message : 'Failed to search cards',
+          cause: error,
         });
       }
     }),

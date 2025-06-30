@@ -844,6 +844,7 @@ To deploy successfully on Vercel, configure these environment variables:
 - Project is live and deployable with automatic CI/CD
 - Trading system API complete, UI deferred to future release
 - Stripe payment processing infrastructure ready, implementation deferred
+- **Development Preference**: Do not run localhost dev server during assistance sessions
 
 ## 🔄 Last Updated
 - Date: 2025-06-30
