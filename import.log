@@ -1243,3 +1243,42 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 112 cards
+  ✅ Set complete: 112 new cards, 663 prices
+
+📊 Overall Progress: 75/166 sets processed
+   Total cards imported: 10159
+   Total prices imported: 59873
+
+📦 Processing Double Crisis (dc1)
+  - Series: XY
+  - Release Date: 2015/03/25
+  - Total Cards: 34
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 34 cards
+  ✅ Set complete: 34 new cards, 204 prices
+
+📊 Overall Progress: 76/166 sets processed
+   Total cards imported: 10193
+   Total prices imported: 60077
+
+📦 Processing Primal Clash (xy5)
+  - Series: XY
+  - Release Date: 2015/02/04
+  - Total Cards: 164
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 164 cards
+  ✅ Set complete: 164 new cards, 981 prices
+
+📊 Overall Progress: 77/166 sets processed
+   Total cards imported: 10357
+   Total prices imported: 61058
+
+📦 Processing Phantom Forces (xy4)
+  - Series: XY
+  - Release Date: 2014/11/05
+  - Total Cards: 124
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 124 cards

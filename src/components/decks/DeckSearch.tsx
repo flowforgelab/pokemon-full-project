@@ -137,7 +137,7 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for cards..."
+                  placeholder="Search by name or number..."
                   className="w-full pl-10 pr-10 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {(searchQuery || isVoiceSearching) && (
