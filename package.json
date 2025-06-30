@@ -15,7 +15,13 @@
     "prisma:studio": "prisma studio",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testMatch='**/*.test.{ts,tsx}'",
+    "test:integration": "jest --testMatch='**/*.integration.test.{ts,tsx}'",
+    "test:ci": "jest --ci --coverage --maxWorkers=2"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.22.0",

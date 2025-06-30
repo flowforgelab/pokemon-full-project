@@ -2842,3 +2842,55 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 132 cards
+  ✅ Set complete: 132 new cards, 264 prices
+
+📊 Overall Progress: 159/166 sets processed
+   Total cards imported: 16309
+   Total prices imported: 94191
+
+📦 Processing Gym Heroes (gym1)
+  - Series: Gym
+  - Release Date: 2000/08/14
+  - Total Cards: 132
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 132 cards
+  ✅ Set complete: 132 new cards, 264 prices
+
+📊 Overall Progress: 160/166 sets processed
+   Total cards imported: 16441
+   Total prices imported: 94455
+
+📦 Processing Team Rocket (base5)
+  - Series: Base
+  - Release Date: 2000/04/24
+  - Total Cards: 83
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 83 cards
+  ✅ Set complete: 83 new cards, 166 prices
+
+📊 Overall Progress: 161/166 sets processed
+   Total cards imported: 16524
+   Total prices imported: 94621
+
+📦 Processing Base Set 2 (base4)
+  - Series: Base
+  - Release Date: 2000/02/24
+  - Total Cards: 130
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 130 cards
+  ✅ Set complete: 130 new cards, 780 prices
+
+📊 Overall Progress: 162/166 sets processed
+   Total cards imported: 16654
+   Total prices imported: 95401
+
+📦 Processing Fossil (base3)
+  - Series: Base
+  - Release Date: 1999/10/10
+  - Total Cards: 62
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 62 cards
