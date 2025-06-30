@@ -306,7 +306,6 @@ export const cardRouter = createTRPCRouter({
           set: true,
           prices: {
             orderBy: { updatedAt: 'desc' },
-            take: 5, // Last 5 price points
           },
         },
       });
@@ -318,10 +317,20 @@ export const cardRouter = createTRPCRouter({
         });
       }
       
-      // Cache for 24 hours
-      await redis.setex(cacheKey, 24 * 60 * 60, JSON.stringify(card));
+      // Convert Decimal prices to numbers for serialization
+      const cardWithPrices = {
+        ...card,
+        prices: card.prices.map(price => ({
+          ...price,
+          price: price.price.toString(), // Convert Decimal to string
+          marketPrice: price.marketPrice?.toString() || null,
+        })),
+      };
       
-      return card;
+      // Cache for 24 hours
+      await redis.setex(cacheKey, 24 * 60 * 60, JSON.stringify(cardWithPrices));
+      
+      return cardWithPrices;
     }),
   
   /**

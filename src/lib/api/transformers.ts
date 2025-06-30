@@ -199,7 +199,7 @@ export function handleImageUrls(imageUrl: string): { isValid: boolean; url: stri
  */
 export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCreateInput[] {
   const prices: Prisma.CardPriceCreateInput[] = [];
-  const updatedAt = new Date();
+  const fetchedAt = new Date();
 
   // Extract TCGPlayer prices (USD)
   if (apiCard.tcgplayer?.prices) {
@@ -214,7 +214,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.LOW,
           price: tcgPrices.normal.low,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.normal.mid) {
@@ -224,7 +224,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.MID,
           price: tcgPrices.normal.mid,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.normal.high) {
@@ -234,7 +234,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.HIGH,
           price: tcgPrices.normal.high,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.normal.market) {
@@ -244,7 +244,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.MARKET,
           price: tcgPrices.normal.market,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
     }
@@ -258,7 +258,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.LOW,
           price: tcgPrices.holofoil.low,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.holofoil.mid) {
@@ -268,7 +268,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.MID,
           price: tcgPrices.holofoil.mid,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.holofoil.high) {
@@ -278,7 +278,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.HIGH,
           price: tcgPrices.holofoil.high,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
       if (tcgPrices.holofoil.market) {
@@ -288,38 +288,13 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
           priceType: PriceType.MARKET,
           price: tcgPrices.holofoil.market,
           currency: 'USD',
-          updatedAt,
+          fetchedAt,
         });
       }
     }
 
-    // Reverse holofoil prices
-    if (tcgPrices.reverseHolofoil) {
-      if (tcgPrices.reverseHolofoil.low) {
-        prices.push({
-          cardId: apiCard.id,
-          source: PriceSource.TCGPLAYER,
-          priceType: PriceType.LOW,
-          price: tcgPrices.reverseHolofoil.low,
-          currency: 'USD',
-          foil: true,
-          condition: 'reverseHolofoil',
-          updatedAt,
-        });
-      }
-      if (tcgPrices.reverseHolofoil.market) {
-        prices.push({
-          cardId: apiCard.id,
-          source: PriceSource.TCGPLAYER,
-          priceType: PriceType.MARKET,
-          price: tcgPrices.reverseHolofoil.market,
-          currency: 'USD',
-          foil: true,
-          condition: 'reverseHolofoil',
-          updatedAt,
-        });
-      }
-    }
+    // Reverse holofoil prices (skipped for now as schema doesn't support foil/condition fields)
+    // TODO: Consider adding foil/condition fields to CardPrice model or creating separate price entries
   }
 
   // Extract CardMarket prices (EUR)

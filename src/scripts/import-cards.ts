@@ -138,10 +138,8 @@ async function importCards() {
                   cardId: price.cardId,
                   source: price.source,
                   priceType: price.priceType,
-                  amount: price.amount,
+                  price: price.price,
                   currency: price.currency,
-                  foil: price.foil,
-                  condition: price.condition,
                   date: new Date(),
                 }));
                 

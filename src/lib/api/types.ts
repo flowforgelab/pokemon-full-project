@@ -88,6 +88,30 @@ export interface PokemonTCGCard {
     small: string;
     large: string;
   };
+  tcgplayer?: {
+    url: string;
+    updatedAt: string;
+    prices?: {
+      normal?: {
+        low?: number;
+        mid?: number;
+        high?: number;
+        market?: number;
+      };
+      holofoil?: {
+        low?: number;
+        mid?: number;
+        high?: number;
+        market?: number;
+      };
+      reverseHolofoil?: {
+        low?: number;
+        mid?: number;
+        high?: number;
+        market?: number;
+      };
+    };
+  };
   cardmarket?: {
     url: string;
     updatedAt: string;
