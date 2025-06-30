@@ -93,6 +93,22 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                       No Image Available
                     </div>
                   )}
+                  
+                  {/* Pokemon Type Badge - Top Left Corner */}
+                  {card.types && card.types.length > 0 && (
+                    <div className="absolute top-4 left-4 flex gap-1">
+                      {card.types.map((type) => (
+                        <span
+                          key={type}
+                          className={`px-2 py-1 rounded-md text-xs font-bold shadow-lg ${
+                            typeColors[type] || 'bg-gray-200 text-gray-800'
+                          }`}
+                        >
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Quick Actions */}
