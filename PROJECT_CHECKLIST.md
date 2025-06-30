@@ -848,8 +848,18 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-06-30
-- Version: 1.0.12-MVP
+- Version: 1.0.13-MVP
 - Latest Updates:
+  - Search Optimization with Relevance Ranking (2025-06-30 Late Evening):
+    - ✅ Implemented searchOptimized endpoint with intelligent relevance-based ranking
+    - ✅ Exact matches get highest priority (100 points)
+    - ✅ Prefix matches (e.g., 'r' returns cards starting with 'r') get 90 points
+    - ✅ Word boundary matches get 70 points, contains matches get 50 points
+    - ✅ Single character searches only return prefix matches for better UX
+    - ✅ Added pg_trgm extension for future fuzzy search capabilities
+    - ✅ Updated frontend components (cards page & DeckSearch) to use optimized endpoint
+    - ✅ Maintains all existing filter and sort functionality
+    - ✅ Addresses user feedback about unintuitive search results
   - Search Functionality Fixes & Real-time Filtering (2025-06-30 Evening):
     - ✅ Fixed broken search in DeckSearch component (was returning mock data)
     - ✅ Implemented real-time search with 500ms debounce
