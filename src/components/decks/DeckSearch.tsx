@@ -45,7 +45,7 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
   }, [debouncedQuery, filters]);
 
   // Use tRPC query for search
-  const { data: searchResult, isLoading, error } = api.card.search.useQuery({
+  const { data: searchResult, isLoading, error } = api.card.searchOptimized.useQuery({
     query: debouncedQuery,
     filters: {
       supertype: filters.supertype ? filters.supertype as any : undefined,

@@ -824,3 +824,188 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 216 cards
+  ✅ Set complete: 216 new cards, 1296 prices
+
+📊 Overall Progress: 43/166 sets processed
+   Total cards imported: 6148
+   Total prices imported: 36464
+
+📦 Processing SWSH Black Star Promos (swshp)
+  - Series: Sword & Shield
+  - Release Date: 2019/11/15
+  - Total Cards: 304
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    ❌ Failed to fetch cards page 2: Response validation failed
+  ✅ Set complete: 250 new cards, 1483 prices
+
+📊 Overall Progress: 44/166 sets processed
+   Total cards imported: 6398
+   Total prices imported: 37947
+
+📦 Processing Cosmic Eclipse (sm12)
+  - Series: Sun & Moon
+  - Release Date: 2019/11/01
+  - Total Cards: 272
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 22 cards
+  ✅ Set complete: 272 new cards, 1628 prices
+
+📊 Overall Progress: 45/166 sets processed
+   Total cards imported: 6670
+   Total prices imported: 39575
+
+📦 Processing McDonald's Collection 2019 (mcd19)
+  - Series: Other
+  - Release Date: 2019/10/15
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 72 prices
+
+📊 Overall Progress: 46/166 sets processed
+   Total cards imported: 6682
+   Total prices imported: 39647
+
+📦 Processing Hidden Fates (sm115)
+  - Series: Sun & Moon
+  - Release Date: 2019/08/23
+  - Total Cards: 69
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 69 cards
+  ✅ Set complete: 69 new cards, 414 prices
+
+📊 Overall Progress: 47/166 sets processed
+   Total cards imported: 6751
+   Total prices imported: 40061
+
+📦 Processing Hidden Fates Shiny Vault (sma)
+  - Series: Sun & Moon
+  - Release Date: 2019/08/23
+  - Total Cards: 94
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 94 cards
+  ✅ Set complete: 94 new cards, 564 prices
+
+📊 Overall Progress: 48/166 sets processed
+   Total cards imported: 6845
+   Total prices imported: 40625
+
+📦 Processing Unified Minds (sm11)
+  - Series: Sun & Moon
+  - Release Date: 2019/08/02
+  - Total Cards: 260
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 11 cards
+  ✅ Set complete: 261 new cards, 1553 prices
+
+📊 Overall Progress: 49/166 sets processed
+   Total cards imported: 7106
+   Total prices imported: 42178
+
+📦 Processing Unbroken Bonds (sm10)
+  - Series: Sun & Moon
+  - Release Date: 2019/05/03
+  - Total Cards: 234
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 238 cards
+  ✅ Set complete: 238 new cards, 1405 prices
+
+📊 Overall Progress: 50/166 sets processed
+   Total cards imported: 7344
+   Total prices imported: 43583
+
+📦 Processing Detective Pikachu (det1)
+  - Series: Sun & Moon
+  - Release Date: 2019/04/05
+  - Total Cards: 18
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 18 cards
+  ✅ Set complete: 18 new cards, 108 prices
+
+📊 Overall Progress: 51/166 sets processed
+   Total cards imported: 7362
+   Total prices imported: 43691
+
+📦 Processing Team Up (sm9)
+  - Series: Sun & Moon
+  - Release Date: 2019/02/01
+  - Total Cards: 198
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 198 cards
+  ✅ Set complete: 198 new cards, 1177 prices
+
+📊 Overall Progress: 52/166 sets processed
+   Total cards imported: 7560
+   Total prices imported: 44868
+
+📦 Processing Lost Thunder (sm8)
+  - Series: Sun & Moon
+  - Release Date: 2018/11/02
+  - Total Cards: 240
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 240 cards
+  ✅ Set complete: 240 new cards, 1420 prices
+
+📊 Overall Progress: 53/166 sets processed
+   Total cards imported: 7800
+   Total prices imported: 46288
+
+📦 Processing McDonald's Collection 2018 (mcd18)
+  - Series: Other
+  - Release Date: 2018/10/16
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 54/166 sets processed
+   Total cards imported: 7812
+   Total prices imported: 46288
+
+📦 Processing Dragon Majesty (sm75)
+  - Series: Sun & Moon
+  - Release Date: 2018/09/07
+  - Total Cards: 80
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 80 cards
+  ✅ Set complete: 80 new cards, 470 prices
+
+📊 Overall Progress: 55/166 sets processed
+   Total cards imported: 7892
+   Total prices imported: 46758
+
+📦 Processing Celestial Storm (sm7)
+  - Series: Sun & Moon
+  - Release Date: 2018/08/03
+  - Total Cards: 187
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 187 cards
+  ✅ Set complete: 187 new cards, 1104 prices
+
+📊 Overall Progress: 56/166 sets processed
+   Total cards imported: 8079
+   Total prices imported: 47862
+
+📦 Processing Forbidden Light (sm6)
+  - Series: Sun & Moon
+  - Release Date: 2018/05/04
+  - Total Cards: 150
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 150 cards

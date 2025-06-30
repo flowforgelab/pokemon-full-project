@@ -72,7 +72,180 @@ const cardSearchFiltersSchema = z.object({
 
 export const cardRouter = createTRPCRouter({
   /**
-   * Advanced card search with comprehensive filtering
+   * Optimized card search with relevance ranking
+   */
+  searchOptimized: publicProcedure
+    .input(z.object({
+      query: z.string().optional(),
+      filters: cardSearchFiltersSchema.optional(),
+      pagination: paginationSchema,
+      sort: sortSchema,
+      includeOwnedStatus: z.boolean().default(false),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { query, filters, pagination, sort, includeOwnedStatus } = input;
+      const { page, limit } = pagination;
+      const skip = (page - 1) * limit;
+      
+      try {
+        // For single character queries, only show prefix matches
+        const minSearchLength = query && query.trim().length === 1 ? 1 : 2;
+        
+        if (!query || query.trim().length < minSearchLength) {
+          // If no query or too short, fall back to regular search
+          return await ctx.prisma.$transaction(async (tx) => {
+            const where: Record<string, any> = {};
+            
+            // Apply filters
+            if (filters?.supertype) {
+              where.supertype = filters.supertype;
+            }
+            
+            const [cards, total] = await Promise.all([
+              tx.card.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { name: 'asc' },
+                include: {
+                  set: true,
+                  prices: {
+                    orderBy: { updatedAt: 'desc' },
+                    take: 1,
+                  },
+                },
+              }),
+              tx.card.count({ where }),
+            ]);
+            
+            return {
+              cards,
+              total,
+              page,
+              pageSize: limit,
+              totalPages: Math.ceil(total / limit),
+            };
+          });
+        }
+        
+        // Use raw SQL for relevance-based search
+        const searchTerm = query.trim().toLowerCase();
+        const isSingleChar = searchTerm.length === 1;
+        
+        // Build filter conditions
+        let filterConditions = '';
+        const filterParams: any[] = [];
+        
+        if (filters?.supertype) {
+          filterConditions += ' AND c.supertype = $' + (filterParams.length + 4);
+          filterParams.push(filters.supertype);
+        }
+        
+        // For single character, only get prefix matches
+        const searchCondition = isSingleChar
+          ? `c.name ILIKE $2`
+          : `(c.name ILIKE $3 OR s.name ILIKE $3)`;
+        
+        const relevanceQuery = `
+          WITH search_results AS (
+            SELECT DISTINCT ON (c.id)
+              c.*,
+              s.name as set_name,
+              s.id as set_id,
+              CASE
+                WHEN LOWER(c.name) = $1 THEN 100
+                WHEN LOWER(c.name) LIKE $2 THEN 90
+                WHEN LOWER(c.name) ~ ('\\m' || $1) THEN 70
+                WHEN LOWER(c.name) LIKE $3 THEN 50
+                WHEN LOWER(s.name) LIKE $3 THEN 30
+                ELSE 0
+              END as relevance_score
+            FROM "Card" c
+            INNER JOIN "Set" s ON c."setId" = s.id
+            WHERE ${searchCondition} ${filterConditions}
+          )
+          SELECT * FROM search_results
+          WHERE relevance_score > 0
+          ORDER BY 
+            relevance_score DESC,
+            name ASC
+          LIMIT ${'$' + (filterParams.length + 4)}
+          OFFSET ${'$' + (filterParams.length + 5)};
+        `;
+        
+        const countQuery = `
+          SELECT COUNT(DISTINCT c.id) as count
+          FROM "Card" c
+          INNER JOIN "Set" s ON c."setId" = s.id
+          WHERE ${searchCondition} ${filterConditions};
+        `;
+        
+        // Execute queries
+        const queryParams = [
+          searchTerm,                    // $1 - exact match
+          searchTerm + '%',              // $2 - prefix match
+          '%' + searchTerm + '%',        // $3 - contains match
+          ...filterParams,
+          limit,
+          skip
+        ];
+        
+        const countParams = [
+          searchTerm,
+          searchTerm + '%',
+          '%' + searchTerm + '%',
+          ...filterParams
+        ];
+        
+        const [searchResults, countResult] = await Promise.all([
+          ctx.prisma.$queryRawUnsafe<any[]>(relevanceQuery, ...queryParams),
+          ctx.prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...countParams),
+        ]);
+        
+        const total = Number(countResult[0]?.count || 0);
+        
+        // Fetch related data (prices)
+        const cardIds = searchResults.map(r => r.id);
+        const prices = await ctx.prisma.cardPrice.findMany({
+          where: { cardId: { in: cardIds } },
+          orderBy: { updatedAt: 'desc' },
+        });
+        
+        // Group prices by card
+        const pricesByCard = prices.reduce((acc, price) => {
+          if (!acc[price.cardId]) acc[price.cardId] = [];
+          acc[price.cardId].push(price);
+          return acc;
+        }, {} as Record<string, typeof prices>);
+        
+        // Format results
+        const cards = searchResults.map(result => ({
+          ...result,
+          set: {
+            id: result.set_id,
+            name: result.set_name,
+          },
+          prices: pricesByCard[result.id]?.slice(0, 1) || [],
+        }));
+        
+        return {
+          cards,
+          total,
+          page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      } catch (error) {
+        console.error('Optimized search error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to search cards',
+        });
+      }
+    }),
+  
+  /**
+   * Advanced card search with comprehensive filtering (legacy)
    */
   search: publicProcedure
     .input(z.object({

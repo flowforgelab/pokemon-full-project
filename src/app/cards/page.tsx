@@ -50,7 +50,7 @@ export default function CardsPage() {
 
   const [page, setPage] = useState(1);
 
-  const { data: searchResult, isLoading, error } = api.card.search.useQuery({
+  const { data: searchResult, isLoading, error } = api.card.searchOptimized.useQuery({
     query: debouncedSearch,
     filters: {
       types: filters.types.length > 0 ? filters.types : undefined,
