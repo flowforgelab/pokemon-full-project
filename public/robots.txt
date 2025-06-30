@@ -1,0 +1,22 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Allow search engines to crawl public pages
+Allow: /
+Allow: /cards
+Allow: /decks
+Allow: /about
+Allow: /privacy
+Allow: /terms
+
+# Disallow private/user-specific pages
+Disallow: /dashboard
+Disallow: /collection
+Disallow: /settings
+Disallow: /admin
+Disallow: /api/
+Disallow: /trpc/
+
+# Sitemap location
+Sitemap: https://pokemon-tcg-deck-builder.vercel.app/sitemap.xml
