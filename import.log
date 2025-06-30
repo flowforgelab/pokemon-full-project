@@ -1217,3 +1217,29 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 165 cards
+  ✅ Set complete: 165 new cards, 982 prices
+
+📊 Overall Progress: 73/166 sets processed
+   Total cards imported: 9946
+   Total prices imported: 58612
+
+📦 Processing Ancient Origins (xy7)
+  - Series: XY
+  - Release Date: 2015/08/12
+  - Total Cards: 100
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 101 cards
+  ✅ Set complete: 101 new cards, 598 prices
+
+📊 Overall Progress: 74/166 sets processed
+   Total cards imported: 10047
+   Total prices imported: 59210
+
+📦 Processing Roaring Skies (xy6)
+  - Series: XY
+  - Release Date: 2015/05/06
+  - Total Cards: 112
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 112 cards
