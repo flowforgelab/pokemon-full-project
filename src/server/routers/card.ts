@@ -134,29 +134,43 @@ export const cardRouter = createTRPCRouter({
         const searchTerm = query.trim().toLowerCase();
         const isSingleChar = searchTerm.length === 1;
         
+        // Check if query contains space and last part could be a number
+        const parts = searchTerm.split(' ');
+        const lastPart = parts[parts.length - 1];
+        const hasSpaceAndNumber = parts.length > 1 && /^\d+$/.test(lastPart);
+        const namePartOnly = hasSpaceAndNumber ? parts.slice(0, -1).join(' ') : searchTerm;
+        const numberPartOnly = hasSpaceAndNumber ? lastPart : null;
+        
         // Build filter conditions
         let filterConditions = '';
         const filterParams: any[] = [];
+        let paramOffset = hasSpaceAndNumber ? 6 : 4; // Adjust for extra parameters
         
         if (filters?.supertype) {
-          filterConditions += ' AND c.supertype = $' + (filterParams.length + 4);
+          filterConditions += ' AND c.supertype = $' + (filterParams.length + paramOffset);
           filterParams.push(filters.supertype);
         }
         
         if (filters?.setId) {
-          filterConditions += ' AND c."setId" = $' + (filterParams.length + 4);
+          filterConditions += ' AND c."setId" = $' + (filterParams.length + paramOffset);
           filterParams.push(filters.setId);
         }
         
         if (filters?.series) {
-          filterConditions += ' AND s.series = $' + (filterParams.length + 4);
+          filterConditions += ' AND s.series = $' + (filterParams.length + paramOffset);
           filterParams.push(filters.series);
         }
         
         // Search card names and numbers
-        const searchCondition = isSingleChar
-          ? `(c.name ILIKE $2 OR c.number = $1)`
-          : `(c.name ILIKE $3 OR c.number ILIKE $3)`;
+        let searchCondition;
+        if (hasSpaceAndNumber) {
+          // Search for name part AND number part (e.g., "char 32" -> name contains "char" AND number contains "32")
+          searchCondition = `((LOWER(c.name) LIKE $5 AND (c.number = $4 OR c.number LIKE $6)) OR c.name ILIKE $3 OR c.number ILIKE $3)`;
+        } else if (isSingleChar) {
+          searchCondition = `(c.name ILIKE $2 OR c.number = $1)`;
+        } else {
+          searchCondition = `(c.name ILIKE $3 OR c.number ILIKE $3)`;
+        }
         
         const relevanceQuery = `
           WITH search_results AS (
@@ -168,6 +182,8 @@ export const cardRouter = createTRPCRouter({
                 -- Exact matches
                 WHEN LOWER(c.name) = $1 THEN 100
                 WHEN c.number = $1 THEN 95
+                -- Special case: name + number match (e.g., "char 32" matches Charcadet #32)
+                ${hasSpaceAndNumber ? `WHEN LOWER(c.name) LIKE $5 AND (c.number = $4 OR c.number LIKE $6) THEN 92` : ''}
                 -- Prefix matches
                 WHEN LOWER(c.name) LIKE $2 THEN 90
                 WHEN c.number LIKE $2 THEN 85
@@ -203,7 +219,17 @@ export const cardRouter = createTRPCRouter({
         `;
         
         // Execute queries
-        const queryParams = [
+        const queryParams = hasSpaceAndNumber ? [
+          searchTerm,                    // $1 - exact match
+          searchTerm + '%',              // $2 - prefix match
+          '%' + searchTerm + '%',        // $3 - contains match
+          numberPartOnly,                // $4 - exact number match
+          '%' + namePartOnly + '%',      // $5 - name contains match
+          numberPartOnly + '%',          // $6 - number prefix match
+          ...filterParams,
+          limit,
+          skip
+        ] : [
           searchTerm,                    // $1 - exact match
           searchTerm + '%',              // $2 - prefix match
           '%' + searchTerm + '%',        // $3 - contains match
@@ -212,7 +238,15 @@ export const cardRouter = createTRPCRouter({
           skip
         ];
         
-        const countParams = [
+        const countParams = hasSpaceAndNumber ? [
+          searchTerm,
+          searchTerm + '%',
+          '%' + searchTerm + '%',
+          numberPartOnly,
+          '%' + namePartOnly + '%',
+          numberPartOnly + '%',
+          ...filterParams
+        ] : [
           searchTerm,
           searchTerm + '%',
           '%' + searchTerm + '%',

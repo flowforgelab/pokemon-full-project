@@ -1282,3 +1282,42 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 124 cards
+  ✅ Set complete: 124 new cards, 733 prices
+
+📊 Overall Progress: 78/166 sets processed
+   Total cards imported: 10481
+   Total prices imported: 61791
+
+📦 Processing Furious Fists (xy3)
+  - Series: XY
+  - Release Date: 2014/08/13
+  - Total Cards: 114
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 114 cards
+  ✅ Set complete: 114 new cards, 680 prices
+
+📊 Overall Progress: 79/166 sets processed
+   Total cards imported: 10595
+   Total prices imported: 62471
+
+📦 Processing McDonald's Collection 2014 (mcd14)
+  - Series: Other
+  - Release Date: 2014/05/23
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 80/166 sets processed
+   Total cards imported: 10607
+   Total prices imported: 62471
+
+📦 Processing Flashfire (xy2)
+  - Series: XY
+  - Release Date: 2014/05/07
+  - Total Cards: 110
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 110 cards
