@@ -31,6 +31,7 @@ const cardSearchFiltersSchema = z.object({
   
   // Set and legality
   setId: z.string().optional(),
+  setIds: z.array(z.string()).optional(),
   series: z.string().optional(),
   rarity: z.array(z.nativeEnum(Rarity)).optional(),
   isLegalStandard: z.boolean().optional(),
@@ -171,6 +172,14 @@ export const cardRouter = createTRPCRouter({
         if (filters?.setId) {
           filterConditions += ' AND c."setId" = $' + (filterParams.length + baseParamCount + 1);
           filterParams.push(filters.setId);
+        }
+        
+        if (filters?.setIds && filters.setIds.length > 0) {
+          const placeholders = filters.setIds.map((_, index) => 
+            '$' + (filterParams.length + baseParamCount + index + 1)
+          ).join(', ');
+          filterConditions += ` AND c."setId" IN (${placeholders})`;
+          filterParams.push(...filters.setIds);
         }
         
         if (filters?.series) {

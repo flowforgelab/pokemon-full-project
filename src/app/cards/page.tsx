@@ -22,7 +22,7 @@ interface CardFilters {
   subtypes: string[];
   supertype: string;
   rarity: string[];
-  set: string;
+  sets: string[];
   hp: { min?: number; max?: number };
   retreatCost: { min?: number; max?: number };
   sortBy: string;
@@ -39,7 +39,7 @@ export default function CardsPage() {
     subtypes: [],
     supertype: '',
     rarity: [],
-    set: '',
+    sets: [],
     hp: {},
     retreatCost: {},
     sortBy: 'name',
@@ -57,7 +57,7 @@ export default function CardsPage() {
       subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
       supertype: filters.supertype ? filters.supertype as any : undefined,
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
-      setId: filters.set || undefined,
+      setIds: filters.sets.length > 0 ? filters.sets : undefined,
       hp: Object.keys(filters.hp).length > 0 ? filters.hp : undefined,
       retreatCost: Object.keys(filters.retreatCost).length > 0 ? filters.retreatCost : undefined,
     },
@@ -86,7 +86,7 @@ export default function CardsPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters.types, filters.subtypes, filters.supertype, filters.rarity, filters.set, filters.sortBy, filters.sortOrder]);
+  }, [debouncedSearch, filters.types, filters.subtypes, filters.supertype, filters.rarity, filters.sets, filters.sortBy, filters.sortOrder]);
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -205,23 +205,27 @@ export default function CardsPage() {
                   </button>
                 </span>
               ))}
-              {filters.set && sets && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
-                  {sets.find(s => s.id === filters.set)?.name}
-                  <button
-                    onClick={() => setFilters({ ...filters, set: '' })}
-                    className="hover:text-green-600"
-                  >
-                    <XMarkIcon className="h-4 w-4" />
-                  </button>
-                </span>
-              )}
+              {filters.sets.map((setId) => {
+                const set = sets?.find(s => s.id === setId);
+                if (!set) return null;
+                return (
+                  <span key={setId} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                    {set.name}
+                    <button
+                      onClick={() => setFilters({ ...filters, sets: filters.sets.filter(s => s !== setId) })}
+                      className="hover:text-green-600"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </span>
+                );
+              })}
               <button
                 onClick={() => setFilters({
                   ...filters,
                   types: [],
                   rarity: [],
-                  set: '',
+                  sets: [],
                   supertype: '',
                 })}
                 className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -312,18 +316,39 @@ export default function CardsPage() {
                 {/* Set */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Set</h3>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                    value={filters.set}
-                    onChange={(e) => setFilters({ ...filters, set: e.target.value })}
-                  >
-                    <option value="">All Sets</option>
-                    {sets?.map((set) => (
-                      <option key={set.id} value={set.id}>
-                        {set.name}
-                      </option>
+                  <input
+                    type="text"
+                    placeholder="Search sets..."
+                    className="w-full px-3 py-2 mb-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    onChange={(e) => {
+                      const searchTerm = e.target.value.toLowerCase();
+                      const filterElement = e.target.nextElementSibling as HTMLDivElement;
+                      const labels = filterElement?.querySelectorAll('label');
+                      labels?.forEach(label => {
+                        const text = label.textContent?.toLowerCase() || '';
+                        label.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+                      });
+                    }}
+                  />
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {sets?.sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)).map((set) => (
+                      <label key={set.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={filters.sets.includes(set.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters({ ...filters, sets: [...filters.sets, set.id] });
+                            } else {
+                              setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{set.name}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
                 {/* Sort */}
