@@ -4,6 +4,11 @@ import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
 import { getAnalysisCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
+import { 
+  requireResourcePermission,
+  requireSubscriptionFeature,
+  rateLimitBySubscription
+} from '@/server/api/middleware/permissions';
 
 // Validation schemas
 const analysisModeSchema = z.enum(['quick', 'standard', 'comprehensive']).default('standard');
@@ -119,8 +124,27 @@ export const analysisRouter = createTRPCRouter({
           analysis = await analyzer.analyze(analysisData);
       }
       
-      // Add recommendations if requested
+      // Add recommendations if requested (premium feature)
       if (options.includeRecommendations) {
+        // Check if user has premium access for advanced recommendations
+        if (ctx.userId) {
+          const user = await ctx.prisma.user.findUnique({
+            where: { clerkUserId: ctx.userId },
+            select: { subscriptionTier: true },
+          });
+          
+          if (user?.subscriptionTier === 'FREE') {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Advanced recommendations require a premium subscription',
+            });
+          }
+        } else {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Please sign in to access recommendations',
+          });
+        }
         const recommendations = await analyzer.getRecommendations(analysisData, analysis);
         analysis.recommendations = recommendations;
       }

@@ -6,6 +6,15 @@ import { deckBuilderManager } from '@/lib/deck-builder/deck-builder-manager';
 import { DeckValidator } from '@/lib/deck-builder/deck-validator';
 import { redis as kv } from '@/server/db/redis';
 import crypto from 'crypto';
+import { 
+  requireResourcePermission,
+  requireOwnership,
+  requirePublicOrOwned,
+  requireSubscriptionFeature,
+  checkDeckLimit,
+  auditLog,
+  rateLimitBySubscription
+} from '@/server/api/middleware/permissions';
 
 // Validation schemas
 const cardInputSchema = z.object({
@@ -28,6 +37,9 @@ const deckFilterSchema = z.object({
 
 export const deckRouter = createTRPCRouter({
   create: protectedProcedure
+    .use(checkDeckLimit)
+    .use(requireResourcePermission('deck', 'create'))
+    .use(rateLimitBySubscription('deck:create'))
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -92,6 +104,8 @@ export const deckRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
+    .use(requireResourcePermission('deck', 'update'))
+    .use(auditLog('update', 'deck'))
     .input(
       z.object({
         id: z.string(),
@@ -179,6 +193,8 @@ export const deckRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
+    .use(requireResourcePermission('deck', 'delete'))
+    .use(auditLog('delete', 'deck'))
     .input(z.string())
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.prisma.user.findUnique({
@@ -379,6 +395,9 @@ export const deckRouter = createTRPCRouter({
 
   // Duplicate a deck
   duplicate: protectedProcedure
+    .use(checkDeckLimit)
+    .use(requireResourcePermission('deck', 'create'))
+    .use(rateLimitBySubscription('deck:duplicate'))
     .input(z.object({
       deckId: z.string(),
       name: z.string().min(1).max(100).optional(),

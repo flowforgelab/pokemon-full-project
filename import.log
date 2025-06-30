@@ -2608,3 +2608,237 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 102 cards
+  ✅ Set complete: 102 new cards, 612 prices
+
+📊 Overall Progress: 141/166 sets processed
+   Total cards imported: 15011
+   Total prices imported: 88609
+
+📦 Processing EX Trainer Kit Latias (tk1a)
+  - Series: EX
+  - Release Date: 2004/06/01
+  - Total Cards: 10
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 10 cards
+  ✅ Set complete: 10 new cards, 0 prices
+
+📊 Overall Progress: 142/166 sets processed
+   Total cards imported: 15021
+   Total prices imported: 88609
+
+📦 Processing EX Trainer Kit Latios (tk1b)
+  - Series: EX
+  - Release Date: 2004/06/01
+  - Total Cards: 10
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 10 cards
+  ✅ Set complete: 10 new cards, 0 prices
+
+📊 Overall Progress: 143/166 sets processed
+   Total cards imported: 15031
+   Total prices imported: 88609
+
+📦 Processing Team Magma vs Team Aqua (ex4)
+  - Series: EX
+  - Release Date: 2004/03/01
+  - Total Cards: 97
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 97 cards
+  ✅ Set complete: 97 new cards, 582 prices
+
+📊 Overall Progress: 144/166 sets processed
+   Total cards imported: 15128
+   Total prices imported: 89191
+
+📦 Processing Dragon (ex3)
+  - Series: EX
+  - Release Date: 2003/11/24
+  - Total Cards: 100
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 100 cards
+  ✅ Set complete: 100 new cards, 600 prices
+
+📊 Overall Progress: 145/166 sets processed
+   Total cards imported: 15228
+   Total prices imported: 89791
+
+📦 Processing Nintendo Black Star Promos (np)
+  - Series: NP
+  - Release Date: 2003/10/01
+  - Total Cards: 40
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 146/166 sets processed
+   Total cards imported: 15228
+   Total prices imported: 89791
+
+📦 Processing Sandstorm (ex2)
+  - Series: EX
+  - Release Date: 2003/09/18
+  - Total Cards: 100
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 100 cards
+  ✅ Set complete: 100 new cards, 600 prices
+
+📊 Overall Progress: 147/166 sets processed
+   Total cards imported: 15328
+   Total prices imported: 90391
+
+📦 Processing Ruby & Sapphire (ex1)
+  - Series: EX
+  - Release Date: 2003/07/01
+  - Total Cards: 109
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 148/166 sets processed
+   Total cards imported: 15328
+   Total prices imported: 90391
+
+📦 Processing Skyridge (ecard3)
+  - Series: E-Card
+  - Release Date: 2003/05/12
+  - Total Cards: 182
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 149/166 sets processed
+   Total cards imported: 15328
+   Total prices imported: 90391
+
+📦 Processing Aquapolis (ecard2)
+  - Series: E-Card
+  - Release Date: 2003/01/15
+  - Total Cards: 182
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 182 cards
+  ✅ Set complete: 182 new cards, 1039 prices
+
+📊 Overall Progress: 150/166 sets processed
+   Total cards imported: 15510
+   Total prices imported: 91430
+
+📦 Processing Best of Game (bp)
+  - Series: Other
+  - Release Date: 2002/12/01
+  - Total Cards: 9
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 9 cards
+  ✅ Set complete: 9 new cards, 33 prices
+
+📊 Overall Progress: 151/166 sets processed
+   Total cards imported: 15519
+   Total prices imported: 91463
+
+📦 Processing Expedition Base Set (ecard1)
+  - Series: E-Card
+  - Release Date: 2002/09/15
+  - Total Cards: 165
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 165 cards
+  ✅ Set complete: 165 new cards, 990 prices
+
+📊 Overall Progress: 152/166 sets processed
+   Total cards imported: 15684
+   Total prices imported: 92453
+
+📦 Processing Legendary Collection (base6)
+  - Series: Other
+  - Release Date: 2002/05/24
+  - Total Cards: 110
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 110 cards
+  ✅ Set complete: 110 new cards, 660 prices
+
+📊 Overall Progress: 153/166 sets processed
+   Total cards imported: 15794
+   Total prices imported: 93113
+
+📦 Processing Neo Destiny (neo4)
+  - Series: Neo
+  - Release Date: 2002/02/28
+  - Total Cards: 113
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 113 cards
+  ✅ Set complete: 113 new cards, 226 prices
+
+📊 Overall Progress: 154/166 sets processed
+   Total cards imported: 15907
+   Total prices imported: 93339
+
+📦 Processing Neo Revelation (neo3)
+  - Series: Neo
+  - Release Date: 2001/09/21
+  - Total Cards: 66
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 66 cards
+  ✅ Set complete: 66 new cards, 132 prices
+
+📊 Overall Progress: 155/166 sets processed
+   Total cards imported: 15973
+   Total prices imported: 93471
+
+📦 Processing Southern Islands (si1)
+  - Series: Other
+  - Release Date: 2001/07/31
+  - Total Cards: 18
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 18 cards
+  ✅ Set complete: 18 new cards, 84 prices
+
+📊 Overall Progress: 156/166 sets processed
+   Total cards imported: 15991
+   Total prices imported: 93555
+
+📦 Processing Neo Discovery (neo2)
+  - Series: Neo
+  - Release Date: 2001/06/01
+  - Total Cards: 75
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 75 cards
+  ✅ Set complete: 75 new cards, 150 prices
+
+📊 Overall Progress: 157/166 sets processed
+   Total cards imported: 16066
+   Total prices imported: 93705
+
+📦 Processing Neo Genesis (neo1)
+  - Series: Neo
+  - Release Date: 2000/12/16
+  - Total Cards: 111
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 111 cards
+  ✅ Set complete: 111 new cards, 222 prices
+
+📊 Overall Progress: 158/166 sets processed
+   Total cards imported: 16177
+   Total prices imported: 93927
+
+📦 Processing Gym Challenge (gym2)
+  - Series: Gym
+  - Release Date: 2000/10/16
+  - Total Cards: 132
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 132 cards

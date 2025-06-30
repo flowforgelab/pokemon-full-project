@@ -7,7 +7,7 @@ import { tradeRouter } from './trade';
 import { analysisRouter } from './analysis';
 import { pricingRouter } from './pricing';
 import { recommendationRouter } from './recommendation';
-// import { adminRouter } from './admin';
+import { adminRouter } from './admin';
 // import { subscriptionRouter } from './subscription';
 // import { notificationRouter } from './notification';
 // import { socialRouter } from './social';
@@ -35,8 +35,8 @@ export const appRouter = createTRPCRouter({
   // notification: notificationRouter,
   // social: socialRouter,
   
-  // Administration (TODO: implement admin router)
-  // admin: adminRouter,
+  // Administration
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

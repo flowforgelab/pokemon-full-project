@@ -4,6 +4,14 @@ import { TRPCError } from '@trpc/server';
 import { CardCondition, Rarity, Supertype } from '@prisma/client';
 import { getCollectionCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
+import { 
+  requireResourcePermission,
+  requireSubscriptionFeature,
+  checkCollectionLimit,
+  requireBulkOperationPermission,
+  rateLimitBySubscription,
+  auditLog
+} from '@/server/api/middleware/permissions';
 
 // Validation schemas
 const collectionFilterSchema = z.object({
@@ -33,21 +41,25 @@ const collectionFilterSchema = z.object({
   acquiredBefore: z.date().optional(),
 });
 
-const bulkAddSchema = z.array(z.object({
-  cardId: z.string(),
-  quantity: z.number().min(1),
-  quantityFoil: z.number().min(0).default(0),
-  condition: z.nativeEnum(CardCondition).default(CardCondition.NEAR_MINT),
-  language: z.string().default('EN'),
-  purchasePrice: z.number().optional(),
-  notes: z.string().optional(),
-})).max(100);
+const bulkAddSchema = z.object({
+  cards: z.array(z.object({
+    cardId: z.string(),
+    quantity: z.number().min(1),
+    quantityFoil: z.number().min(0).default(0),
+    condition: z.nativeEnum(CardCondition).default(CardCondition.NEAR_MINT),
+    language: z.string().default('EN'),
+    purchasePrice: z.number().optional(),
+    notes: z.string().optional(),
+  })).max(100),
+});
 
 export const collectionRouter = createTRPCRouter({
   /**
    * Get comprehensive collection dashboard data
    */
   getDashboard: protectedProcedure
+    .use(requireResourcePermission('collection', 'read'))
+    .use(rateLimitBySubscription('collection:dashboard'))
     .query(async ({ ctx }) => {
       const user = await ctx.prisma.user.findUnique({
         where: { clerkUserId: ctx.userId },
