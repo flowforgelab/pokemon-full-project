@@ -2894,3 +2894,62 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 62 cards
+  ✅ Set complete: 62 new cards, 124 prices
+
+📊 Overall Progress: 163/166 sets processed
+   Total cards imported: 16716
+   Total prices imported: 95525
+
+📦 Processing Wizards Black Star Promos (basep)
+  - Series: Base
+  - Release Date: 1999/07/01
+  - Total Cards: 53
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 53 cards
+  ✅ Set complete: 53 new cards, 302 prices
+
+📊 Overall Progress: 164/166 sets processed
+   Total cards imported: 16769
+   Total prices imported: 95827
+
+📦 Processing Jungle (base2)
+  - Series: Base
+  - Release Date: 1999/06/16
+  - Total Cards: 64
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 64 cards
+  ✅ Set complete: 64 new cards, 128 prices
+
+📊 Overall Progress: 165/166 sets processed
+   Total cards imported: 16833
+   Total prices imported: 95955
+
+📦 Processing Base (base1)
+  - Series: Base
+  - Release Date: 1999/01/09
+  - Total Cards: 102
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 102 cards
+  ✅ Set complete: 102 new cards, 607 prices
+
+📊 Overall Progress: 166/166 sets processed
+   Total cards imported: 16935
+   Total prices imported: 96562
+
+================================================================================
+✅ Import completed successfully!
+
+📊 Final Statistics:
+  - Sets processed: 166
+  - Cards imported: 16935
+  - Prices imported: 96562
+
+📊 Final database state:
+  - Total sets: 166
+  - Total cards: 17315
+  - Total prices: 98368
+
+👋 Import process finished

@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { protectedProcedure } from '../trpc';
+import { protectedProcedure } from '@/server/trpc';
 import { checkPermission, getDbUser } from '@/lib/auth/clerk';
 import { prisma } from '@/server/db/prisma';
 
