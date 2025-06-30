@@ -144,7 +144,7 @@ export const cardRouter = createTRPCRouter({
         // Build filter conditions
         let filterConditions = '';
         const filterParams: any[] = [];
-        let paramOffset = hasSpaceAndNumber ? 6 : 4; // Adjust for extra parameters
+        let paramOffset = hasSpaceAndNumber ? 7 : 4; // Adjust for extra parameters (including limit/offset)
         
         if (filters?.supertype) {
           filterConditions += ' AND c.supertype = $' + (filterParams.length + paramOffset);
@@ -207,8 +207,8 @@ export const cardRouter = createTRPCRouter({
               WHEN relevance_score = 90 THEN name
               ELSE name
             END ASC
-          LIMIT ${'$' + (filterParams.length + 4)}
-          OFFSET ${'$' + (filterParams.length + 5)};
+          LIMIT ${'$' + (filterParams.length + paramOffset - 2)}
+          OFFSET ${'$' + (filterParams.length + paramOffset - 1)};
         `;
         
         const countQuery = `

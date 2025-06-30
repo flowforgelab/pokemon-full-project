@@ -1321,3 +1321,175 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 110 cards
+  ✅ Set complete: 110 new cards, 656 prices
+
+📊 Overall Progress: 81/166 sets processed
+   Total cards imported: 10717
+   Total prices imported: 63127
+
+📦 Processing XY (xy1)
+  - Series: XY
+  - Release Date: 2014/02/05
+  - Total Cards: 146
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 146 cards
+  ✅ Set complete: 146 new cards, 873 prices
+
+📊 Overall Progress: 82/166 sets processed
+   Total cards imported: 10863
+   Total prices imported: 64000
+
+📦 Processing Kalos Starter Set (xy0)
+  - Series: XY
+  - Release Date: 2013/11/08
+  - Total Cards: 39
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 39 cards
+      ❌ Error processing card Chespin: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Chesnaught: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Quilladin: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Fennekin: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Braixen: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Delphox: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Greninja: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Froakie: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Frogadier: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 30 new cards, 180 prices
+
+📊 Overall Progress: 83/166 sets processed
+   Total cards imported: 10893
+   Total prices imported: 64180
+
+📦 Processing Legendary Treasures (bw11)
+  - Series: Black & White
+  - Release Date: 2013/11/06
+  - Total Cards: 140
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 140 cards
+  ✅ Set complete: 140 new cards, 839 prices
+
+📊 Overall Progress: 84/166 sets processed
+   Total cards imported: 11033
+   Total prices imported: 65019
+
+📦 Processing XY Black Star Promos (xyp)
+  - Series: XY
+  - Release Date: 2013/10/12
+  - Total Cards: 216
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 85/166 sets processed
+   Total cards imported: 11033
+   Total prices imported: 65019
+
+📦 Processing Plasma Blast (bw10)
+  - Series: Black & White
+  - Release Date: 2013/08/14
+  - Total Cards: 105
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 105 cards
+  ✅ Set complete: 105 new cards, 628 prices
+
+📊 Overall Progress: 86/166 sets processed
+   Total cards imported: 11138
+   Total prices imported: 65647
+
+📦 Processing Plasma Freeze (bw9)
+  - Series: Black & White
+  - Release Date: 2013/05/08
+  - Total Cards: 122
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 122 cards
+  ✅ Set complete: 122 new cards, 732 prices
+
+📊 Overall Progress: 87/166 sets processed
+   Total cards imported: 11260
+   Total prices imported: 66379
+
+📦 Processing Plasma Storm (bw8)
+  - Series: Black & White
+  - Release Date: 2013/02/06
+  - Total Cards: 138
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 138 cards
