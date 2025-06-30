@@ -1,0 +1,332 @@
+🚀 Starting Pokemon card import...
+📅 Date: 2025-06-30T16:15:21.231Z
+🔑 API Key: ✅ Found
+🗄️  Database: ✅ Connected
+
+📊 Current database state:
+  - Sets: 12
+  - Cards: 302
+
+📦 Fetching all sets from Pokemon TCG API...
+✅ Found 166 sets in the API
+
+
+📦 Processing Destined Rivals (sv10)
+  - Series: Scarlet & Violet
+  - Release Date: 2025/05/30
+  - Total Cards: 244
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 244 cards
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 1/166 sets processed
+   Total cards imported: 0
+   Total prices imported: 0
+
+📦 Processing Journey Together (sv9)
+  - Series: Scarlet & Violet
+  - Release Date: 2025/03/28
+  - Total Cards: 190
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 190 cards
+  ✅ Set complete: 152 new cards, 912 prices
+
+📊 Overall Progress: 2/166 sets processed
+   Total cards imported: 152
+   Total prices imported: 912
+
+📦 Processing Prismatic Evolutions (sv8pt5)
+  - Series: Scarlet & Violet
+  - Release Date: 2025/01/17
+  - Total Cards: 180
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 180 cards
+  ✅ Set complete: 180 new cards, 720 prices
+
+📊 Overall Progress: 3/166 sets processed
+   Total cards imported: 332
+   Total prices imported: 1632
+
+📦 Processing Surging Sparks (sv8)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/11/08
+  - Total Cards: 252
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 2 cards
+  ✅ Set complete: 252 new cards, 1512 prices
+
+📊 Overall Progress: 4/166 sets processed
+   Total cards imported: 584
+   Total prices imported: 3144
+
+📦 Processing Stellar Crown (sv7)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/09/13
+  - Total Cards: 175
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 175 cards
+      ❌ Error processing card Lokix: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 174 new cards, 1044 prices
+
+📊 Overall Progress: 5/166 sets processed
+   Total cards imported: 758
+   Total prices imported: 4188
+
+📦 Processing Shrouded Fable (sv6pt5)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/08/02
+  - Total Cards: 99
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 99 cards
+  ✅ Set complete: 99 new cards, 594 prices
+
+📊 Overall Progress: 6/166 sets processed
+   Total cards imported: 857
+   Total prices imported: 4782
+
+📦 Processing Twilight Masquerade (sv6)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/05/24
+  - Total Cards: 226
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 226 cards
+  ✅ Set complete: 226 new cards, 1356 prices
+
+📊 Overall Progress: 7/166 sets processed
+   Total cards imported: 1083
+   Total prices imported: 6138
+
+📦 Processing Temporal Forces (sv5)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/03/22
+  - Total Cards: 218
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 218 cards
+  ✅ Set complete: 218 new cards, 1308 prices
+
+📊 Overall Progress: 8/166 sets processed
+   Total cards imported: 1301
+   Total prices imported: 7446
+
+📦 Processing Paldean Fates (sv4pt5)
+  - Series: Scarlet & Violet
+  - Release Date: 2024/01/26
+  - Total Cards: 245
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 245 cards
+  ✅ Set complete: 245 new cards, 1466 prices
+
+📊 Overall Progress: 9/166 sets processed
+   Total cards imported: 1546
+   Total prices imported: 8912
+
+📦 Processing Paradox Rift (sv4)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/11/03
+  - Total Cards: 266
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 16 cards
+  ✅ Set complete: 266 new cards, 1595 prices
+
+📊 Overall Progress: 10/166 sets processed
+   Total cards imported: 1812
+   Total prices imported: 10507
+
+📦 Processing 151 (sv3pt5)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/09/22
+  - Total Cards: 207
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 207 cards
+  ✅ Set complete: 207 new cards, 1242 prices
+
+📊 Overall Progress: 11/166 sets processed
+   Total cards imported: 2019
+   Total prices imported: 11749
+
+📦 Processing Obsidian Flames (sv3)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/08/11
+  - Total Cards: 230
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 230 cards
+  ✅ Set complete: 230 new cards, 1380 prices
+
+📊 Overall Progress: 12/166 sets processed
+   Total cards imported: 2249
+   Total prices imported: 13129
+
+📦 Processing Paldea Evolved (sv2)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/06/09
+  - Total Cards: 279
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 29 cards
+  ✅ Set complete: 279 new cards, 1674 prices
+
+📊 Overall Progress: 13/166 sets processed
+   Total cards imported: 2528
+   Total prices imported: 14803
+
+📦 Processing Scarlet & Violet (sv1)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/03/31
+  - Total Cards: 258
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 250 cards
+    - Page 2: 8 cards
+  ✅ Set complete: 258 new cards, 1547 prices
+
+📊 Overall Progress: 14/166 sets processed
+   Total cards imported: 2786
+   Total prices imported: 16350
+
+📦 Processing Scarlet & Violet Energies (sve)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/03/31
+  - Total Cards: 8
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 15/166 sets processed
+   Total cards imported: 2786
+   Total prices imported: 16350
+
+📦 Processing Crown Zenith Galarian Gallery (swsh12pt5gg)
+  - Series: Sword & Shield
+  - Release Date: 2023/01/20
+  - Total Cards: 70
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 70 cards
+  ✅ Set complete: 70 new cards, 420 prices
+
+📊 Overall Progress: 16/166 sets processed
+   Total cards imported: 2856
+   Total prices imported: 16770
+
+📦 Processing Crown Zenith (swsh12pt5)
+  - Series: Sword & Shield
+  - Release Date: 2023/01/20
+  - Total Cards: 160
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 160 cards
+  ✅ Set complete: 160 new cards, 960 prices
+
+📊 Overall Progress: 17/166 sets processed
+   Total cards imported: 3016
+   Total prices imported: 17730
+
+📦 Processing Scarlet & Violet Black Star Promos (svp)
+  - Series: Scarlet & Violet
+  - Release Date: 2023/01/01
+  - Total Cards: 196
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 18/166 sets processed
+   Total cards imported: 3016
+   Total prices imported: 17730
+
+📦 Processing Silver Tempest (swsh12)
+  - Series: Sword & Shield
+  - Release Date: 2022/11/11
+  - Total Cards: 215
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 215 cards
+  ✅ Set complete: 205 new cards, 1230 prices
+
+📊 Overall Progress: 19/166 sets processed
+   Total cards imported: 3221
+   Total prices imported: 18960
+
+📦 Processing Silver Tempest Trainer Gallery (swsh12tg)
+  - Series: Sword & Shield
+  - Release Date: 2022/11/11
+  - Total Cards: 30
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 30 cards
+  ✅ Set complete: 30 new cards, 180 prices
+
+📊 Overall Progress: 20/166 sets processed
+   Total cards imported: 3251
+   Total prices imported: 19140
+
+📦 Processing Lost Origin Trainer Gallery (swsh11tg)
+  - Series: Sword & Shield
+  - Release Date: 2022/09/09
+  - Total Cards: 30
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 30 cards
+  ✅ Set complete: 30 new cards, 180 prices
+
+📊 Overall Progress: 21/166 sets processed
+   Total cards imported: 3281
+   Total prices imported: 19320
+
+📦 Processing Lost Origin (swsh11)
+  - Series: Sword & Shield
+  - Release Date: 2022/09/09
+  - Total Cards: 217
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 217 cards
+  ✅ Set complete: 217 new cards, 1302 prices
+
+📊 Overall Progress: 22/166 sets processed
+   Total cards imported: 3498
+   Total prices imported: 20622
+
+📦 Processing McDonald's Collection 2022 (mcd22)
+  - Series: Other
+  - Release Date: 2022/08/03
+  - Total Cards: 15
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 15 cards
+  ✅ Set complete: 15 new cards, 90 prices
+
+📊 Overall Progress: 23/166 sets processed
+   Total cards imported: 3513
+   Total prices imported: 20712
+
+📦 Processing Pokémon GO (pgo)
+  - Series: Sword & Shield
+  - Release Date: 2022/07/01
+  - Total Cards: 88
+  ℹ️  Set already exists in database
+  🃏 Fetching cards...
+    - Page 1: 88 cards

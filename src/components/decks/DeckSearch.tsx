@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Search, X, Filter, Mic } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { CardDisplay } from '../cards/CardDisplay';
+import { api } from '@/utils/api';
 
 interface DeckSearchProps {
   onAddCard: (cardId: string, quantity?: number) => void;
@@ -30,9 +31,6 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
     rarity: '',
     set: '',
   });
-  const [searchResults, setSearchResults] = useState<Card[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -43,25 +41,33 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
   }, []);
 
   useEffect(() => {
-    if (debouncedQuery || Object.values(filters).some(v => v.length > 0)) {
-      performSearch(1);
-    }
+    setPage(1); // Reset page when search changes
   }, [debouncedQuery, filters]);
 
-  const performSearch = async (pageNum: number) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      const mockResults: Card[] = [];
-      setSearchResults(pageNum === 1 ? mockResults : [...searchResults, ...mockResults]);
-      setPage(pageNum);
-      setHasMore(false);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use tRPC query for search
+  const { data: searchResult, isLoading, error } = api.card.search.useQuery({
+    query: debouncedQuery,
+    filters: {
+      supertype: filters.supertype ? filters.supertype as any : undefined,
+      types: filters.types.length > 0 ? filters.types : undefined,
+      rarity: filters.rarity ? [filters.rarity.toUpperCase().replace(' ', '_') as any] : undefined,
+      setId: filters.set || undefined,
+    },
+    pagination: {
+      page,
+      limit: 50,
+    },
+    sort: {
+      field: 'name',
+      direction: 'asc',
+    },
+  }, {
+    enabled: !!debouncedQuery || Object.values(filters).some(v => v.length > 0),
+    keepPreviousData: true,
+  });
+
+  const searchResults = searchResult?.cards || [];
+  const hasMore = searchResult ? page < searchResult.totalPages : false;
 
   const handleVoiceSearch = useCallback(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -104,9 +110,9 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
 
   const handleLoadMore = useCallback(() => {
     if (!isLoading && hasMore) {
-      performSearch(page + 1);
+      setPage(p => p + 1);
     }
-  }, [isLoading, hasMore, page]);
+  }, [isLoading, hasMore]);
 
   const existingCardIds = existingCards.map(dc => dc.cardId);
 
@@ -193,8 +199,19 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {searchResults.length > 0 ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <div className="text-red-500 mb-4">
+                <X className="w-12 h-12" />
+              </div>
+              <p className="text-red-500 font-medium">Search Error</p>
+              <p className="text-sm text-muted-foreground mt-1">Failed to load cards</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="p-4">
+              <div className="mb-2 text-sm text-muted-foreground">
+                Found {searchResult?.total || 0} cards
+              </div>
               <CardDisplay
                 cards={searchResults.map(card => ({
                   ...card,

@@ -1,0 +1,85 @@
+🔧 Fixing TCGPlayer search URLs...
+📅 Date: 2025-06-30T16:44:10.873Z
+Found 1100 cards with old URL format
+
+Processing batch 1/22
+✅ Updated 50 cards so far...
+
+Processing batch 2/22
+✅ Updated 100 cards so far...
+
+Processing batch 3/22
+✅ Updated 150 cards so far...
+
+Processing batch 4/22
+✅ Updated 200 cards so far...
+
+Processing batch 5/22
+✅ Updated 250 cards so far...
+
+Processing batch 6/22
+✅ Updated 300 cards so far...
+
+Processing batch 7/22
+✅ Updated 350 cards so far...
+
+Processing batch 8/22
+✅ Updated 400 cards so far...
+
+Processing batch 9/22
+✅ Updated 450 cards so far...
+
+Processing batch 10/22
+✅ Updated 500 cards so far...
+
+Processing batch 11/22
+✅ Updated 550 cards so far...
+
+Processing batch 12/22
+✅ Updated 600 cards so far...
+
+Processing batch 13/22
+✅ Updated 650 cards so far...
+
+Processing batch 14/22
+✅ Updated 700 cards so far...
+
+Processing batch 15/22
+✅ Updated 750 cards so far...
+
+Processing batch 16/22
+✅ Updated 800 cards so far...
+
+Processing batch 17/22
+✅ Updated 850 cards so far...
+
+Processing batch 18/22
+✅ Updated 900 cards so far...
+
+Processing batch 19/22
+✅ Updated 950 cards so far...
+
+Processing batch 20/22
+✅ Updated 1000 cards so far...
+
+Processing batch 21/22
+✅ Updated 1050 cards so far...
+
+Processing batch 22/22
+✅ Updated 1100 cards so far...
+
+📊 Summary:
+✅ Fixed: 1100 card URLs
+
+📋 Sample URLs:
+
+Radiant Charizard (Pokémon GO):
+https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=Radiant%20Charizard%20Pok%C3%A9mon%20GO&view=grid
+
+Ivysaur (Pokémon GO):
+https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=Ivysaur%20Pok%C3%A9mon%20GO&view=grid
+
+Golisopod (Pokémon GO):
+https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=Golisopod%20Pok%C3%A9mon%20GO&view=grid
+
+✅ URL fix completed

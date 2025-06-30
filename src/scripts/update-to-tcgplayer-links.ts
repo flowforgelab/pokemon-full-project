@@ -1,17 +1,18 @@
-import { PrismaClient } from '@prisma/client';
+#!/usr/bin/env tsx
+
 import { config } from 'dotenv';
 import { join } from 'path';
-
-// Load environment variables
 config({ path: join(process.cwd(), '.env.local') });
+
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function updatePurchaseLinks() {
-  console.log('🔗 Updating purchase links for all cards...\n');
+async function updateToTCGPlayerLinks() {
+  console.log('🔗 Updating all cards to use TCGPlayer links...\n');
 
   try {
-    // Get all cards
+    // Get all cards with their sets
     const cards = await prisma.card.findMany({
       include: {
         set: true,
@@ -22,7 +23,7 @@ async function updatePurchaseLinks() {
 
     let updated = 0;
     for (const card of cards) {
-      // Generate purchase URL - using TCGPlayer search
+      // Generate TCGPlayer search URL
       const purchaseUrl = `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name)}&view=grid&ProductTypeName=Cards&set=${encodeURIComponent(card.set.name)}`;
       
       // Update the card
@@ -37,24 +38,25 @@ async function updatePurchaseLinks() {
       }
     }
 
-    console.log(`\n✅ Successfully updated ${updated} cards with purchase links!`);
+    console.log(`\n✅ Successfully updated ${updated} cards with TCGPlayer links!`);
     
     // Show a sample
     const sample = await prisma.card.findFirst({
       where: { purchaseUrl: { not: null } },
+      include: { set: true },
     });
     
     if (sample) {
-      console.log(`\nSample purchase URL:`);
-      console.log(`Card: ${sample.name}`);
+      console.log(`\nSample TCGPlayer URL:`);
+      console.log(`Card: ${sample.name} from ${sample.set.name}`);
       console.log(`URL: ${sample.purchaseUrl}`);
     }
 
   } catch (error) {
-    console.error('Error updating purchase links:', error);
+    console.error('Error updating links:', error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-updatePurchaseLinks();
+updateToTCGPlayerLinks();

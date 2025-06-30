@@ -46,16 +46,16 @@ export default function CardsPage() {
     sortOrder: 'asc',
   });
 
-  const debouncedSearch = useDebounce(filters.search, 300);
+  const debouncedSearch = useDebounce(filters.search, 500);
 
   const [page, setPage] = useState(1);
 
-  const { data: searchResult, isLoading } = api.card.search.useQuery({
+  const { data: searchResult, isLoading, error } = api.card.search.useQuery({
     query: debouncedSearch,
     filters: {
       types: filters.types.length > 0 ? filters.types : undefined,
       subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
-      supertype: filters.supertype || undefined,
+      supertype: filters.supertype ? filters.supertype as any : undefined,
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
       setId: filters.set || undefined,
       hp: filters.hp,
@@ -69,6 +69,9 @@ export default function CardsPage() {
       field: filters.sortBy as any,
       direction: filters.sortOrder,
     },
+  }, {
+    keepPreviousData: true,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   const { data: sets } = api.card.getSets.useQuery();
@@ -112,10 +115,15 @@ export default function CardsPage() {
                 <input
                   type="text"
                   placeholder="Search cards by name, text, or ability..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 />
+                {isLoading && filters.search && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -339,9 +347,19 @@ export default function CardsPage() {
 
           {/* Results */}
           <div className="flex-1">
-            {isLoading && allCards.length === 0 ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            {error ? (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-8 text-center">
+                <p className="text-red-800 dark:text-red-200 font-medium">Error loading cards</p>
+                <p className="text-red-600 dark:text-red-300 text-sm mt-2">{error.message}</p>
+              </div>
+            ) : isLoading ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+                <p className="text-center text-gray-500 dark:text-gray-400">
+                  {filters.search ? `Searching for "${filters.search}"...` : 'Loading cards...'}
+                </p>
               </div>
             ) : allCards.length > 0 ? (
               <>

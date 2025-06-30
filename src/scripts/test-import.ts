@@ -4,14 +4,14 @@
  * Run with: npx tsx src/scripts/test-import.ts
  */
 
+// Load environment variables FIRST
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(__dirname, '../../.env.local') });
+
 import { PokemonTCGClient } from '@/lib/api/pokemon-tcg-client';
 import { prisma } from '@/server/db/prisma';
 import { normalizeSetData, transformAndValidateCard } from '@/lib/api/transformers';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load environment variables
-config({ path: resolve(__dirname, '../../.env.local') });
 
 // Test parameters - VERY LIMITED for testing
 const MAX_SETS = 2; // Only import 2 sets

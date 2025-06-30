@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { runDailyImport } from '@/scripts/smart-daily-import';
+import { runAutoImport } from '@/scripts/auto-import';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,16 +13,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('Starting daily import via cron job...');
+    console.log('Starting auto import via cron job...');
     
-    // Run the import asynchronously to avoid timeout
-    runDailyImport().catch(error => {
-      console.error('Daily import error:', error);
+    // Run the auto import (decides between batch import or smart update)
+    runAutoImport().catch(error => {
+      console.error('Auto import error:', error);
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Daily import started',
+      message: 'Auto import started (will run batch import or smart update based on completion)',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

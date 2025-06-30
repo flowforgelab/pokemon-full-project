@@ -98,9 +98,11 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
     value: resistance.value,
   })) || null;
 
-  // Generate purchase URL - for now using Pokemon.com search
-  // In the future, this will be replaced with affiliate links
-  const purchaseUrl = `https://www.pokemon.com/us/pokemon-tcg/pokemon-cards/detail-search/?cardName=${encodeURIComponent(apiCard.name)}&setName=${encodeURIComponent(apiCard.set.name)}`;
+  // Use direct TCGPlayer URL if available, otherwise generate search URL
+  // The Pokemon TCG API doesn't provide direct TCGPlayer.com URLs, so we generate a search URL
+  // Combining card name + set name in the query gives better results than using the set parameter
+  const purchaseUrl = apiCard.tcgplayer?.url || 
+    `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(apiCard.name + ' ' + apiCard.set.name)}&view=grid`;
   
   // Extract TCGPlayer ID if available
   const tcgplayerId = apiCard.tcgplayer?.url ? extractTCGPlayerIdFromUrl(apiCard.tcgplayer.url) : null;
@@ -325,7 +327,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
         priceType: PriceType.MARKET,
         price: cmPrices.averageSellPrice,
         currency: 'EUR',
-        updatedAt,
+        fetchedAt,
       });
     }
     
@@ -336,7 +338,7 @@ export function extractPricingData(apiCard: PokemonTCGCard): Prisma.CardPriceCre
         priceType: PriceType.LOW,
         price: cmPrices.lowPrice,
         currency: 'EUR',
-        updatedAt,
+        fetchedAt,
       });
     }
     

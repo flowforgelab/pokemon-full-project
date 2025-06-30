@@ -87,18 +87,19 @@ export const cardRouter = createTRPCRouter({
       const { page, limit } = pagination;
       const skip = (page - 1) * limit;
       
-      // Build search query
-      const where: Record<string, any> = {};
-      
-      // Text search
-      if (query) {
-        where.OR = [
-          { name: { contains: query, mode: 'insensitive' } },
-          { set: { name: { contains: query, mode: 'insensitive' } } },
-          { attacks: { some: { name: { contains: query, mode: 'insensitive' } } } },
-          { abilities: { some: { name: { contains: query, mode: 'insensitive' } } } },
-        ];
-      }
+      try {
+        // Build search query
+        const where: Record<string, any> = {};
+        
+        // Text search
+        if (query && query.trim()) {
+          where.OR = [
+            { name: { contains: query, mode: 'insensitive' } },
+            { set: { name: { contains: query, mode: 'insensitive' } } },
+            { attacks: { some: { name: { contains: query, mode: 'insensitive' } } } },
+            { abilities: { some: { name: { contains: query, mode: 'insensitive' } } } },
+          ];
+        }
       
       // Apply filters
       if (filters) {
@@ -278,13 +279,20 @@ export const cardRouter = createTRPCRouter({
         ctx.prisma.card.count({ where }),
       ]);
       
-      return {
-        cards,
-        total,
-        page,
-        pageSize: limit,
-        totalPages: Math.ceil(total / limit),
-      };
+        return {
+          cards,
+          total,
+          page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      } catch (error) {
+        console.error('Card search error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to search cards',
+        });
+      }
     }),
   
   /**
