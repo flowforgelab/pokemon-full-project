@@ -134,12 +134,28 @@ export const cardRouter = createTRPCRouter({
         const searchTerm = query.trim().toLowerCase();
         const isSingleChar = searchTerm.length === 1;
         
-        // Check if query contains space and last part could be a number
+        // Check if query contains space and has a number part (either first or last)
         const parts = searchTerm.split(' ');
         const lastPart = parts[parts.length - 1];
-        const hasSpaceAndNumber = parts.length > 1 && /^\d+$/.test(lastPart);
-        const namePartOnly = hasSpaceAndNumber ? parts.slice(0, -1).join(' ') : searchTerm;
-        const numberPartOnly = hasSpaceAndNumber ? lastPart : null;
+        const firstPart = parts[0];
+        
+        // Check both patterns: "name number" and "number name"
+        const hasSpaceAndNumberLast = parts.length > 1 && /^\d+$/.test(lastPart);
+        const hasSpaceAndNumberFirst = parts.length > 1 && /^\d+$/.test(firstPart);
+        const hasSpaceAndNumber = hasSpaceAndNumberLast || hasSpaceAndNumberFirst;
+        
+        let namePartOnly = searchTerm;
+        let numberPartOnly = null;
+        
+        if (hasSpaceAndNumberLast) {
+          // Pattern: "char 16"
+          namePartOnly = parts.slice(0, -1).join(' ');
+          numberPartOnly = lastPart;
+        } else if (hasSpaceAndNumberFirst) {
+          // Pattern: "16 char"
+          namePartOnly = parts.slice(1).join(' ');
+          numberPartOnly = firstPart;
+        }
         
         // Build filter conditions
         let filterConditions = '';
