@@ -1021,6 +1021,55 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ---
 
+## 🚀 MVP Priority List
+
+### Critical for Launch (Must Complete)
+1. **Week 4 Visual Issues** (7 items)
+   - [ ] Create PWA manifest.json and app icons
+   - [ ] Add Open Graph and Twitter card images
+   - [ ] Create proper logo file
+   - [ ] Add robots.txt and sitemap.xml
+   - [ ] Activate design tokens with generateCSSVariables()
+   - [ ] Replace hardcoded values with design tokens
+   - [ ] Consolidate energy colors to single source
+
+2. **Security Essentials** (3 items)
+   - [ ] Input validation on all forms
+   - [ ] XSS protection
+   - [ ] User permission checks
+
+3. **Testing Foundation** (2 items - minimum)
+   - [ ] Unit tests setup
+   - [ ] Integration tests for API routes
+
+### Important but Can Deploy Without
+4. **Documentation** (2 items)
+   - [ ] API documentation
+   - [ ] Contributing guidelines
+
+5. **Developer Experience** (2 items)
+   - [ ] Type-safe client hooks for tRPC procedures
+   - [ ] Optimistic updates and caching strategies
+
+6. **Additional Testing** (2 items)
+   - [ ] E2E tests for critical user flows
+   - [ ] Performance testing
+
+### Post-MVP Features
+- Trading System UI (4 sub-tasks)
+- Stripe Payment Integration (5 sub-tasks)
+- Mobile app development
+- Tournament support
+- Enhanced AI recommendations
+- Social features
+- Advanced analytics dashboard
+
+**Total MVP Tasks Remaining: 21**
+- Critical: 12 items
+- Important: 9 items
+
+---
+
 ### How to Update This Checklist
 1. When starting a new task, move it from To-Do to In Progress
 2. When completing a task, move it to Completed with [x]
