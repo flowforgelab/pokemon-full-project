@@ -847,8 +847,17 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-06-30
-- Version: 1.0.11-MVP
+- Version: 1.0.12-MVP
 - Latest Updates:
+  - Search Functionality Fixes & Real-time Filtering (2025-06-30 Evening):
+    - ✅ Fixed broken search in DeckSearch component (was returning mock data)
+    - ✅ Implemented real-time search with 500ms debounce
+    - ✅ Added proper error handling with user-friendly messages
+    - ✅ Added loading indicators in search input field
+    - ✅ Connected DeckSearch to actual tRPC API
+    - ✅ Improved performance with keepPreviousData and caching
+    - ✅ Shows total results count in DeckSearch component
+    - ✅ Import continues in background: 3,591+ cards (18.7% of 19,136 total)
   - TCGPlayer URL Improvements & Import Progress (2025-06-30 Late PM):
     - ✅ Discovered Pokemon TCG API doesn't provide direct TCGPlayer product URLs
     - ✅ Improved search URL format: "card name + set name" in query for better results
