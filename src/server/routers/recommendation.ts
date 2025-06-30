@@ -413,4 +413,49 @@ export const recommendationRouter = createTRPCRouter({
         });
       }
     }),
+
+  // Get quick recommendations for dashboard
+  getQuickRecommendations: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        // Get user to find their ID
+        const user = await ctx.prisma.user.findUnique({
+          where: { clerkUserId: ctx.userId },
+          select: { id: true }
+        });
+
+        if (!user) {
+          return [];
+        }
+
+        // Get popular cards that the user doesn't have
+        const popularCards = await ctx.prisma.card.findMany({
+          where: {
+            rarity: {
+              in: [Rarity.RARE, Rarity.RARE_HOLO, Rarity.RARE_ULTRA]
+            },
+            NOT: {
+              collections: {
+                some: {
+                  userId: user.id
+                }
+              }
+            }
+          },
+          include: {
+            set: true,
+          },
+          take: 5,
+          orderBy: {
+            name: 'asc'
+          }
+        });
+
+        return popularCards;
+      } catch (error) {
+        console.error('Failed to get quick recommendations:', error);
+        // Return empty array instead of throwing to prevent dashboard from breaking
+        return [];
+      }
+    }),
 });

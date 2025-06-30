@@ -431,4 +431,78 @@ export const userRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  // Get dashboard statistics
+  getDashboardStats: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true }
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Get collection statistics
+      const [collectionStats, deckStats] = await Promise.all([
+        ctx.prisma.userCollection.aggregate({
+          where: { userId: user.id },
+          _sum: {
+            quantity: true,
+            quantityFoil: true,
+            purchasePrice: true,
+          },
+          _count: {
+            cardId: true,
+          },
+        }),
+        ctx.prisma.deck.aggregate({
+          where: { userId: user.id },
+          _count: true,
+          _sum: {
+            wins: true,
+            losses: true,
+          },
+        }),
+      ]);
+
+      const totalCards = (collectionStats._sum.quantity || 0) + (collectionStats._sum.quantityFoil || 0);
+      const collectionValue = Number(collectionStats._sum.purchasePrice || 0);
+      const completeDecks = await ctx.prisma.deck.count({
+        where: { userId: user.id, isComplete: true },
+      });
+
+      const winRate = deckStats._sum.wins && deckStats._sum.losses
+        ? Math.round((deckStats._sum.wins / (deckStats._sum.wins + deckStats._sum.losses)) * 100)
+        : 0;
+
+      return {
+        totalCards,
+        collectionValue,
+        collectionValueChange: 0, // TODO: Calculate actual change
+        completeDecks,
+        winRate,
+      };
+    }),
+
+  // Get recent activity
+  getRecentActivity: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true }
+      });
+
+      if (!user) {
+        return [];
+      }
+
+      // For now, return empty array since we don't have an activity tracking system
+      // TODO: Implement activity tracking
+      return [];
+    }),
 });
