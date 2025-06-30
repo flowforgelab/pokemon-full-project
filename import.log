@@ -1632,3 +1632,81 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 115 cards
+  ✅ Set complete: 115 new cards, 690 prices
+
+📊 Overall Progress: 98/166 sets processed
+   Total cards imported: 12252
+   Total prices imported: 72329
+
+📦 Processing BW Black Star Promos (bwp)
+  - Series: Black & White
+  - Release Date: 2011/03/01
+  - Total Cards: 101
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 99/166 sets processed
+   Total cards imported: 12252
+   Total prices imported: 72329
+
+📦 Processing Call of Legends (col1)
+  - Series: HeartGold & SoulSilver
+  - Release Date: 2011/02/09
+  - Total Cards: 106
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 106 cards
+  ✅ Set complete: 106 new cards, 596 prices
+
+📊 Overall Progress: 100/166 sets processed
+   Total cards imported: 12358
+   Total prices imported: 72925
+
+📦 Processing HS—Triumphant (hgss4)
+  - Series: HeartGold & SoulSilver
+  - Release Date: 2010/11/03
+  - Total Cards: 103
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 103 cards
+  ✅ Set complete: 103 new cards, 618 prices
+
+📊 Overall Progress: 101/166 sets processed
+   Total cards imported: 12461
+   Total prices imported: 73543
+
+📦 Processing HS—Undaunted (hgss3)
+  - Series: HeartGold & SoulSilver
+  - Release Date: 2010/08/18
+  - Total Cards: 91
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 91 cards
+  ✅ Set complete: 91 new cards, 546 prices
+
+📊 Overall Progress: 102/166 sets processed
+   Total cards imported: 12552
+   Total prices imported: 74089
+
+📦 Processing HS—Unleashed (hgss2)
+  - Series: HeartGold & SoulSilver
+  - Release Date: 2010/05/12
+  - Total Cards: 96
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 96 cards
+  ✅ Set complete: 96 new cards, 576 prices
+
+📊 Overall Progress: 103/166 sets processed
+   Total cards imported: 12648
+   Total prices imported: 74665
+
+📦 Processing HeartGold & SoulSilver (hgss1)
+  - Series: HeartGold & SoulSilver
+  - Release Date: 2010/02/10
+  - Total Cards: 124
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 124 cards
