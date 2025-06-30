@@ -848,8 +848,17 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-06-30
-- Version: 1.0.13-MVP
+- Version: 1.0.14-MVP
 - Latest Updates:
+  - Advanced Search Enhancements (2025-06-30 Night):
+    - ✅ Search now only searches card names, not set names (no more Abomasnow from "Chilling Reign" when searching "ch")
+    - ✅ Added card number search capability (search "172" or "Fairy 172")
+    - ✅ Implemented space-separated name+number search ("char 32" finds Charcadet #032)
+    - ✅ Added relevance-first sorting that overrides user sort during search
+    - ✅ Visual indicator shows "Sorting by relevance when searching"
+    - ✅ Sort dropdown disabled during search for clarity
+    - ✅ Fixed grid layout: 5 columns max (was 6) for perfect 5×4 grid with 20 cards
+    - ✅ Updated search placeholders to show "Search by name or number..."
   - Search Optimization with Relevance Ranking (2025-06-30 Late Evening):
     - ✅ Implemented searchOptimized endpoint with intelligent relevance-based ranking
     - ✅ Exact matches get highest priority (100 points)
