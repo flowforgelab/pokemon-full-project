@@ -13,12 +13,21 @@ async function fixTCGPlayerSearchUrls() {
   console.log(`📅 Date: ${new Date().toISOString()}`);
   
   try {
-    // Get all cards with the old URL format (contains &set= parameter)
+    // Get all cards with the old URL format (contains &set= parameter or %20 instead of +)
     const cardsWithOldUrls = await prisma.card.findMany({
       where: {
-        purchaseUrl: {
-          contains: '&set='
-        }
+        OR: [
+          {
+            purchaseUrl: {
+              contains: '&set='
+            }
+          },
+          {
+            purchaseUrl: {
+              contains: '%20'
+            }
+          }
+        ]
       },
       select: {
         id: true,
@@ -50,8 +59,9 @@ async function fixTCGPlayerSearchUrls() {
       // Process each card in the batch individually
       for (const card of batch) {
         try {
-          // Generate new URL with card name + set name in query
-          const newUrl = `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name + ' ' + card.set.name)}&view=grid`;
+          // Generate new URL with card name + set name in query (using + for spaces)
+          const searchQuery = `${card.name} ${card.set.name}`.replace(/ /g, '+');
+          const newUrl = `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${searchQuery}&view=grid`;
           
           await prisma.card.update({
             where: { id: card.id },

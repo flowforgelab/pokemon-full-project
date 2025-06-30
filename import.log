@@ -1515,3 +1515,120 @@ Invalid `prisma.cardPrice.createMany()` invocation in
   145   if (validPrices.length > 0) {
 → 146     await prisma.cardPrice.createMany(
 Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 152 new cards, 912 prices
+
+📊 Overall Progress: 89/166 sets processed
+   Total cards imported: 11550
+   Total prices imported: 68119
+
+📦 Processing Dragon Vault (dv1)
+  - Series: Black & White
+  - Release Date: 2012/10/05
+  - Total Cards: 21
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 21 cards
+  ✅ Set complete: 21 new cards, 126 prices
+
+📊 Overall Progress: 90/166 sets processed
+   Total cards imported: 11571
+   Total prices imported: 68245
+
+📦 Processing Dragons Exalted (bw6)
+  - Series: Black & White
+  - Release Date: 2012/08/15
+  - Total Cards: 128
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 128 cards
+  ✅ Set complete: 128 new cards, 768 prices
+
+📊 Overall Progress: 91/166 sets processed
+   Total cards imported: 11699
+   Total prices imported: 69013
+
+📦 Processing McDonald's Collection 2012 (mcd12)
+  - Series: Other
+  - Release Date: 2012/06/15
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 71 prices
+
+📊 Overall Progress: 92/166 sets processed
+   Total cards imported: 11711
+   Total prices imported: 69084
+
+📦 Processing Dark Explorers (bw5)
+  - Series: Black & White
+  - Release Date: 2012/05/09
+  - Total Cards: 111
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 111 cards
+  ✅ Set complete: 111 new cards, 666 prices
+
+📊 Overall Progress: 93/166 sets processed
+   Total cards imported: 11822
+   Total prices imported: 69750
+
+📦 Processing Next Destinies (bw4)
+  - Series: Black & White
+  - Release Date: 2012/02/08
+  - Total Cards: 103
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 103 cards
+  ✅ Set complete: 103 new cards, 618 prices
+
+📊 Overall Progress: 94/166 sets processed
+   Total cards imported: 11925
+   Total prices imported: 70368
+
+📦 Processing Noble Victories (bw3)
+  - Series: Black & White
+  - Release Date: 2011/11/16
+  - Total Cards: 102
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 102 cards
+  ✅ Set complete: 102 new cards, 612 prices
+
+📊 Overall Progress: 95/166 sets processed
+   Total cards imported: 12027
+   Total prices imported: 70980
+
+📦 Processing Emerging Powers (bw2)
+  - Series: Black & White
+  - Release Date: 2011/08/31
+  - Total Cards: 98
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 98 cards
+  ✅ Set complete: 98 new cards, 587 prices
+
+📊 Overall Progress: 96/166 sets processed
+   Total cards imported: 12125
+   Total prices imported: 71567
+
+📦 Processing McDonald's Collection 2011 (mcd11)
+  - Series: Other
+  - Release Date: 2011/06/17
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 72 prices
+
+📊 Overall Progress: 97/166 sets processed
+   Total cards imported: 12137
+   Total prices imported: 71639
+
+📦 Processing Black & White (bw1)
+  - Series: Black & White
+  - Release Date: 2011/04/25
+  - Total Cards: 115
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 115 cards

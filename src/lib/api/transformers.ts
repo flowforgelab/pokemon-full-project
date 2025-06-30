@@ -100,9 +100,10 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
 
   // Use direct TCGPlayer URL if available, otherwise generate search URL
   // The Pokemon TCG API doesn't provide direct TCGPlayer.com URLs, so we generate a search URL
-  // Combining card name + set name in the query gives better results than using the set parameter
+  // Combining card name + set name in the query (with + instead of %20) gives better results
+  const searchQuery = `${apiCard.name} ${apiCard.set.name}`.replace(/ /g, '+');
   const purchaseUrl = apiCard.tcgplayer?.url || 
-    `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(apiCard.name + ' ' + apiCard.set.name)}&view=grid`;
+    `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${searchQuery}&view=grid`;
   
   // Extract TCGPlayer ID if available
   const tcgplayerId = apiCard.tcgplayer?.url ? extractTCGPlayerIdFromUrl(apiCard.tcgplayer.url) : null;
