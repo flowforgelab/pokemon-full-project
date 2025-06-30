@@ -129,6 +129,8 @@ export const cardRouter = createTRPCRouter({
         }
         
         // Use raw SQL for relevance-based search
+        // When searching, we always order by relevance first to ensure best matches appear at top
+        // This overrides any user sort preference to provide better UX
         const searchTerm = query.trim().toLowerCase();
         const isSingleChar = searchTerm.length === 1;
         
@@ -177,7 +179,11 @@ export const cardRouter = createTRPCRouter({
           WHERE relevance_score > 0
           ORDER BY 
             relevance_score DESC,
-            name ASC
+            CASE 
+              WHEN relevance_score = 100 THEN name
+              WHEN relevance_score = 90 THEN name
+              ELSE name
+            END ASC
           LIMIT ${'$' + (filterParams.length + 4)}
           OFFSET ${'$' + (filterParams.length + 5)};
         `;

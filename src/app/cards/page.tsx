@@ -329,6 +329,11 @@ export default function CardsPage() {
                 {/* Sort */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Sort By</h3>
+                  {debouncedSearch && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                      ✓ Sorting by relevance when searching
+                    </p>
+                  )}
                   <select
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                     value={`${filters.sortBy}-${filters.sortOrder}`}
@@ -336,6 +341,7 @@ export default function CardsPage() {
                       const [sortBy, sortOrder] = e.target.value.split('-');
                       setFilters({ ...filters, sortBy, sortOrder: sortOrder as 'asc' | 'desc' });
                     }}
+                    disabled={!!debouncedSearch}
                   >
                     <option value="name-asc">Name (A-Z)</option>
                     <option value="name-desc">Name (Z-A)</option>

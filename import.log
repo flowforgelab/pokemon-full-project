@@ -1152,3 +1152,68 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 116 cards
+  ✅ Set complete: 116 new cards, 690 prices
+
+📊 Overall Progress: 68/166 sets processed
+   Total cards imported: 9397
+   Total prices imported: 55444
+
+📦 Processing Fates Collide (xy10)
+  - Series: XY
+  - Release Date: 2016/05/02
+  - Total Cards: 129
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 129 cards
+  ✅ Set complete: 129 new cards, 756 prices
+
+📊 Overall Progress: 69/166 sets processed
+   Total cards imported: 9526
+   Total prices imported: 56200
+
+📦 Processing Generations (g1)
+  - Series: XY
+  - Release Date: 2016/02/22
+  - Total Cards: 117
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 117 cards
+  ✅ Set complete: 117 new cards, 692 prices
+
+📊 Overall Progress: 70/166 sets processed
+   Total cards imported: 9643
+   Total prices imported: 56892
+
+📦 Processing BREAKpoint (xy9)
+  - Series: XY
+  - Release Date: 2016/02/03
+  - Total Cards: 126
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 126 cards
+  ✅ Set complete: 126 new cards, 738 prices
+
+📊 Overall Progress: 71/166 sets processed
+   Total cards imported: 9769
+   Total prices imported: 57630
+
+📦 Processing McDonald's Collection 2015 (mcd15)
+  - Series: Other
+  - Release Date: 2015/11/27
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 72/166 sets processed
+   Total cards imported: 9781
+   Total prices imported: 57630
+
+📦 Processing BREAKthrough (xy8)
+  - Series: XY
+  - Release Date: 2015/11/04
+  - Total Cards: 165
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 165 cards
