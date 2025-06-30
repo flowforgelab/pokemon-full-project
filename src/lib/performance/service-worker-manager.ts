@@ -79,12 +79,18 @@ export class ServiceWorkerManager {
     // Notify user about available update
     const updateBanner = document.createElement('div');
     updateBanner.className = 'fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50';
-    updateBanner.innerHTML = `
-      <p class="mb-2">A new version is available!</p>
-      <button onclick="window.location.reload()" class="bg-white text-blue-600 px-4 py-2 rounded">
-        Update Now
-      </button>
-    `;
+    // Create elements safely without innerHTML
+    const message = document.createElement('p');
+    message.className = 'mb-2';
+    message.textContent = 'A new version is available!';
+    
+    const button = document.createElement('button');
+    button.className = 'bg-white text-blue-600 px-4 py-2 rounded';
+    button.textContent = 'Update Now';
+    button.addEventListener('click', () => window.location.reload());
+    
+    updateBanner.appendChild(message);
+    updateBanner.appendChild(button);
     document.body.appendChild(updateBanner);
   }
   

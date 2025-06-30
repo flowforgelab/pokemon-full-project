@@ -1,24 +1,40 @@
 'use client';
 
 import { useSignIn } from '@clerk/nextjs';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { signInSchema } from '@/lib/validations';
+import { FormField } from '@/components/ui/FormField';
+import { Input } from '@/components/ui/Input';
+
+type SignInFormData = z.infer<typeof signInSchema>;
 
 export default function SimpleSignInPage() {
   const { isLoaded, signIn, setActive } = useSignIn();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const router = useRouter();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError: setFormError,
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: SignInFormData) => {
     if (!isLoaded) return;
 
     try {
       const result = await signIn.create({
-        identifier: email,
-        password,
+        identifier: data.email,
+        password: data.password,
       });
 
       if (result.status === 'complete') {
@@ -26,7 +42,8 @@ export default function SimpleSignInPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'An error occurred');
+      const errorMessage = err.errors?.[0]?.message || 'An error occurred';
+      setFormError('root', { message: errorMessage });
     }
   };
 
@@ -39,42 +56,43 @@ export default function SimpleSignInPage() {
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         <h1 className="text-2xl font-bold mb-6">Sign In</h1>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            label="Email"
+            error={errors.email?.message}
+            required
+          >
+            <Input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              placeholder="your@email.com"
+              {...register('email')}
+              className="w-full"
             />
-          </div>
+          </FormField>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
+          <FormField
+            label="Password"
+            error={errors.password?.message}
+            required
+          >
+            <Input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              placeholder="••••••••"
+              {...register('password')}
+              className="w-full"
             />
-          </div>
+          </FormField>
           
-          {error && (
-            <div className="text-red-600 text-sm">{error}</div>
+          {errors.root && (
+            <div className="text-red-600 text-sm">{errors.root.message}</div>
           )}
           
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         

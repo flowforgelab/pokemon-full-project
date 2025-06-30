@@ -1,6 +1,18 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { securityMiddleware } from './middleware/security';
 
-export default clerkMiddleware();
+// Create a composed middleware that applies both Clerk and security
+const middleware = clerkMiddleware((auth, request: NextRequest) => {
+  // Create a response object
+  const response = NextResponse.next();
+  
+  // Apply security headers
+  return securityMiddleware(request, response);
+});
+
+export default middleware;
 
 export const config = {
   matcher: [

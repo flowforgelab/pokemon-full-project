@@ -308,20 +308,53 @@ export class DragDropManager {
     dragImage.style.left = '-1000px';
     dragImage.style.zIndex = '-1';
     
-    // Create card preview
+    // Create card preview safely
     const cardPreview = document.createElement('div');
     cardPreview.className = 'card-preview';
-    cardPreview.innerHTML = `
-      <div class="card-image-wrapper">
-        <img src="${item.card.images?.small}" alt="${item.card.name}" />
-        ${item.quantity ? `<span class="quantity">×${item.quantity}</span>` : ''}
-      </div>
-    `;
+    
+    const imageWrapper = document.createElement('div');
+    imageWrapper.className = 'card-image-wrapper';
+    
+    const img = document.createElement('img');
+    // Sanitize image URL
+    const imageUrl = this.sanitizeImageUrl(item.card.images?.small || '');
+    img.src = imageUrl;
+    img.alt = item.card.name || 'Card image';
+    imageWrapper.appendChild(img);
+    
+    if (item.quantity) {
+      const quantitySpan = document.createElement('span');
+      quantitySpan.className = 'quantity';
+      quantitySpan.textContent = `×${item.quantity}`;
+      imageWrapper.appendChild(quantitySpan);
+    }
+    
+    cardPreview.appendChild(imageWrapper);
     
     dragImage.appendChild(cardPreview);
     document.body.appendChild(dragImage);
     
     return dragImage;
+  }
+
+  private sanitizeImageUrl(url: string): string {
+    if (!url) return '/images/card-placeholder.png';
+    
+    try {
+      const parsed = new URL(url);
+      // Only allow http and https protocols
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return '/images/card-placeholder.png';
+      }
+      // Only allow trusted image domains
+      const trustedDomains = ['images.pokemontcg.io', 'api.pokemontcg.io'];
+      if (!trustedDomains.some(domain => parsed.hostname.includes(domain))) {
+        return '/images/card-placeholder.png';
+      }
+      return url;
+    } catch {
+      return '/images/card-placeholder.png';
+    }
   }
 
   private calculateDropIndex(event: DragEvent): number {

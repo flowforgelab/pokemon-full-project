@@ -2065,3 +2065,546 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 106 cards
+  ✅ Set complete: 106 new cards, 636 prices
+
+📊 Overall Progress: 117/166 sets processed
+   Total cards imported: 13796
+   Total prices imported: 81468
+
+📦 Processing Secret Wonders (dp3)
+  - Series: Diamond & Pearl
+  - Release Date: 2007/11/01
+  - Total Cards: 132
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 132 cards
+  ✅ Set complete: 132 new cards, 792 prices
+
+📊 Overall Progress: 118/166 sets processed
+   Total cards imported: 13928
+   Total prices imported: 82260
+
+📦 Processing POP Series 6 (pop6)
+  - Series: POP
+  - Release Date: 2007/09/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 17 cards
+      ❌ Error processing card Manaphy: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Riolu: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Gible: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Pikachu: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Chimchar: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Piplup: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Turtwig: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 10 new cards, 60 prices
+
+📊 Overall Progress: 119/166 sets processed
+   Total cards imported: 13938
+   Total prices imported: 82320
+
+📦 Processing Mysterious Treasures (dp2)
+  - Series: Diamond & Pearl
+  - Release Date: 2007/08/01
+  - Total Cards: 124
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 124 cards
+  ✅ Set complete: 124 new cards, 744 prices
+
+📊 Overall Progress: 120/166 sets processed
+   Total cards imported: 14062
+   Total prices imported: 83064
+
+📦 Processing DP Black Star Promos (dpp)
+  - Series: Diamond & Pearl
+  - Release Date: 2007/05/01
+  - Total Cards: 56
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 121/166 sets processed
+   Total cards imported: 14062
+   Total prices imported: 83064
+
+📦 Processing Diamond & Pearl (dp1)
+  - Series: Diamond & Pearl
+  - Release Date: 2007/05/01
+  - Total Cards: 130
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 130 cards
+  ✅ Set complete: 130 new cards, 776 prices
+
+📊 Overall Progress: 122/166 sets processed
+   Total cards imported: 14192
+   Total prices imported: 83840
+
+📦 Processing POP Series 5 (pop5)
+  - Series: POP
+  - Release Date: 2007/03/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 123/166 sets processed
+   Total cards imported: 14192
+   Total prices imported: 83840
+
+📦 Processing Power Keepers (ex16)
+  - Series: EX
+  - Release Date: 2007/02/02
+  - Total Cards: 108
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 108 cards
+  ✅ Set complete: 108 new cards, 648 prices
+
+📊 Overall Progress: 124/166 sets processed
+   Total cards imported: 14300
+   Total prices imported: 84488
+
+📦 Processing Dragon Frontiers (ex15)
+  - Series: EX
+  - Release Date: 2006/11/01
+  - Total Cards: 101
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 101 cards
+  ✅ Set complete: 101 new cards, 606 prices
+
+📊 Overall Progress: 125/166 sets processed
+   Total cards imported: 14401
+   Total prices imported: 85094
+
+📦 Processing POP Series 4 (pop4)
+  - Series: POP
+  - Release Date: 2006/08/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 126/166 sets processed
+   Total cards imported: 14401
+   Total prices imported: 85094
+
+📦 Processing Crystal Guardians (ex14)
+  - Series: EX
+  - Release Date: 2006/08/01
+  - Total Cards: 100
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 100 cards
+  ✅ Set complete: 100 new cards, 600 prices
+
+📊 Overall Progress: 127/166 sets processed
+   Total cards imported: 14501
+   Total prices imported: 85694
+
+📦 Processing Holon Phantoms (ex13)
+  - Series: EX
+  - Release Date: 2006/05/01
+  - Total Cards: 111
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 111 cards
+  ✅ Set complete: 111 new cards, 666 prices
+
+📊 Overall Progress: 128/166 sets processed
+   Total cards imported: 14612
+   Total prices imported: 86360
+
+📦 Processing POP Series 3 (pop3)
+  - Series: POP
+  - Release Date: 2006/04/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 17 cards
+      ❌ Error processing card Jolteon: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Flareon: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Minun: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Plusle: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Vaporeon: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 12 new cards, 72 prices
+
+📊 Overall Progress: 129/166 sets processed
+   Total cards imported: 14624
+   Total prices imported: 86432
+
+📦 Processing EX Trainer Kit 2 Plusle (tk2a)
+  - Series: EX
+  - Release Date: 2006/03/01
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 130/166 sets processed
+   Total cards imported: 14636
+   Total prices imported: 86432
+
+📦 Processing EX Trainer Kit 2 Minun (tk2b)
+  - Series: EX
+  - Release Date: 2006/03/01
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 131/166 sets processed
+   Total cards imported: 14648
+   Total prices imported: 86432
+
+📦 Processing Legend Maker (ex12)
+  - Series: EX
+  - Release Date: 2006/02/01
+  - Total Cards: 93
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 93 cards
+  ✅ Set complete: 93 new cards, 557 prices
+
+📊 Overall Progress: 132/166 sets processed
+   Total cards imported: 14741
+   Total prices imported: 86989
+
+📦 Processing Delta Species (ex11)
+  - Series: EX
+  - Release Date: 2005/10/31
+  - Total Cards: 114
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 133/166 sets processed
+   Total cards imported: 14741
+   Total prices imported: 86989
+
+📦 Processing POP Series 2 (pop2)
+  - Series: POP
+  - Release Date: 2005/08/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 17 cards
+      ❌ FIRST ERROR - Card Pidgeot: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+    at Zn.handleRequestError (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at Zn.handleAndLogRequestError (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at Zn.request (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async importCards (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:21) {
+  code: 'P2002',
+  meta: {
+    modelName: 'CardPrice',
+    target: [ 'cardId', 'source', 'priceType', 'currency' ]
+  },
+  clientVersion: '6.10.1'
+}
+      ❌ Error processing card Raikou: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Entei: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Venusaur: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Suicune: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Tauros: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 11 new cards, 66 prices
+
+📊 Overall Progress: 134/166 sets processed
+   Total cards imported: 14752
+   Total prices imported: 87055
+
+📦 Processing Unseen Forces (ex10)
+  - Series: EX
+  - Release Date: 2005/08/01
+  - Total Cards: 145
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 145 cards
+  ✅ Set complete: 145 new cards, 870 prices
+
+📊 Overall Progress: 135/166 sets processed
+   Total cards imported: 14897
+   Total prices imported: 87925
+
+📦 Processing Emerald (ex9)
+  - Series: EX
+  - Release Date: 2005/05/01
+  - Total Cards: 107
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 136/166 sets processed
+   Total cards imported: 14897
+   Total prices imported: 87925
+
+📦 Processing Deoxys (ex8)
+  - Series: EX
+  - Release Date: 2005/02/01
+  - Total Cards: 108
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 137/166 sets processed
+   Total cards imported: 14897
+   Total prices imported: 87925
+
+📦 Processing Team Rocket Returns (ex7)
+  - Series: EX
+  - Release Date: 2004/11/01
+  - Total Cards: 111
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 138/166 sets processed
+   Total cards imported: 14897
+   Total prices imported: 87925
+
+📦 Processing POP Series 1 (pop1)
+  - Series: POP
+  - Release Date: 2004/09/01
+  - Total Cards: 17
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 17 cards
+      ❌ FIRST ERROR - Card Metagross: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+    at Zn.handleRequestError (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at Zn.handleAndLogRequestError (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at Zn.request (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async importCards (/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:21) {
+  code: 'P2002',
+  meta: {
+    modelName: 'CardPrice',
+    target: [ 'cardId', 'source', 'priceType', 'currency' ]
+  },
+  clientVersion: '6.10.1'
+}
+      ❌ Error processing card Blaziken: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Rayquaza: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Sceptile: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+      ❌ Error processing card Swampert: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)
+  ✅ Set complete: 12 new cards, 72 prices
+
+📊 Overall Progress: 139/166 sets processed
+   Total cards imported: 14909
+   Total prices imported: 87997
+
+📦 Processing FireRed & LeafGreen (ex6)
+  - Series: EX
+  - Release Date: 2004/09/01
+  - Total Cards: 116
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 140/166 sets processed
+   Total cards imported: 14909
+   Total prices imported: 87997
+
+📦 Processing Hidden Legends (ex5)
+  - Series: EX
+  - Release Date: 2004/06/01
+  - Total Cards: 102
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 102 cards

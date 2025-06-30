@@ -1,9 +1,13 @@
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useUpdateProfile, useUserProfile } from '@/lib/auth/hooks';
-import { PrivacySettings } from '@/types/auth';
+import { privacySettingsSchema } from '@/lib/validations';
+import { z } from 'zod';
 import { Loader2, Lock, Users, Eye, MessageSquare, Search, Activity } from 'lucide-react';
+
+type PrivacySettingsFormData = z.infer<typeof privacySettingsSchema>;
 
 const privacyOptions = [
   {
@@ -29,13 +33,13 @@ const privacyOptions = [
     ],
   },
   {
-    name: 'deckSharingDefault',
-    label: 'Default Deck Privacy',
-    description: 'Default privacy setting for new decks',
+    name: 'decksVisibility',
+    label: 'Decks Visibility',
+    description: 'Control who can view your decks',
     icon: Users,
     options: [
-      { value: 'public', label: 'Public', description: 'Listed in deck directory' },
-      { value: 'unlisted', label: 'Unlisted', description: 'Only with link' },
+      { value: 'public', label: 'Public', description: 'Anyone can view' },
+      { value: 'friends', label: 'Friends Only', description: 'Only friends can view' },
       { value: 'private', label: 'Private', description: 'Only you can view' },
     ],
   },
@@ -55,33 +59,27 @@ const toggleSettings = [
     icon: Users,
   },
   {
-    name: 'allowTradeOffers',
-    label: 'Allow Trade Offers',
-    description: 'Let other users send you trade offers',
-    icon: MessageSquare,
-  },
-  {
     name: 'allowMessages',
     label: 'Allow Messages',
     description: 'Let other users send you direct messages',
     icon: MessageSquare,
   },
   {
-    name: 'searchableProfile',
-    label: 'Searchable Profile',
-    description: 'Allow your profile to appear in search results',
+    name: 'allowTradeOffers',
+    label: 'Allow Trade Offers',
+    description: 'Let other users send you trade offers',
+    icon: MessageSquare,
+  },
+  {
+    name: 'showInLeaderboards',
+    label: 'Show in Leaderboards',
+    description: 'Allow your profile to appear in leaderboards',
     icon: Search,
   },
   {
-    name: 'shareActivityFeed',
-    label: 'Share Activity Feed',
-    description: 'Let friends see your recent activity',
-    icon: Activity,
-  },
-  {
-    name: 'analyticsOptOut',
-    label: 'Opt Out of Analytics',
-    description: 'Disable anonymous usage analytics',
+    name: 'shareDataForAnalytics',
+    label: 'Share Data for Analytics',
+    description: 'Help improve the app with anonymous usage data',
     icon: Lock,
   },
 ];
@@ -93,26 +91,41 @@ export function PrivacySettingsForm() {
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting },
-  } = useForm<{ privacy: PrivacySettings }>({
+    formState: { isSubmitting, errors },
+  } = useForm<PrivacySettingsFormData>({
+    resolver: zodResolver(privacySettingsSchema),
     defaultValues: {
-      privacy: profile?.privacy || {
-        profileVisibility: 'public',
-        collectionVisibility: 'friends',
-        deckSharingDefault: 'unlisted',
-        showOnlineStatus: true,
-        allowFriendRequests: true,
-        allowTradeOffers: true,
-        allowMessages: true,
-        searchableProfile: true,
-        shareActivityFeed: true,
-        analyticsOptOut: false,
-      },
+      profileVisibility: profile?.privacy?.profileVisibility || 'public',
+      collectionVisibility: profile?.privacy?.collectionVisibility || 'friends',
+      decksVisibility: profile?.privacy?.deckSharingDefault || 'public',
+      showOnlineStatus: profile?.privacy?.showOnlineStatus ?? true,
+      allowFriendRequests: profile?.privacy?.allowFriendRequests ?? true,
+      allowMessages: profile?.privacy?.allowMessages ?? true,
+      allowTradeOffers: profile?.privacy?.allowTradeOffers ?? true,
+      showInLeaderboards: profile?.privacy?.searchableProfile ?? true,
+      shareDataForAnalytics: !profile?.privacy?.analyticsOptOut ?? true,
     },
   });
 
-  const onSubmit = async (data: { privacy: PrivacySettings }) => {
-    await updateProfile.mutateAsync(data);
+  const onSubmit = async (data: PrivacySettingsFormData) => {
+    try {
+      // Transform the data to match PrivacySettings type
+      const privacy = {
+        profileVisibility: data.profileVisibility,
+        collectionVisibility: data.collectionVisibility,
+        deckSharingDefault: data.decksVisibility as 'public' | 'unlisted' | 'private',
+        showOnlineStatus: data.showOnlineStatus,
+        allowFriendRequests: data.allowFriendRequests,
+        allowTradeOffers: data.allowTradeOffers,
+        allowMessages: data.allowMessages,
+        searchableProfile: data.showInLeaderboards,
+        shareActivityFeed: true, // Not in schema, keeping default
+        analyticsOptOut: !data.shareDataForAnalytics,
+      };
+      await updateProfile.mutateAsync({ privacy });
+    } catch (error) {
+      console.error('Failed to update privacy settings:', error);
+    }
   };
 
   if (isLoading) {
@@ -137,7 +150,7 @@ export function PrivacySettingsForm() {
                   <p className="text-sm text-muted-foreground">{option.description}</p>
                   
                   <Controller
-                    name={`privacy.${option.name}` as any}
+                    name={option.name as keyof PrivacySettingsFormData}
                     control={control}
                     render={({ field }) => (
                       <div className="mt-3 space-y-2">
@@ -168,6 +181,11 @@ export function PrivacySettingsForm() {
                       </div>
                     )}
                   />
+                  {errors[option.name as keyof PrivacySettingsFormData] && (
+                    <p className="mt-1 text-xs text-destructive">
+                      {errors[option.name as keyof PrivacySettingsFormData]?.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -191,7 +209,7 @@ export function PrivacySettingsForm() {
               </div>
               
               <Controller
-                name={`privacy.${setting.name}` as any}
+                name={setting.name as keyof PrivacySettingsFormData}
                 control={control}
                 render={({ field }) => (
                   <button
@@ -210,6 +228,11 @@ export function PrivacySettingsForm() {
                 )}
               />
             </div>
+            {errors[setting.name as keyof PrivacySettingsFormData] && (
+              <p className="text-xs text-destructive">
+                {errors[setting.name as keyof PrivacySettingsFormData]?.message}
+              </p>
+            )}
           );
         })}
       </div>

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MobileDeckBuilder } from '@/components/decks/MobileDeckBuilder';
 import { api } from '@/utils/api';
@@ -20,6 +23,9 @@ import {
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToastNotification } from '@/hooks/useToastNotification';
 import { useBreakpoint } from '@/hooks/useMediaQuery';
+import { createDeckSchema, sanitizeInput } from '@/lib/validations';
+
+type CreateDeckFormData = z.infer<typeof createDeckSchema>;
 
 interface DeckCard {
   id: string;
@@ -37,8 +43,6 @@ interface DeckSection {
 export default function DeckBuilderPage() {
   const router = useRouter();
   const toast = useToastNotification();
-  const [deckName, setDeckName] = useState('');
-  const [format, setFormat] = useState('standard');
   const [searchQuery, setSearchQuery] = useState('');
   const [deck, setDeck] = useState<DeckSection>({
     pokemon: [],
@@ -47,13 +51,30 @@ export default function DeckBuilderPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+    setValue,
+  } = useForm<CreateDeckFormData>({
+    resolver: zodResolver(createDeckSchema),
+    defaultValues: {
+      format: 'standard',
+      isPublic: false,
+    },
+  });
+  
+  const watchedName = watch('name');
+  const watchedFormat = watch('format');
+  
   const { isMobile } = useBreakpoint();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data: searchResults, isLoading: searchLoading } = api.card.search.useQuery(
     {
       query: debouncedSearch,
-      filters: { format },
+      filters: { format: watchedFormat },
       limit: 20,
     },
     {
@@ -150,12 +171,7 @@ export default function DeckBuilderPage() {
     });
   };
 
-  const saveDeck = async () => {
-    if (!deckName) {
-      toast.error('Deck name required', 'Please enter a name for your deck');
-      return;
-    }
-    
+  const onSubmit = async (data: CreateDeckFormData) => {
     if (totalCards === 0) {
       toast.error('No cards in deck', 'Add some cards before saving');
       return;
@@ -166,18 +182,31 @@ export default function DeckBuilderPage() {
       return;
     }
 
+    // Validate card quantities
+    const allCards = [...deck.pokemon, ...deck.trainer, ...deck.energy];
+    const invalidCards = allCards.filter(c => 
+      c.quantity > 4 && c.card.supertype !== 'Energy' && !c.card.name.includes('Basic')
+    );
+    
+    if (invalidCards.length > 0) {
+      toast.error('Invalid card quantities', 'Maximum 4 copies of non-basic cards allowed');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const cards = [
-        ...deck.pokemon.map(c => ({ cardId: c.cardId, quantity: c.quantity })),
-        ...deck.trainer.map(c => ({ cardId: c.cardId, quantity: c.quantity })),
-        ...deck.energy.map(c => ({ cardId: c.cardId, quantity: c.quantity })),
-      ];
+      const cards = allCards.map(c => ({ cardId: c.cardId, quantity: c.quantity }));
+
+      // Sanitize inputs
+      const sanitizedData = {
+        ...data,
+        name: sanitizeInput(data.name),
+        description: data.description ? sanitizeInput(data.description) : undefined,
+      };
 
       await toast.promise(
         createDeckMutation.mutateAsync({
-          name: deckName,
-          format,
+          ...sanitizedData,
           cards,
         }),
         {
@@ -280,20 +309,27 @@ export default function DeckBuilderPage() {
         {/* Center Panel - Deck Builder */}
         <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
           {/* Deck Header */}
-          <div className="p-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
-                <input
-                  type="text"
-                  placeholder="Deck Name"
-                  className="text-xl font-semibold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus-visible:outline-none focus-visible:border-blue-500 px-1"
-                  value={deckName}
-                  onChange={(e) => setDeckName(e.target.value)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Deck Name"
+                    className={`text-xl font-semibold bg-transparent border-b-2 focus-visible:outline-none px-1 ${
+                      errors.name 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
+                    }`}
+                    {...register('name')}
+                  />
+                  {errors.name && (
+                    <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>
+                  )}
+                </div>
                 <select
                   className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus-ring"
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
+                  {...register('format')}
                 >
                   <option value="standard">Standard</option>
                   <option value="expanded">Expanded</option>
@@ -306,8 +342,8 @@ export default function DeckBuilderPage() {
                   {totalCards}/60
                 </span>
                 <button
-                  onClick={saveDeck}
-                  disabled={!deckName || totalCards === 0 || isSaving}
+                  type="submit"
+                  disabled={!watchedName || totalCards === 0 || isSaving}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 focus-ring transition-colors"
                 >
                   <DocumentArrowDownIcon className="h-5 w-5" />

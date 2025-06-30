@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useUpdatePreferences, useUserProfile } from '@/lib/auth/hooks';
-import { UserPreferences } from '@/types/auth';
+import { preferencesFormSchema } from '@/lib/validations';
+import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
+
+type PreferencesFormData = z.infer<typeof preferencesFormSchema>;
 
 export function PreferencesForm() {
   const { data: profile, isLoading } = useUserProfile();
@@ -15,22 +19,38 @@ export function PreferencesForm() {
     control,
     handleSubmit,
     watch,
-    formState: { isSubmitting },
-  } = useForm<UserPreferences>({
-    defaultValues: profile?.preferences || {
-      defaultFormat: 'standard',
-      preferredCurrency: 'USD',
-      deckBuildingMode: 'beginner',
-      collectionDisplay: 'grid',
-      priceAlerts: false,
-      theme: 'system',
-      language: 'en',
-      timezone: 'UTC',
+    formState: { isSubmitting, errors },
+  } = useForm<PreferencesFormData>({
+    resolver: zodResolver(preferencesFormSchema),
+    defaultValues: {
+      currency: profile?.preferences?.preferredCurrency || 'USD',
+      language: profile?.preferences?.language || 'en',
+      timezone: profile?.preferences?.timezone || 'UTC',
+      theme: profile?.preferences?.theme || 'system',
+      collectionDisplay: profile?.preferences?.collectionDisplay || 'grid',
+      deckBuildingMode: profile?.preferences?.deckBuildingMode === 'beginner' ? 'simple' : profile?.preferences?.deckBuildingMode || 'simple',
+      defaultFormat: profile?.preferences?.defaultFormat || 'standard',
+      priceAlerts: profile?.preferences?.priceAlerts || false,
     },
   });
 
-  const onSubmit = async (data: UserPreferences) => {
-    await updatePreferences.mutateAsync(data);
+  const onSubmit = async (data: PreferencesFormData) => {
+    try {
+      // Transform the data to match UserPreferences type
+      const preferences = {
+        preferredCurrency: data.currency as 'USD' | 'EUR' | 'GBP',
+        language: data.language,
+        timezone: data.timezone,
+        theme: data.theme,
+        collectionDisplay: data.collectionDisplay,
+        deckBuildingMode: data.deckBuildingMode === 'simple' ? 'beginner' : 'advanced' as 'beginner' | 'advanced',
+        defaultFormat: data.defaultFormat as 'standard' | 'expanded' | 'legacy',
+        priceAlerts: data.priceAlerts,
+      };
+      await updatePreferences.mutateAsync(preferences);
+    } catch (error) {
+      console.error('Failed to update preferences:', error);
+    }
   };
 
   if (isLoading) {
@@ -69,7 +89,7 @@ export function PreferencesForm() {
                 Preferred Currency
               </label>
               <Controller
-                name="preferredCurrency"
+                name="currency"
                 control={control}
                 render={({ field }) => (
                   <select
@@ -79,9 +99,15 @@ export function PreferencesForm() {
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="JPY">JPY (¥)</option>
                   </select>
                 )}
               />
+              {errors.currency && (
+                <p className="mt-1 text-xs text-destructive">{errors.currency.message}</p>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">
                 Used for displaying card prices throughout the app
               </p>
@@ -103,10 +129,14 @@ export function PreferencesForm() {
                     <option value="es">Español</option>
                     <option value="fr">Français</option>
                     <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
                     <option value="ja">日本語</option>
                   </select>
                 )}
               />
+              {errors.language && (
+                <p className="mt-1 text-xs text-destructive">{errors.language.message}</p>
+              )}
             </div>
 
             <div>
@@ -132,6 +162,9 @@ export function PreferencesForm() {
                   </select>
                 )}
               />
+              {errors.timezone && (
+                <p className="mt-1 text-xs text-destructive">{errors.timezone.message}</p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -163,6 +196,9 @@ export function PreferencesForm() {
                 )}
               />
             </div>
+            {errors.priceAlerts && (
+              <p className="text-xs text-destructive">{errors.priceAlerts.message}</p>
+            )}
           </>
         )}
 
@@ -194,6 +230,9 @@ export function PreferencesForm() {
                   </div>
                 )}
               />
+              {errors.theme && (
+                <p className="mt-1 text-xs text-destructive">{errors.theme.message}</p>
+              )}
             </div>
 
             <div>
@@ -222,6 +261,9 @@ export function PreferencesForm() {
                   </div>
                 )}
               />
+              {errors.collectionDisplay && (
+                <p className="mt-1 text-xs text-destructive">{errors.collectionDisplay.message}</p>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">
                 How cards are displayed in your collection
               </p>
@@ -245,10 +287,13 @@ export function PreferencesForm() {
                   >
                     <option value="standard">Standard</option>
                     <option value="expanded">Expanded</option>
-                    <option value="legacy">Legacy</option>
+                    <option value="unlimited">Unlimited</option>
                   </select>
                 )}
               />
+              {errors.defaultFormat && (
+                <p className="mt-1 text-xs text-destructive">{errors.defaultFormat.message}</p>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">
                 Default format when creating new decks
               </p>
@@ -265,8 +310,8 @@ export function PreferencesForm() {
                   <div className="space-y-3">
                     {[
                       {
-                        value: 'beginner',
-                        label: 'Beginner',
+                        value: 'simple',
+                        label: 'Simple',
                         description: 'Guided experience with tips and suggestions',
                       },
                       {
@@ -301,6 +346,9 @@ export function PreferencesForm() {
                   </div>
                 )}
               />
+              {errors.deckBuildingMode && (
+                <p className="mt-1 text-xs text-destructive">{errors.deckBuildingMode.message}</p>
+              )}
             </div>
           </>
         )}
