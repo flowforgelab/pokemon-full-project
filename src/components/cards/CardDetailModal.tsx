@@ -135,8 +135,8 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
 
               {/* Card Details */}
               <div className="lg:col-span-2 p-6 lg:p-8 space-y-6">
-                {/* Header with close button */}
-                <div className="flex items-start justify-between">
+                {/* Header with rarity - moved above to avoid close button overlap */}
+                <div className="flex items-start justify-between pr-12">
                   <div className="flex-1">
                     {/* Basic Info */}
                     <div>
@@ -150,7 +150,7 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                   </div>
                   
                   {card.rarity && (
-                    <span className="ml-4 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium">
+                    <span className="ml-4 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium whitespace-nowrap">
                       {card.rarity}
                     </span>
                   )}
