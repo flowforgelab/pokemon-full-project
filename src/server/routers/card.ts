@@ -141,10 +141,20 @@ export const cardRouter = createTRPCRouter({
           filterParams.push(filters.supertype);
         }
         
-        // For single character, only get prefix matches
+        if (filters?.setId) {
+          filterConditions += ' AND c."setId" = $' + (filterParams.length + 4);
+          filterParams.push(filters.setId);
+        }
+        
+        if (filters?.series) {
+          filterConditions += ' AND s.series = $' + (filterParams.length + 4);
+          filterParams.push(filters.series);
+        }
+        
+        // Only search card names, not set names
         const searchCondition = isSingleChar
           ? `c.name ILIKE $2`
-          : `(c.name ILIKE $3 OR s.name ILIKE $3)`;
+          : `c.name ILIKE $3`;
         
         const relevanceQuery = `
           WITH search_results AS (
@@ -157,7 +167,6 @@ export const cardRouter = createTRPCRouter({
                 WHEN LOWER(c.name) LIKE $2 THEN 90
                 WHEN LOWER(c.name) ~ ('\\m' || $1) THEN 70
                 WHEN LOWER(c.name) LIKE $3 THEN 50
-                WHEN LOWER(s.name) LIKE $3 THEN 30
                 ELSE 0
               END as relevance_score
             FROM "Card" c
@@ -264,12 +273,9 @@ export const cardRouter = createTRPCRouter({
         // Build search query
         const where: Record<string, any> = {};
         
-        // Text search
+        // Text search - only search card names, not set names
         if (query && query.trim()) {
-          where.OR = [
-            { name: { contains: query, mode: 'insensitive' } },
-            { set: { name: { contains: query, mode: 'insensitive' } } },
-          ];
+          where.name = { contains: query, mode: 'insensitive' };
         }
       
       // Apply filters

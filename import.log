@@ -1009,3 +1009,146 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 150 cards
+  ✅ Set complete: 150 new cards, 881 prices
+
+📊 Overall Progress: 57/166 sets processed
+   Total cards imported: 8229
+   Total prices imported: 48743
+
+📦 Processing Ultra Prism (sm5)
+  - Series: Sun & Moon
+  - Release Date: 2018/02/02
+  - Total Cards: 178
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 178 cards
+  ✅ Set complete: 178 new cards, 1044 prices
+
+📊 Overall Progress: 58/166 sets processed
+   Total cards imported: 8407
+   Total prices imported: 49787
+
+📦 Processing McDonald's Collection 2017 (mcd17)
+  - Series: Other
+  - Release Date: 2017/11/07
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 0 prices
+
+📊 Overall Progress: 59/166 sets processed
+   Total cards imported: 8419
+   Total prices imported: 49787
+
+📦 Processing Crimson Invasion (sm4)
+  - Series: Sun & Moon
+  - Release Date: 2017/11/03
+  - Total Cards: 126
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 126 cards
+  ✅ Set complete: 126 new cards, 748 prices
+
+📊 Overall Progress: 60/166 sets processed
+   Total cards imported: 8545
+   Total prices imported: 50535
+
+📦 Processing Shining Legends (sm35)
+  - Series: Sun & Moon
+  - Release Date: 2017/10/06
+  - Total Cards: 81
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 81 cards
+  ✅ Set complete: 81 new cards, 474 prices
+
+📊 Overall Progress: 61/166 sets processed
+   Total cards imported: 8626
+   Total prices imported: 51009
+
+📦 Processing Burning Shadows (sm3)
+  - Series: Sun & Moon
+  - Release Date: 2017/08/05
+  - Total Cards: 177
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 177 cards
+  ✅ Set complete: 177 new cards, 1030 prices
+
+📊 Overall Progress: 62/166 sets processed
+   Total cards imported: 8803
+   Total prices imported: 52039
+
+📦 Processing Guardians Rising (sm2)
+  - Series: Sun & Moon
+  - Release Date: 2017/05/05
+  - Total Cards: 180
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 180 cards
+  ✅ Set complete: 180 new cards, 1033 prices
+
+📊 Overall Progress: 63/166 sets processed
+   Total cards imported: 8983
+   Total prices imported: 53072
+
+📦 Processing SM Black Star Promos (smp)
+  - Series: Sun & Moon
+  - Release Date: 2017/02/03
+  - Total Cards: 250
+  ✅ Set created in database
+  🃏 Fetching cards...
+    ❌ Failed to fetch cards page 1: Response validation failed
+  ✅ Set complete: 0 new cards, 0 prices
+
+📊 Overall Progress: 64/166 sets processed
+   Total cards imported: 8983
+   Total prices imported: 53072
+
+📦 Processing Sun & Moon (sm1)
+  - Series: Sun & Moon
+  - Release Date: 2017/02/03
+  - Total Cards: 173
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 173 cards
+  ✅ Set complete: 173 new cards, 980 prices
+
+📊 Overall Progress: 65/166 sets processed
+   Total cards imported: 9156
+   Total prices imported: 54052
+
+📦 Processing Evolutions (xy12)
+  - Series: XY
+  - Release Date: 2016/11/02
+  - Total Cards: 113
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 113 cards
+  ✅ Set complete: 113 new cards, 678 prices
+
+📊 Overall Progress: 66/166 sets processed
+   Total cards imported: 9269
+   Total prices imported: 54730
+
+📦 Processing McDonald's Collection 2016 (mcd16)
+  - Series: Other
+  - Release Date: 2016/08/19
+  - Total Cards: 12
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 12 cards
+  ✅ Set complete: 12 new cards, 24 prices
+
+📊 Overall Progress: 67/166 sets processed
+   Total cards imported: 9281
+   Total prices imported: 54754
+
+📦 Processing Steam Siege (xy11)
+  - Series: XY
+  - Release Date: 2016/08/03
+  - Total Cards: 116
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 116 cards
