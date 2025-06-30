@@ -104,6 +104,16 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                   <button className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                     Add to Deck
                   </button>
+                  {card.purchaseUrl && (
+                    <a
+                      href={card.purchaseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                    >
+                      Buy This Card
+                    </a>
+                  )}
                 </div>
               </div>
 

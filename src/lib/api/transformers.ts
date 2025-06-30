@@ -98,6 +98,13 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
     value: resistance.value,
   })) || null;
 
+  // Generate purchase URL - for now using Pokemon.com search
+  // In the future, this will be replaced with affiliate links
+  const purchaseUrl = `https://www.pokemon.com/us/pokemon-tcg/pokemon-cards/detail-search/?cardName=${encodeURIComponent(apiCard.name)}&setName=${encodeURIComponent(apiCard.set.name)}`;
+  
+  // Extract TCGPlayer ID if available
+  const tcgplayerId = apiCard.tcgplayer?.url ? extractTCGPlayerIdFromUrl(apiCard.tcgplayer.url) : null;
+
   return {
     id: apiCard.id,
     name: apiCard.name,
@@ -128,6 +135,8 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
     imageUrlSmall: apiCard.images.small,
     imageUrlLarge: apiCard.images.large,
     cardmarketId: apiCard.cardmarket?.url ? extractCardMarketIdFromUrl(apiCard.cardmarket.url) : null,
+    purchaseUrl,
+    tcgplayerId,
     isLegalStandard: apiCard.legalities.standard === 'Legal',
     isLegalExpanded: apiCard.legalities.expanded === 'Legal',
     isLegalUnlimited: apiCard.legalities.unlimited === 'Legal',
@@ -139,6 +148,14 @@ export function normalizeCardData(apiCard: PokemonTCGCard): Prisma.CardCreateInp
  */
 function extractCardMarketIdFromUrl(url: string): string | null {
   const match = url.match(/\/Products\/Singles\/[^\/]+\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Extract TCGPlayer product ID from URL
+ */
+function extractTCGPlayerIdFromUrl(url: string): string | null {
+  const match = url.match(/\/product\/(\d+)/);
   return match ? match[1] : null;
 }
 

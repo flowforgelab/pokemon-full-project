@@ -175,6 +175,10 @@ model Card {
   // External IDs for pricing
   cardmarketId            String?   @unique
   
+  // Purchase links
+  purchaseUrl             String?   // Direct purchase URL (will be affiliate link later)
+  tcgplayerId             String?   // TCGPlayer product ID for future affiliate integration
+  
   // Legalities
   isLegalStandard         Boolean   @default(false)
   isLegalExpanded         Boolean   @default(false)

@@ -29,9 +29,16 @@
     },
     "src/app/api/analysis/[deckId]/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/cron/daily-import/route.ts": {
+      "maxDuration": 300
     }
   },
   "crons": [
+    {
+      "path": "/api/cron/daily-import",
+      "schedule": "0 5 * * *"
+    },
     {
       "path": "/api/cron/sync-cards",
       "schedule": "0 3 * * *"
