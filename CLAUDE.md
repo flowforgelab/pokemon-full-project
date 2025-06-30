@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Pokemon TCG Deck Builder - A Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks. Features include AI-powered deck analysis, collection management with value tracking, drag-and-drop deck building, and real-time card pricing from the Pokemon TCG API.
 
-**Current Status**: v1.0.11-MVP with 2,408 cards imported (12.58% of 19,136 total)
+**Current Status**: v1.0.14-MVP with 11,033+ cards imported (57.6% of 19,136 total)
 
 ## Essential Commands
 
@@ -132,6 +132,32 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 }
 ```
 
+## Search System
+
+The app has an advanced search system with multiple features:
+
+### Search Endpoints
+- `searchOptimized`: Relevance-based search with intelligent ranking
+- `search`: Legacy search endpoint (still used in some places)
+
+### Search Features
+1. **Card name search**: Only searches card names, not set names
+2. **Card number search**: Search by collector number (e.g., "172")
+3. **Combined search**: Space-separated queries (e.g., "char 32" finds Charcadet #032)
+4. **Relevance ranking**:
+   - Exact match: 100 points
+   - Name+number match: 92 points (for space-separated queries)
+   - Prefix match: 90 points
+   - Number exact: 95 points
+   - Word boundary: 70 points
+   - Contains: 50 points
+
+### Search Behavior
+- When searching, results are ALWAYS sorted by relevance (user sort is ignored)
+- Sort dropdown shows "✓ Sorting by relevance when searching" and is disabled
+- Single character searches only return prefix matches
+- Filters (supertype, set, rarity) still work during search
+
 ## Pokemon TCG API Integration
 
 The Pokemon TCG API provides both card data AND pricing:
@@ -144,7 +170,7 @@ Price extraction happens in `transformAndValidateCard()` which returns both card
 
 ### Card Import System
 
-**Current Progress**: 2,408 cards imported (12.58% of 19,136 total cards in API)
+**Current Progress**: 11,033+ cards imported (57.6% of 19,136 total cards in API)
 
 The project has multiple import scripts for different scenarios:
 
@@ -242,12 +268,16 @@ CRON_SECRET                          # Protect cron endpoints
 - USD pricing display (filtered from API data)
 
 ### Recent Updates (June 30, 2025)
+- Advanced Search Enhancements:
+  - Search now only searches card names, not set names
+  - Added card number search capability
+  - Space-separated name+number search ("char 32" finds Charcadet #032)
+  - Relevance-first sorting during search with visual indicator
+  - Fixed grid layout to 5 columns for perfect alignment
 - Created auto-import system that intelligently switches modes
 - Created batch import for Vercel's 5-minute limit
-- Updated cron to use auto-import instead of smart-daily-import
 - Fixed TCGPlayer URL format (combined query instead of separate set param)
-- Updated 2,200+ existing cards with better search URLs
-- Import progress: 2,408 cards (12.58% of 19,136 total)
+- Import progress: 11,033+ cards (57.6% of 19,136 total)
 
 ### Not Implemented
 - Trading UI (API exists, no frontend)
@@ -327,10 +357,10 @@ Configured for Vercel deployment:
 ## Project Status
 
 - **Current Version**: v0.8.0 (per README.md)
-- **Project Checklist Version**: 1.0.11-MVP (updated)
-- **Status**: MVP ready with card data importing
-- **Database**: 2,408 cards from 14+ sets with 14,803 prices
-- **Import Progress**: 12.58% complete (2,408 of 19,136 cards)
+- **Project Checklist Version**: 1.0.14-MVP (updated)
+- **Status**: MVP ready with advanced search and 57%+ card data imported
+- **Database**: 11,033+ cards from 85+ sets with 65,000+ prices
+- **Import Progress**: 57.6% complete (11,033 of 19,136 cards)
 - **Next Steps**:
   1. Monitor auto-import progress (runs daily at 5 AM UTC)
   2. Configure CRON_SECRET in Vercel
