@@ -1493,3 +1493,25 @@ Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency
   ✅ Set created in database
   🃏 Fetching cards...
     - Page 1: 138 cards
+  ✅ Set complete: 138 new cards, 828 prices
+
+📊 Overall Progress: 88/166 sets processed
+   Total cards imported: 11398
+   Total prices imported: 67207
+
+📦 Processing Boundaries Crossed (bw7)
+  - Series: Black & White
+  - Release Date: 2012/11/07
+  - Total Cards: 153
+  ✅ Set created in database
+  🃏 Fetching cards...
+    - Page 1: 153 cards
+      ❌ Error processing card Blastoise: PrismaClientKnownRequestError: 
+Invalid `prisma.cardPrice.createMany()` invocation in
+/Users/greg/Pokemon-deck-builder/pokemon-tcg-deck-builder/src/scripts/import-cards-simple.ts:146:44
+
+  143 if (prices && prices.length > 0) {
+  144   const validPrices = prices.filter(p => p.source !== undefined);
+  145   if (validPrices.length > 0) {
+→ 146     await prisma.cardPrice.createMany(
+Unique constraint failed on the fields: (`cardId`,`source`,`priceType`,`currency`)

@@ -144,20 +144,21 @@ export const cardRouter = createTRPCRouter({
         // Build filter conditions
         let filterConditions = '';
         const filterParams: any[] = [];
-        let paramOffset = hasSpaceAndNumber ? 7 : 4; // Adjust for extra parameters (including limit/offset)
+        
+        const baseParamCount = hasSpaceAndNumber ? 6 : 3; // Base search params
         
         if (filters?.supertype) {
-          filterConditions += ' AND c.supertype = $' + (filterParams.length + paramOffset);
+          filterConditions += ' AND c.supertype = $' + (filterParams.length + baseParamCount + 1);
           filterParams.push(filters.supertype);
         }
         
         if (filters?.setId) {
-          filterConditions += ' AND c."setId" = $' + (filterParams.length + paramOffset);
+          filterConditions += ' AND c."setId" = $' + (filterParams.length + baseParamCount + 1);
           filterParams.push(filters.setId);
         }
         
         if (filters?.series) {
-          filterConditions += ' AND s.series = $' + (filterParams.length + paramOffset);
+          filterConditions += ' AND s.series = $' + (filterParams.length + baseParamCount + 1);
           filterParams.push(filters.series);
         }
         
@@ -207,8 +208,8 @@ export const cardRouter = createTRPCRouter({
               WHEN relevance_score = 90 THEN name
               ELSE name
             END ASC
-          LIMIT ${'$' + (filterParams.length + paramOffset - 2)}
-          OFFSET ${'$' + (filterParams.length + paramOffset - 1)};
+          LIMIT ${'$' + (filterParams.length + baseParamCount + 1)}
+          OFFSET ${'$' + (filterParams.length + baseParamCount + 2)};
         `;
         
         const countQuery = `
