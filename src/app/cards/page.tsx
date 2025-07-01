@@ -25,6 +25,7 @@ interface CardFilters {
   subtypes: string[];
   supertype: string;
   rarity: string[];
+  series: string[];
   sets: string[];
   hp: { min?: number; max?: number };
   retreatCost: { min?: number; max?: number };
@@ -44,6 +45,7 @@ export default function CardsPage() {
     subtypes: [],
     supertype: '',
     rarity: [],
+    series: [],
     sets: [],
     hp: {},
     retreatCost: {},
@@ -63,6 +65,7 @@ export default function CardsPage() {
       subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
       supertype: filters.supertype && ['POKEMON', 'TRAINER', 'ENERGY'].includes(filters.supertype) ? filters.supertype as any : undefined,
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
+      series: filters.series.length > 0 ? filters.series : undefined,
       setIds: filters.sets.length > 0 ? filters.sets : undefined,
       hp: Object.keys(filters.hp).length > 0 ? filters.hp : undefined,
       retreatCost: Object.keys(filters.retreatCost).length > 0 ? filters.retreatCost : undefined,
@@ -114,10 +117,13 @@ export default function CardsPage() {
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;
 
+  // Extract unique series from sets
+  const uniqueSeries = sets ? [...new Set(sets.map(set => set.series))].sort() : [];
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters.types, filters.subtypes, filters.supertype, filters.rarity, filters.sets, filters.sortBy, filters.sortOrder]);
+  }, [debouncedSearch, filters.types, filters.subtypes, filters.supertype, filters.rarity, filters.series, filters.sets, filters.sortBy, filters.sortOrder]);
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -192,9 +198,9 @@ export default function CardsPage() {
               >
                 <FunnelIcon className="h-5 w-5" />
                 Filters
-                {(filters.types.length > 0 || filters.rarity.length > 0 || filters.sets.length > 0 || filters.supertype) && (
+                {(filters.types.length > 0 || filters.rarity.length > 0 || filters.series.length > 0 || filters.sets.length > 0 || filters.supertype) && (
                   <span className="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                    {filters.types.length + filters.rarity.length + filters.sets.length + (filters.supertype ? 1 : 0)}
+                    {filters.types.length + filters.rarity.length + filters.series.length + filters.sets.length + (filters.supertype ? 1 : 0)}
                   </span>
                 )}
               </button>
@@ -202,7 +208,7 @@ export default function CardsPage() {
           </div>
 
           {/* Active Filters */}
-          {(filters.types.length > 0 || filters.rarity.length > 0 || filters.sets.length > 0 || filters.supertype) && (
+          {(filters.types.length > 0 || filters.rarity.length > 0 || filters.series.length > 0 || filters.sets.length > 0 || filters.supertype) && (
             <div className="mt-4 flex flex-wrap gap-2">
               {filters.supertype && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
@@ -237,6 +243,17 @@ export default function CardsPage() {
                   </button>
                 </span>
               ))}
+              {filters.series.map((series) => (
+                <span key={series} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                  {series}
+                  <button
+                    onClick={() => setFilters({ ...filters, series: filters.series.filter(s => s !== series) })}
+                    className="hover:text-green-600"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                </span>
+              ))}
               {filters.sets.map((setId) => {
                 const set = sets?.find(s => s.id === setId);
                 const year = set?.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
@@ -257,6 +274,7 @@ export default function CardsPage() {
                   ...filters,
                   types: [],
                   rarity: [],
+                  series: [],
                   sets: [],
                   supertype: '',
                 })}
@@ -345,43 +363,36 @@ export default function CardsPage() {
                   </div>
                 </div>
 
-                {/* Set */}
+                {/* Series */}
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">Set</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">Series</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {setsLoading ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Loading sets...</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Loading series...</p>
                     ) : setsError ? (
-                      <p className="text-sm text-red-500 dark:text-red-400">Error loading sets</p>
-                    ) : sets && sets.length > 0 ? (
-                      [...sets].sort((a, b) => {
-                        if (!a.releaseDate || !b.releaseDate) return 0;
-                        // Convert to Date objects for proper comparison
-                        return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
-                      }).map((set) => {
-                        const year = set.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
-                        return (
-                          <label key={set.id} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={filters.sets.includes(set.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setFilters({ ...filters, sets: [...filters.sets, set.id] });
-                                } else {
-                                  setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
-                                }
-                              }}
-                              className="mr-2"
-                            />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              {set.name} {year && `(${year})`}
-                            </span>
-                          </label>
-                        );
-                      })
+                      <p className="text-sm text-red-500 dark:text-red-400">Error loading series</p>
+                    ) : uniqueSeries.length > 0 ? (
+                      uniqueSeries.map((series) => (
+                        <label key={series} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={filters.series.includes(series)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilters({ ...filters, series: [...filters.series, series] });
+                              } else {
+                                setFilters({ ...filters, series: filters.series.filter(s => s !== series) });
+                              }
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {series}
+                          </span>
+                        </label>
+                      ))
                     ) : (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No sets available</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No series available</p>
                     )}
                   </div>
                 </div>
