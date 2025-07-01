@@ -97,13 +97,13 @@ export function PrivacySettingsForm() {
     defaultValues: {
       profileVisibility: profile?.privacy?.profileVisibility || 'public',
       collectionVisibility: profile?.privacy?.collectionVisibility || 'friends',
-      decksVisibility: profile?.privacy?.deckSharingDefault || 'public',
+      decksVisibility: (profile?.privacy?.deckSharingDefault === 'unlisted' ? 'friends' : profile?.privacy?.deckSharingDefault as 'public' | 'friends' | 'private') || 'public',
       showOnlineStatus: profile?.privacy?.showOnlineStatus ?? true,
       allowFriendRequests: profile?.privacy?.allowFriendRequests ?? true,
       allowMessages: profile?.privacy?.allowMessages ?? true,
       allowTradeOffers: profile?.privacy?.allowTradeOffers ?? true,
       showInLeaderboards: profile?.privacy?.searchableProfile ?? true,
-      shareDataForAnalytics: !profile?.privacy?.analyticsOptOut ?? true,
+      shareDataForAnalytics: !(profile?.privacy?.analyticsOptOut ?? false),
     },
   });
 
@@ -113,7 +113,7 @@ export function PrivacySettingsForm() {
       const privacy = {
         profileVisibility: data.profileVisibility,
         collectionVisibility: data.collectionVisibility,
-        deckSharingDefault: data.decksVisibility as 'public' | 'unlisted' | 'private',
+        deckSharingDefault: data.decksVisibility === 'friends' ? 'unlisted' : data.decksVisibility as 'public' | 'private',
         showOnlineStatus: data.showOnlineStatus,
         allowFriendRequests: data.allowFriendRequests,
         allowTradeOffers: data.allowTradeOffers,
@@ -199,42 +199,44 @@ export function PrivacySettingsForm() {
         {toggleSettings.map((setting) => {
           const Icon = setting.icon;
           return (
-            <div key={setting.name} className="flex items-center justify-between">
-              <div className="flex items-start gap-3">
-                <Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <label className="font-medium text-sm">{setting.label}</label>
-                  <p className="text-xs text-muted-foreground">{setting.description}</p>
+            <div key={setting.name}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <label className="font-medium text-sm">{setting.label}</label>
+                    <p className="text-xs text-muted-foreground">{setting.description}</p>
+                  </div>
                 </div>
-              </div>
-              
-              <Controller
-                name={setting.name as keyof PrivacySettingsFormData}
-                control={control}
-                render={({ field }) => (
-                  <button
-                    type="button"
-                    onClick={() => field.onChange(!field.value)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      field.value ? 'bg-primary' : 'bg-input'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        field.value ? 'translate-x-6' : 'translate-x-1'
+                
+                <Controller
+                  name={setting.name as keyof PrivacySettingsFormData}
+                  control={control}
+                  render={({ field }) => (
+                    <button
+                      type="button"
+                      onClick={() => field.onChange(!field.value)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        field.value ? 'bg-primary' : 'bg-input'
                       }`}
-                    />
-                  </button>
-                )}
-              />
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          field.value ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  )}
+                />
+              </div>
+              {errors[setting.name as keyof PrivacySettingsFormData] && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors[setting.name as keyof PrivacySettingsFormData]?.message}
+                </p>
+              )}
             </div>
-            {errors[setting.name as keyof PrivacySettingsFormData] && (
-              <p className="text-xs text-destructive">
-                {errors[setting.name as keyof PrivacySettingsFormData]?.message}
-              </p>
-            )}
           );
-        })}
+      })}
       </div>
 
       <div className="flex justify-end gap-4 pt-4 border-t">

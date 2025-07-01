@@ -88,59 +88,127 @@ export const cardRouter = createTRPCRouter({
       const { page, limit } = pagination;
       const skip = (page - 1) * limit;
       
+      console.log('SearchOptimized input:', JSON.stringify({
+        query,
+        filters,
+        pagination,
+        sort
+      }, null, 2));
+      
       try {
+        // Validate input enums
+        if (filters?.supertype && !['POKEMON', 'TRAINER', 'ENERGY'].includes(filters.supertype)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Invalid supertype: ${filters.supertype}. Must be POKEMON, TRAINER, or ENERGY.`,
+          });
+        }
+        
+        if (filters?.rarity && filters.rarity.length > 0) {
+          const validRarities = [
+            'COMMON', 'UNCOMMON', 'RARE', 'RARE_HOLO', 'RARE_HOLO_EX', 
+            'RARE_HOLO_GX', 'RARE_HOLO_V', 'RARE_HOLO_VMAX', 'RARE_HOLO_VSTAR',
+            'RARE_ULTRA', 'RARE_SECRET', 'RARE_PRIME', 'RARE_ACE', 
+            'RARE_BREAK', 'LEGEND', 'PROMO', 'AMAZING_RARE'
+          ];
+          const invalidRarities = filters.rarity.filter(r => !validRarities.includes(r));
+          if (invalidRarities.length > 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Invalid rarities: ${invalidRarities.join(', ')}`,
+            });
+          }
+        }
+        
         // For single character queries, only show prefix matches
         const minSearchLength = query && query.trim().length === 1 ? 1 : 2;
         
         if (!query || query.trim().length < minSearchLength) {
           // If no query or too short, fall back to regular search
-          return await ctx.prisma.$transaction(async (tx) => {
-            const where: Record<string, any> = {};
-            
-            // Apply filters
-            if (filters?.supertype) {
-              where.supertype = filters.supertype;
-            }
-            if (filters?.setId) {
-              where.setId = filters.setId;
-            }
-            if (filters?.setIds && filters.setIds.length > 0) {
-              where.setId = { in: filters.setIds };
-            }
-            if (filters?.types && filters.types.length > 0) {
-              where.types = { hasSome: filters.types };
-            }
-            if (filters?.rarity && filters.rarity.length > 0) {
-              where.rarity = { in: filters.rarity };
-            }
-            
-            const [cards, total] = await Promise.all([
-              tx.card.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: sort.field === 'price' 
-                  ? { prices: { _count: sort.direction } }
-                  : { [sort.field]: sort.direction },
-                include: {
-                  set: true,
-                  prices: {
-                    orderBy: { updatedAt: 'desc' },
-                    take: 1,
+          try {
+            return await ctx.prisma.$transaction(async (tx) => {
+              const where: Record<string, any> = {};
+              
+              // Apply filters
+              if (filters?.supertype) {
+                where.supertype = filters.supertype;
+              }
+              if (filters?.setId) {
+                where.setId = filters.setId;
+              }
+              if (filters?.setIds && filters.setIds.length > 0) {
+                where.setId = { in: filters.setIds };
+              }
+              if (filters?.types && filters.types.length > 0) {
+                where.types = { hasSome: filters.types };
+              }
+              if (filters?.rarity && filters.rarity.length > 0) {
+                where.rarity = { in: filters.rarity };
+              }
+              
+              console.log('Prisma where clause:', JSON.stringify(where, null, 2));
+              
+              const [cards, total] = await Promise.all([
+                tx.card.findMany({
+                  where,
+                  skip,
+                  take: limit,
+                  orderBy: (() => {
+                    // Log the sort field for debugging
+                    console.log('Non-search orderBy - sort field:', sort.field, 'direction:', sort.direction);
+                    
+                    switch (sort.field) {
+                      case 'price':
+                        return { prices: { _count: sort.direction } };
+                      case 'releaseDate':
+                        return { set: { releaseDate: sort.direction } };
+                      case 'set':
+                        return { set: { name: sort.direction } };
+                      case 'hp':
+                        // HP might be a string in the DB, so we need special handling
+                        return { hp: sort.direction };
+                      case 'retreatCost':
+                        return { convertedRetreatCost: sort.direction };
+                      case 'number':
+                        return { number: sort.direction };
+                      case 'name':
+                        return { name: sort.direction };
+                      case 'rarity':
+                        return { rarity: sort.direction };
+                      default:
+                        console.warn('Unknown sort field:', sort.field);
+                        return { name: sort.direction }; // Fallback to name
+                    }
+                  })(),
+                  include: {
+                    set: true,
+                    prices: {
+                      orderBy: { updatedAt: 'desc' },
+                      take: 1,
+                    },
                   },
-                },
-              }),
-              tx.card.count({ where }),
-            ]);
-            
-            return {
-              cards,
-              total,
-              page,
-              pageSize: limit,
-              totalPages: Math.ceil(total / limit),
-            };
-          });
+                }),
+                tx.card.count({ where }),
+              ]);
+              
+              return {
+                cards,
+                total,
+                page,
+                pageSize: limit,
+                totalPages: Math.ceil(total / limit),
+              };
+            });
+          } catch (txError) {
+            console.error('Transaction error:', txError);
+            console.error('Transaction error details:', {
+              name: txError?.constructor?.name,
+              message: txError?.message,
+              code: txError?.code,
+              meta: txError?.meta,
+            });
+            throw txError;
+          }
         }
         
         // Use raw SQL for relevance-based search
@@ -349,9 +417,29 @@ export const cardRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error('Optimized search error:', error);
+        console.error('Error details:', {
+          errorName: error instanceof Error ? error.constructor.name : 'Unknown',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          queryParams: {
+            query: debouncedSearch,
+            filters,
+            sort,
+            page,
+            limit
+          }
+        });
+        
+        // If it's a Prisma error, log more details
+        if (error && typeof error === 'object' && 'code' in error) {
+          console.error('Prisma error code:', (error as any).code);
+          console.error('Prisma error meta:', (error as any).meta);
+        }
+        
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Failed to search cards',
+          cause: error,
         });
       }
     }),
@@ -406,6 +494,9 @@ export const cardRouter = createTRPCRouter({
         // Set and legality
         if (filters.setId) {
           where.setId = filters.setId;
+        }
+        if (filters.setIds?.length) {
+          where.setId = { in: filters.setIds };
         }
         if (filters.series) {
           where.set = { series: filters.series };

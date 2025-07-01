@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import CardDetailModal from '@/components/cards/CardDetailModal';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -50,12 +51,13 @@ export default function CardsPage() {
 
   const [page, setPage] = useState(1);
 
-  const { data: searchResult, isLoading, error } = api.card.searchOptimized.useQuery({
+  // Debug logging
+  const queryInput = {
     query: debouncedSearch,
     filters: {
       types: filters.types.length > 0 ? filters.types : undefined,
       subtypes: filters.subtypes.length > 0 ? filters.subtypes : undefined,
-      supertype: filters.supertype ? filters.supertype as any : undefined,
+      supertype: filters.supertype && ['POKEMON', 'TRAINER', 'ENERGY'].includes(filters.supertype) ? filters.supertype as any : undefined,
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
       setIds: filters.sets.length > 0 ? filters.sets : undefined,
       hp: Object.keys(filters.hp).length > 0 ? filters.hp : undefined,
@@ -69,16 +71,29 @@ export default function CardsPage() {
       field: filters.sortBy as any,
       direction: filters.sortOrder,
     },
-  }, {
+  };
+  
+  console.log('Frontend query input:', queryInput);
+
+  const { data: searchResult, isLoading, error } = api.card.searchOptimized.useQuery(queryInput, {
     keepPreviousData: true,
     staleTime: 30000, // Cache for 30 seconds
     retry: 1,
     onError: (err) => {
       console.error('Search query error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        data: err.data,
+        shape: err.shape,
+      });
     },
   });
 
-  const { data: sets, isLoading: setsLoading } = api.card.getSets.useQuery({});
+  const { data: sets, isLoading: setsLoading, error: setsError } = api.card.getSets.useQuery({}, {
+    onError: (err) => {
+      console.error('Error loading sets:', err);
+    },
+  });
 
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;
@@ -105,7 +120,8 @@ export default function CardsPage() {
 
   return (
     <MainLayout title="Card Browser" breadcrumbs={breadcrumbs}>
-      <div className="space-y-6">
+      <ErrorBoundary>
+        <div className="space-y-6">
         {/* Search Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -160,9 +176,9 @@ export default function CardsPage() {
               >
                 <FunnelIcon className="h-5 w-5" />
                 Filters
-                {(filters.types.length > 0 || filters.rarity.length > 0 || filters.set || filters.supertype) && (
+                {(filters.types.length > 0 || filters.rarity.length > 0 || filters.sets.length > 0 || filters.supertype) && (
                   <span className="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                    {filters.types.length + filters.rarity.length + (filters.set ? 1 : 0) + (filters.supertype ? 1 : 0)}
+                    {filters.types.length + filters.rarity.length + filters.sets.length + (filters.supertype ? 1 : 0)}
                   </span>
                 )}
               </button>
@@ -170,7 +186,7 @@ export default function CardsPage() {
           </div>
 
           {/* Active Filters */}
-          {(filters.types.length > 0 || filters.rarity.length > 0 || filters.set || filters.supertype) && (
+          {(filters.types.length > 0 || filters.rarity.length > 0 || filters.sets.length > 0 || filters.supertype) && (
             <div className="mt-4 flex flex-wrap gap-2">
               {filters.supertype && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
@@ -207,10 +223,9 @@ export default function CardsPage() {
               ))}
               {filters.sets.map((setId) => {
                 const set = sets?.find(s => s.id === setId);
-                if (!set) return null;
                 return (
                   <span key={setId} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
-                    {set.name}
+                    {set?.name || setId}
                     <button
                       onClick={() => setFilters({ ...filters, sets: filters.sets.filter(s => s !== setId) })}
                       className="hover:text-green-600"
@@ -319,10 +334,13 @@ export default function CardsPage() {
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {setsLoading ? (
                       <p className="text-sm text-gray-500 dark:text-gray-400">Loading sets...</p>
+                    ) : setsError ? (
+                      <p className="text-sm text-red-500 dark:text-red-400">Error loading sets</p>
                     ) : sets && sets.length > 0 ? (
-                      sets.sort((a, b) => {
+                      [...sets].sort((a, b) => {
                         if (!a.releaseDate || !b.releaseDate) return 0;
-                        return b.releaseDate.localeCompare(a.releaseDate);
+                        // Convert to Date objects for proper comparison
+                        return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
                       }).map((set) => (
                         <label key={set.id} className="flex items-center">
                           <input
@@ -380,9 +398,22 @@ export default function CardsPage() {
           {/* Results */}
           <div className="flex-1">
             {error ? (
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-8 text-center">
-                <p className="text-red-800 dark:text-red-200 font-medium">Error loading cards</p>
-                <p className="text-red-600 dark:text-red-300 text-sm mt-2">{error.message}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-8">
+                <p className="text-red-800 dark:text-red-200 font-medium text-center">Error loading cards</p>
+                <p className="text-red-600 dark:text-red-300 text-sm mt-2 text-center">{error.message}</p>
+                {process.env.NODE_ENV === 'development' && (
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-red-700 dark:text-red-300 text-sm">Debug Details</summary>
+                    <pre className="mt-2 p-4 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto">
+                      {JSON.stringify({ 
+                        message: error.message,
+                        data: error.data,
+                        shape: error.shape,
+                        queryInput 
+                      }, null, 2)}
+                    </pre>
+                  </details>
+                )}
               </div>
             ) : isLoading ? (
               <div className="space-y-4">
@@ -537,6 +568,7 @@ export default function CardsPage() {
           onClose={() => setSelectedCardId(null)}
         />
       )}
+      </ErrorBoundary>
     </MainLayout>
   );
 }
