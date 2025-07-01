@@ -86,6 +86,10 @@ export default function DeckBuilderPage() {
         page: 1,
         limit: 20,
       },
+      sort: {
+        field: 'name',
+        direction: 'asc',
+      },
     },
     {
       enabled: true, // Always enable to show all cards when collection filter is on
