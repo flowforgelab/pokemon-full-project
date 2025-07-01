@@ -78,7 +78,7 @@ export default function CardsPage() {
     },
   });
 
-  const { data: sets } = api.card.getSets.useQuery();
+  const { data: sets, isLoading: setsLoading } = api.card.getSets.useQuery({});
 
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;
@@ -317,23 +317,32 @@ export default function CardsPage() {
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Set</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {sets?.sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)).map((set) => (
-                      <label key={set.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={filters.sets.includes(set.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFilters({ ...filters, sets: [...filters.sets, set.id] });
-                            } else {
-                              setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
-                            }
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{set.name}</span>
-                      </label>
-                    ))}
+                    {setsLoading ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Loading sets...</p>
+                    ) : sets && sets.length > 0 ? (
+                      sets.sort((a, b) => {
+                        if (!a.releaseDate || !b.releaseDate) return 0;
+                        return b.releaseDate.localeCompare(a.releaseDate);
+                      }).map((set) => (
+                        <label key={set.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={filters.sets.includes(set.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilters({ ...filters, sets: [...filters.sets, set.id] });
+                              } else {
+                                setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
+                              }
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{set.name}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No sets available</p>
+                    )}
                   </div>
                 </div>
 
