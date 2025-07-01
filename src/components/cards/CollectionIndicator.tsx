@@ -128,6 +128,7 @@ export function CollectionIndicator({
   if (isBasicEnergy) {
     return (
       <div className={cn(
+        layout === 'grid' ? 'absolute top-2 right-2 z-30' : 'relative',
         'flex items-center gap-1.5 px-2 py-1 rounded-full',
         'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
         'text-xs font-medium',
@@ -252,7 +253,7 @@ export function CollectionIndicator({
   return (
     <div className={cn('relative', className)}>
       {isEditing ? (
-        <div className="absolute top-0 right-0 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700">
+        <div className="absolute top-0 right-0 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <input
@@ -302,7 +303,7 @@ export function CollectionIndicator({
         <button
           onClick={handleEdit}
           className={cn(
-            'absolute top-2 right-2 z-10',
+            'absolute top-2 right-2 z-30',
             'flex items-center gap-1 px-2 py-1 rounded-full',
             'bg-green-500/90 hover:bg-green-600/90 text-white',
             'text-xs font-medium backdrop-blur-sm',
@@ -325,7 +326,7 @@ export function CollectionIndicator({
         <button
           onClick={handleQuickAdd}
           className={cn(
-            'absolute top-2 right-2 z-10',
+            'absolute top-2 right-2 z-30',
             'w-8 h-8 rounded-full',
             'bg-gray-200/90 hover:bg-gray-300/90 dark:bg-gray-700/90 dark:hover:bg-gray-600/90',
             'flex items-center justify-center',
