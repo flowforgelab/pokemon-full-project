@@ -108,29 +108,9 @@ export const analysisRouter = createTRPCRouter({
       // Create analyzer instance
       const analyzer = new DeckAnalyzer();
       
-      // Transform deck data for analyzer
-      const analysisData = {
-        id: deck.id,
-        name: deck.name,
-        format: deck.format?.name || 'Standard',
-        cards: deck.cards.map(dc => ({
-          ...dc.card,
-          quantity: dc.quantity,
-        })),
-      };
-      
-      // Perform analysis based on mode
-      let analysis;
-      switch (mode) {
-        case 'quick':
-          analysis = await analyzer.quickAnalysis(analysisData);
-          break;
-        case 'comprehensive':
-          analysis = await analyzer.comprehensiveAnalysis(analysisData);
-          break;
-        default:
-          analysis = await analyzer.analyze(analysisData);
-      }
+      // Perform analysis (DeckAnalyzer only has one method: analyzeDeck)
+      // Mode parameter can be used in future if different analysis methods are added
+      const analysis = await analyzer.analyzeDeck(deck);
       
       // Add recommendations if requested (premium feature)
       if (options.includeRecommendations) {
@@ -153,8 +133,8 @@ export const analysisRouter = createTRPCRouter({
             message: 'Please sign in to access recommendations',
           });
         }
-        const recommendations = await analyzer.getRecommendations(analysisData, analysis);
-        analysis.recommendations = recommendations;
+        // Recommendations are already included in the analysis result
+        // from the analyzeDeck method
       }
       
       // Add pricing data if requested
@@ -289,33 +269,36 @@ export const analysisRouter = createTRPCRouter({
       // Create analyzer
       const analyzer = new DeckAnalyzer();
       
-      // Transform deck data
-      const deckData1 = {
-        id: deck1.id,
-        name: deck1.name,
-        format: deck1.format?.name || 'Standard',
-        cards: deck1.cards.map(dc => ({
-          ...dc.card,
-          quantity: dc.quantity,
-        })),
-      };
+      // Analyze both decks separately
+      const analysis1 = await analyzer.analyzeDeck(deck1);
+      const analysis2 = await analyzer.analyzeDeck(deck2);
       
-      const deckData2 = {
-        id: deck2.id,
-        name: deck2.name,
-        format: deck2.format?.name || 'Standard',
-        cards: deck2.cards.map(dc => ({
-          ...dc.card,
-          quantity: dc.quantity,
-        })),
+      // Create comparison based on individual analyses
+      const comparison = {
+        deck1Analysis: analysis1,
+        deck2Analysis: analysis2,
+        // Compare key metrics
+        consistencyDifference: analysis1.consistency.overallConsistency - analysis2.consistency.overallConsistency,
+        speedDifference: analysis1.speed.score - analysis2.speed.score,
+        synergyDifference: analysis1.synergy.score - analysis2.synergy.score,
+        // Determine which deck is favored
+        favoredDeck: analysis1.scores.overall > analysis2.scores.overall ? 'deck1' : 'deck2',
+        favoredBy: Math.abs(analysis1.scores.overall - analysis2.scores.overall),
       };
-      
-      // Perform comparison
-      const comparison = await analyzer.compare(deckData1, deckData2);
       
       // Add matchup prediction if requested
       if (includeMatchup) {
-        const matchup = await analyzer.predictMatchup(deckData1, deckData2);
+        // Basic matchup prediction based on archetype and scores
+        const matchup = {
+          deck1Archetype: analysis1.archetype.primaryArchetype,
+          deck2Archetype: analysis2.archetype.primaryArchetype,
+          deck1WinRate: Math.max(20, Math.min(80, 50 + (analysis1.scores.overall - analysis2.scores.overall) / 2)),
+          deck2WinRate: Math.max(20, Math.min(80, 50 + (analysis2.scores.overall - analysis1.scores.overall) / 2)),
+          keyFactors: [
+            analysis1.scores.speed > analysis2.scores.speed ? 'Deck 1 has speed advantage' : 'Deck 2 has speed advantage',
+            analysis1.consistency.overallConsistency > analysis2.consistency.overallConsistency ? 'Deck 1 is more consistent' : 'Deck 2 is more consistent',
+          ],
+        };
         comparison.matchup = matchup;
       }
       
@@ -575,18 +558,9 @@ export const analysisRouter = createTRPCRouter({
       
       // Get recent analysis or perform new one
       let analysis = deck.lastAnalysis;
-      if (!analysis || new Date(deck.updatedAt) > new Date(analysis.analyzedAt)) {
+      if (!analysis || new Date(deck.updatedAt) > new Date(analysis.analyzedAt || 0)) {
         const analyzer = new DeckAnalyzer();
-        const deckData = {
-          id: deck.id,
-          name: deck.name,
-          format: deck.format?.name || 'Standard',
-          cards: deck.cards.map(dc => ({
-            ...dc.card,
-            quantity: dc.quantity,
-          })),
-        };
-        analysis = await analyzer.analyze(deckData);
+        analysis = await analyzer.analyzeDeck(deck);
       }
       
       // Generate recommendations based on type
@@ -758,17 +732,7 @@ export const analysisRouter = createTRPCRouter({
       
       // Get or generate analysis
       const analyzer = new DeckAnalyzer();
-      const deckData = {
-        id: deck.id,
-        name: deck.name,
-        format: deck.format?.name || 'Standard',
-        cards: deck.cards.map(dc => ({
-          ...dc.card,
-          quantity: dc.quantity,
-        })),
-      };
-      
-      const analysis = await analyzer.comprehensiveAnalysis(deckData);
+      const analysis = await analyzer.analyzeDeck(deck);
       
       // Generate export based on format
       let exportData;
