@@ -358,7 +358,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     <motion.div
       className={cn(
         currentLayout.container,
-        'rounded-lg overflow-hidden relative',
+        'rounded-lg relative',
         selectionMode && isSelected && 'ring-2 ring-primary',
         className
       )}
@@ -391,7 +391,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       )}
 
       {/* Card image */}
-      <div className={cn('relative', currentLayout.image[viewMode])}>
+      <div className={cn('relative rounded-t-lg overflow-hidden', currentLayout.image[viewMode])}>
         {isLoading && <CardSkeleton />}
         <Image
           src={card.imageUrl || card.imageUrlLarge || card.imageUrlSmall}
@@ -465,7 +465,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         </div>
       )}
 
-      {/* Collection Indicator for Grid Layout */}
+      {/* Collection Indicator for Grid Layout - Render first so hover doesn't block it */}
       {layout === 'grid' && showCollectionIndicator && (
         <CollectionIndicator
           cardId={card.id}
@@ -490,11 +490,11 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-auto"
-              style={{ zIndex: 20 }}
+              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none"
+              style={{ zIndex: 10 }}
             >
               {/* Action Buttons Container */}
-              <div className="absolute bottom-0 left-0 right-0 p-3">
+              <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-auto">
                 {/* View Details Button */}
                 <button
                   onClick={(e) => {
