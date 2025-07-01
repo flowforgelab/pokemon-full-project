@@ -1004,7 +1004,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Use deckBuilderManager instead of creating new instance
-      const exported = await builder.export({
+      const exported = await deckBuilderManager.export({
         deck,
         format: input.format,
       });
@@ -1034,7 +1034,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Use deckBuilderManager instead of creating new instance
-      const parsedDeck = await builder.import({
+      const parsedDeck = await deckBuilderManager.import({
         content: input.content,
         format: input.format,
       });
@@ -1114,7 +1114,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Use deckBuilderManager instead of creating new instance
-      const suggestions = await builder.getSuggestions({
+      const suggestions = await deckBuilderManager.getSuggestions({
         deck,
         type: input.type,
         limit: input.limit,

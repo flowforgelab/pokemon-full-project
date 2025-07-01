@@ -235,7 +235,11 @@ export default function DeckBuilderPage() {
 
     setIsSaving(true);
     try {
-      const cards = allCards.map(c => ({ cardId: c.cardId, quantity: c.quantity }));
+      const cards = allCards.map(c => ({ 
+        cardId: c.cardId, 
+        quantity: c.quantity,
+        category: 'MAIN' as const // All cards go in MAIN category for now
+      }));
 
       // Sanitize inputs
       const sanitizedData = {
