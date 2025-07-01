@@ -223,12 +223,13 @@ export default function DeckBuilderPage() {
 
     // Validate card quantities
     const allCards = [...deck.pokemon, ...deck.trainer, ...deck.energy];
-    const invalidCards = allCards.filter(c => 
-      c.quantity > 4 && c.card.supertype !== 'Energy' && !c.card.name.includes('Basic')
-    );
+    const invalidCards = allCards.filter(c => {
+      const maxQuantity = getMaxCardQuantity(c.card);
+      return c.quantity > maxQuantity;
+    });
     
     if (invalidCards.length > 0) {
-      toast.error('Invalid card quantities', 'Maximum 4 copies of non-basic cards allowed');
+      toast.error('Invalid card quantities', 'Maximum 4 copies allowed (except basic energy cards)');
       return;
     }
 
