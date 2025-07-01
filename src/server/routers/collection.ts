@@ -74,6 +74,27 @@ export const collectionRouter = createTRPCRouter({
         });
       }
 
+      // Check which cards are basic energy cards
+      const cards = await ctx.prisma.card.findMany({
+        where: { id: { in: input.cardIds } },
+        select: {
+          id: true,
+          name: true,
+          supertype: true,
+        },
+      });
+
+      const basicEnergyNames = [
+        'Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+        'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'
+      ];
+
+      const basicEnergyCardIds = new Set(
+        cards
+          .filter(c => c.supertype === 'ENERGY' && basicEnergyNames.includes(c.name))
+          .map(c => c.id)
+      );
+
       const userCollectionCards = await ctx.prisma.userCollection.findMany({
         where: {
           userId: user.id,
@@ -88,7 +109,8 @@ export const collectionRouter = createTRPCRouter({
       const inCollectionSet = new Set(userCollectionCards.map(uc => uc.cardId));
       
       return input.cardIds.reduce((acc, cardId) => {
-        acc[cardId] = inCollectionSet.has(cardId);
+        // Basic energy cards are always in collection
+        acc[cardId] = basicEnergyCardIds.has(cardId) || inCollectionSet.has(cardId);
         return acc;
       }, {} as Record<string, boolean>);
     }),
@@ -450,6 +472,14 @@ export const collectionRouter = createTRPCRouter({
         });
       }
 
+      // Check if this is a basic energy card
+      const basicEnergyNames = [
+        'Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+        'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'
+      ];
+      
+      const isBasicEnergy = card.supertype === 'ENERGY' && basicEnergyNames.includes(card.name);
+
       // Check for existing card with same attributes
       const existing = await ctx.prisma.userCollection.findUnique({
         where: {
@@ -500,6 +530,9 @@ export const collectionRouter = createTRPCRouter({
           ...input,
           userId: user.id,
           acquiredDate: input.acquiredDate || new Date(),
+          // Basic energy cards get unlimited quantity
+          quantity: isBasicEnergy ? 9999 : input.quantity,
+          notes: isBasicEnergy ? 'Basic energy - unlimited quantity' : input.notes,
         },
         include: {
           card: {

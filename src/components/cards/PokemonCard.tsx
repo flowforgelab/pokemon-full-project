@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Check, ChevronRight, AlertCircle, Plus, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, ChevronRight, AlertCircle, Plus, Minus, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from './CardSkeleton';
 import { Card as CardType } from '@/types/pokemon';
@@ -46,6 +46,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
   const [inCollection, setInCollection] = useState(isInCollection);
   const [isToggling, setIsToggling] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
   const toast = useToastNotification();
 
@@ -288,13 +289,14 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         selectionMode && isSelected && 'ring-2 ring-primary',
         className
       )}
-      onClick={handleClick}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
       onMouseMove={handleMouseMove}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       style={shouldShowHolographic() ? {
         background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, 
           rgba(255, 255, 255, 0.3) 0%, 
@@ -389,31 +391,74 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         </div>
       )}
 
-      {/* Collection Toggle Button */}
-      {showCollectionToggle && (
-        <button
-          onClick={handleCollectionToggle}
-          disabled={isToggling}
-          className={cn(
-            'absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full',
-            'flex items-center justify-center transition-all',
-            'bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl',
-            'border-2',
-            inCollection 
-              ? 'border-green-500 hover:border-green-600' 
-              : 'border-gray-300 hover:border-blue-500',
-            isToggling && 'opacity-50 cursor-not-allowed'
+      {/* Hover Overlay with Actions */}
+      {showCollectionToggle && layout === 'grid' && (
+        <AnimatePresence>
+          {isHovering && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+            >
+              {/* Action Buttons Container */}
+              <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                {/* Collection Button */}
+                <button
+                  onClick={handleCollectionToggle}
+                  disabled={isToggling}
+                  className={cn(
+                    'w-full py-2 px-3 rounded-lg font-medium text-sm',
+                    'flex items-center justify-center gap-2',
+                    'transition-all transform hover:scale-105',
+                    'backdrop-blur-sm',
+                    inCollection 
+                      ? 'bg-green-500/90 hover:bg-green-600/90 text-white' 
+                      : 'bg-white/90 hover:bg-white text-gray-900',
+                    isToggling && 'opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  {isToggling ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                  ) : inCollection ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      In Collection
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Add to Collection
+                    </>
+                  )}
+                </button>
+                
+                {/* View Details Button */}
+                <button
+                  onClick={handleClick}
+                  className="w-full py-2 px-3 rounded-lg font-medium text-sm
+                    bg-gray-800/90 hover:bg-gray-900/90 text-white
+                    flex items-center justify-center gap-2
+                    transition-all transform hover:scale-105
+                    backdrop-blur-sm"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Details
+                </button>
+              </div>
+
+              {/* Collection Status Badge */}
+              {inCollection && (
+                <div className="absolute top-2 right-2">
+                  <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg">
+                    <Check className="w-4 h-4" />
+                  </div>
+                </div>
+              )}
+            </motion.div>
           )}
-          title={inCollection ? 'Remove from collection' : 'Add to collection'}
-        >
-          {isToggling ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
-          ) : inCollection ? (
-            <Minus className="w-4 h-4 text-green-600 dark:text-green-400" />
-          ) : (
-            <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-          )}
-        </button>
+        </AnimatePresence>
       )}
     </motion.div>
   );
