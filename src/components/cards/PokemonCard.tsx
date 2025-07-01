@@ -393,7 +393,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       )}
 
       {/* Hover Overlay with Actions */}
-      {showCollectionToggle && layout === 'grid' && (
+      {layout === 'grid' && (
         <AnimatePresence mode="wait">
           {isHovering && (
             <motion.div
@@ -406,8 +406,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
             >
               {/* Action Buttons Container */}
               <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                {/* Collection Button */}
-                <button
+                {/* Collection Button - Only show when signed in */}
+                {showCollectionToggle && (
+                  <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCollectionToggle(e);
@@ -437,7 +438,8 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
                       Add to Collection
                     </>
                   )}
-                </button>
+                  </button>
+                )}
                 
                 {/* View Details Button */}
                 <button
