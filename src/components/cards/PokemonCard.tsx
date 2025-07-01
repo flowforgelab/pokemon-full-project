@@ -359,6 +359,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       className={cn(
         currentLayout.container,
         'rounded-lg relative',
+        'shadow-md hover:shadow-xl transition-shadow duration-200',
         selectionMode && isSelected && 'ring-2 ring-primary',
         className
       )}
@@ -369,7 +370,10 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
       onMouseMove={handleMouseMove}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ 
+        y: -4,
+        transition: { duration: 0.2 }
+      }}
       whileTap={{ scale: 0.98 }}
       style={shouldShowHolographic() ? {
         background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, 
@@ -391,7 +395,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       )}
 
       {/* Card image */}
-      <div className={cn('relative rounded-t-lg overflow-hidden', currentLayout.image[viewMode])}>
+      <div className={cn('relative rounded-lg overflow-hidden', currentLayout.image[viewMode])}>
         {isLoading && <CardSkeleton />}
         <Image
           src={card.imageUrl || card.imageUrlLarge || card.imageUrlSmall}

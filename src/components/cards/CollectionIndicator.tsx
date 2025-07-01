@@ -128,9 +128,10 @@ export function CollectionIndicator({
   if (isBasicEnergy) {
     return (
       <div className={cn(
-        layout === 'grid' ? 'absolute top-2 right-2 z-30' : 'relative',
-        'flex items-center gap-1.5 px-2 py-1 rounded-full',
-        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+        layout === 'grid' ? 'absolute top-0 right-0 z-20' : 'relative',
+        layout === 'grid' ? 'rounded-bl-lg rounded-tr-lg' : 'rounded-full',
+        'flex items-center gap-1.5 px-2 py-1',
+        'bg-green-500 text-white',
         'text-xs font-medium',
         className
       )}>
@@ -251,9 +252,9 @@ export function CollectionIndicator({
 
   // Grid layout - more compact
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('absolute top-0 right-0 z-20', className)}>
       {isEditing ? (
-        <div className="absolute top-0 right-0 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700">
+        <div className="absolute top-2 right-2 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <input
@@ -303,16 +304,17 @@ export function CollectionIndicator({
         <button
           onClick={handleEdit}
           className={cn(
-            'absolute top-2 right-2 z-30',
-            'flex items-center gap-1 px-2 py-1 rounded-full',
-            'bg-green-500/90 hover:bg-green-600/90 text-white',
-            'text-xs font-medium backdrop-blur-sm',
-            'transition-all transform hover:scale-105',
-            'shadow-sm'
+            'rounded-bl-lg rounded-tr-lg',
+            'flex items-center gap-1 px-2 py-1.5',
+            'bg-green-500 hover:bg-green-600 text-white',
+            'text-xs font-medium',
+            'transition-all hover:brightness-110',
+            'shadow-sm',
+            'min-w-[32px]'
           )}
         >
-          <Check className="w-3 h-3" />
-          <span>
+          <Check className="w-3 h-3 flex-shrink-0" />
+          <span className="font-medium">
             {quantity > 0 && quantity}
             {quantityFoil > 0 && (
               <>
@@ -326,16 +328,16 @@ export function CollectionIndicator({
         <button
           onClick={handleQuickAdd}
           className={cn(
-            'absolute top-2 right-2 z-30',
-            'w-8 h-8 rounded-full',
-            'bg-gray-200/90 hover:bg-gray-300/90 dark:bg-gray-700/90 dark:hover:bg-gray-600/90',
+            'rounded-bl-lg rounded-tr-lg',
+            'w-8 h-8',
+            'bg-gray-800/70 hover:bg-gray-800/90 dark:bg-gray-700/70 dark:hover:bg-gray-600/90',
             'flex items-center justify-center',
-            'transition-all transform hover:scale-110',
-            'backdrop-blur-sm shadow-sm'
+            'transition-all hover:brightness-110',
+            'shadow-sm'
           )}
           title="Add to collection"
         >
-          <Plus className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+          <Plus className="w-3.5 h-3.5 text-white" />
         </button>
       )}
     </div>
