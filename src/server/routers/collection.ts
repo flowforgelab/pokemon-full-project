@@ -55,6 +55,45 @@ const bulkAddSchema = z.object({
 
 export const collectionRouter = createTRPCRouter({
   /**
+   * Check if cards are in user's collection
+   */
+  checkCardsInCollection: protectedProcedure
+    .input(z.object({
+      cardIds: z.array(z.string()).max(100),
+    }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const userCollectionCards = await ctx.prisma.userCollection.findMany({
+        where: {
+          userId: user.id,
+          cardId: { in: input.cardIds },
+          isWishlist: false,
+        },
+        select: {
+          cardId: true,
+        },
+      });
+
+      const inCollectionSet = new Set(userCollectionCards.map(uc => uc.cardId));
+      
+      return input.cardIds.reduce((acc, cardId) => {
+        acc[cardId] = inCollectionSet.has(cardId);
+        return acc;
+      }, {} as Record<string, boolean>);
+    }),
+
+  /**
    * Get comprehensive collection dashboard data
    */
   getDashboard: protectedProcedure

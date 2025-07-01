@@ -24,6 +24,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useToastNotification } from '@/hooks/useToastNotification';
 import { useBreakpoint } from '@/hooks/useMediaQuery';
 import { createDeckSchema, sanitizeInput } from '@/lib/validations';
+import RealTimeAnalysisPanel from '@/components/deck-builder/RealTimeAnalysisPanel';
 
 type CreateDeckFormData = z.infer<typeof createDeckSchema>;
 
@@ -610,81 +611,19 @@ export default function DeckBuilderPage() {
         </div>
 
         {/* Right Panel - Analysis */}
-        <div className="w-80 bg-white dark:bg-gray-800 border-l dark:border-gray-700 p-4 overflow-y-auto">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Deck Analysis
-          </h2>
-
-          {totalCards > 0 ? (
-            <div className="space-y-4">
-              {/* Validation */}
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                  <InformationCircleIcon className="h-5 w-5" />
-                  Validation
-                </h3>
-                <div className="space-y-1 text-sm">
-                  {totalCards !== 60 && (
-                    <p className="text-yellow-600 dark:text-yellow-400">
-                      • Deck must have exactly 60 cards
-                    </p>
-                  )}
-                  {analysis?.validation?.errors?.map((error, index) => (
-                    <p key={index} className="text-red-600 dark:text-red-400">
-                      • {error}
-                    </p>
-                  ))}
-                  {totalCards === 60 && (!analysis?.validation?.errors || analysis.validation.errors.length === 0) && (
-                    <p className="text-green-600 dark:text-green-400">
-                      ✓ Deck is valid for {format} format
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Consistency Score */}
-              {analysis?.consistency && (
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                    <ChartBarIcon className="h-5 w-5" />
-                    Consistency
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Score</span>
-                    <span className="text-2xl font-bold text-blue-600">
-                      {analysis.consistency.score}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Suggestions */}
-              <div className="bg-blue-50 dark:bg-blue-900/50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                  <SparklesIcon className="h-5 w-5" />
-                  Suggestions
-                </h3>
-                <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <li>• Add more draw supporters</li>
-                  <li>• Consider adding Professor's Research</li>
-                  <li>• Balance your energy count</li>
-                </ul>
-              </div>
-
-              {/* Test Hands */}
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
-                <PlayIcon className="h-5 w-5" />
-                Test Opening Hands
-              </button>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <SparklesIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">
-                Add cards to see deck analysis
-              </p>
-            </div>
-          )}
+        <div className="w-80 bg-white dark:bg-gray-800 border-l dark:border-gray-700 p-4 overflow-hidden flex flex-col">
+          <RealTimeAnalysisPanel
+            deckId={undefined} // No deck ID yet since we're creating
+            totalCards={totalCards}
+            cards={[
+              ...deck.pokemon.map(dc => ({ card: dc.card, count: dc.quantity })),
+              ...deck.trainer.map(dc => ({ card: dc.card, count: dc.quantity })),
+              ...deck.energy.map(dc => ({ card: dc.card, count: dc.quantity }))
+            ]}
+            format={format}
+            analysis={analysis}
+            isAnalyzing={analysisLoading}
+          />
         </div>
       </div>
     </MainLayout>

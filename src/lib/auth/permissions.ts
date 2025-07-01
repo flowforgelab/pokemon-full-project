@@ -141,11 +141,14 @@ export function hasPermission(
       
       if (permission) {
         // Check conditions
-        if (permission.conditions && conditions) {
+        if (permission.conditions) {
+          // If permission has conditions, they must be met
+          if (!conditions) return false;
           return Object.entries(permission.conditions).every(
             ([key, value]) => conditions[key] === value
           );
         }
+        // No conditions required for this permission
         return true;
       }
       break;

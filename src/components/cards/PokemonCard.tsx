@@ -3,10 +3,12 @@
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, AlertCircle } from 'lucide-react';
+import { Check, ChevronRight, AlertCircle, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from './CardSkeleton';
 import { Card as CardType } from '@/types/game';
+import { api } from '@/utils/api';
+import { useToastNotification } from '@/hooks/useToastNotification';
 
 export interface PokemonCardProps {
   card: CardType;
@@ -19,6 +21,9 @@ export interface PokemonCardProps {
   onLongPress?: (card: CardType) => void;
   onSelectionToggle?: (card: CardType) => void;
   className?: string;
+  showCollectionToggle?: boolean;
+  isInCollection?: boolean;
+  onCollectionToggle?: (card: CardType, isInCollection: boolean) => void;
 }
 
 const PokemonCard: React.FC<PokemonCardProps> = ({
@@ -32,11 +37,72 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   onLongPress,
   onSelectionToggle,
   className,
+  showCollectionToggle = false,
+  isInCollection = false,
+  onCollectionToggle,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [inCollection, setInCollection] = useState(isInCollection);
+  const [isToggling, setIsToggling] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
+  const toast = useToastNotification();
+
+  // Collection mutations
+  const addToCollection = api.collection.addCard.useMutation({
+    onSuccess: () => {
+      setInCollection(true);
+      setIsToggling(false);
+      toast.success('Added to collection', `${card.name} has been added to your collection`);
+      onCollectionToggle?.(card, true);
+    },
+    onError: () => {
+      setIsToggling(false);
+      toast.error('Failed to add card', 'Please try again');
+    },
+  });
+
+  const updateCollection = api.collection.updateCard.useMutation({
+    onSuccess: () => {
+      setInCollection(false);
+      setIsToggling(false);
+      toast.success('Removed from collection', `${card.name} has been removed from your collection`);
+      onCollectionToggle?.(card, false);
+    },
+    onError: () => {
+      setIsToggling(false);
+      toast.error('Failed to remove card', 'Please try again');
+    },
+  });
+
+  const handleCollectionToggle = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isToggling) return;
+
+    setIsToggling(true);
+    
+    if (inCollection) {
+      // Remove from collection by setting quantity to 0
+      // First we need to find the collection entry ID
+      // For now, we'll use a simplified approach
+      updateCollection.mutate({
+        id: card.id, // This should be the userCollection ID, not card ID
+        quantity: 0,
+        quantityFoil: 0,
+      });
+    } else {
+      // Add to collection
+      addToCollection.mutate({
+        cardId: card.id,
+        quantity: 1,
+        quantityFoil: 0,
+        condition: 'NEAR_MINT',
+        language: 'EN',
+        isWishlist: false,
+      });
+    }
+  }, [card, inCollection, isToggling, addToCollection, updateCollection]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!showHolographic || !shouldShowHolographic()) return;
@@ -180,6 +246,33 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
           </div>
         </div>
 
+        {/* Collection Toggle Button for List Layout */}
+        {showCollectionToggle && (
+          <button
+            onClick={handleCollectionToggle}
+            disabled={isToggling}
+            className={cn(
+              'w-8 h-8 rounded-full flex-shrink-0 mr-2',
+              'flex items-center justify-center transition-all',
+              'bg-white dark:bg-gray-800 shadow hover:shadow-md',
+              'border-2',
+              inCollection 
+                ? 'border-green-500 hover:border-green-600' 
+                : 'border-gray-300 hover:border-blue-500',
+              isToggling && 'opacity-50 cursor-not-allowed'
+            )}
+            title={inCollection ? 'Remove from collection' : 'Add to collection'}
+          >
+            {isToggling ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
+            ) : inCollection ? (
+              <Minus className="w-4 h-4 text-green-600 dark:text-green-400" />
+            ) : (
+              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            )}
+          </button>
+        )}
+
         {/* Chevron */}
         <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
       </motion.div>
@@ -292,6 +385,33 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
             </p>
           )}
         </div>
+      )}
+
+      {/* Collection Toggle Button */}
+      {showCollectionToggle && (
+        <button
+          onClick={handleCollectionToggle}
+          disabled={isToggling}
+          className={cn(
+            'absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full',
+            'flex items-center justify-center transition-all',
+            'bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl',
+            'border-2',
+            inCollection 
+              ? 'border-green-500 hover:border-green-600' 
+              : 'border-gray-300 hover:border-blue-500',
+            isToggling && 'opacity-50 cursor-not-allowed'
+          )}
+          title={inCollection ? 'Remove from collection' : 'Add to collection'}
+        >
+          {isToggling ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
+          ) : inCollection ? (
+            <Minus className="w-4 h-4 text-green-600 dark:text-green-400" />
+          ) : (
+            <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          )}
+        </button>
       )}
     </motion.div>
   );

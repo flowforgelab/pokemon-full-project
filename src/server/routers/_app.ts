@@ -7,6 +7,7 @@ import { tradeRouter } from './trade';
 import { analysisRouter } from './analysis';
 import { pricingRouter } from './pricing';
 import { recommendationRouter } from './recommendation';
+import { budgetRouter } from './budget';
 import { adminRouter } from './admin';
 // import { subscriptionRouter } from './subscription';
 // import { notificationRouter } from './notification';
@@ -29,6 +30,7 @@ export const appRouter = createTRPCRouter({
   // Advanced features
   analysis: analysisRouter,
   recommendation: recommendationRouter,
+  budget: budgetRouter,
   
   // User management (TODO: implement these routers)
   // subscription: subscriptionRouter,

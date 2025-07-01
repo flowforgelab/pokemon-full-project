@@ -5,7 +5,9 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import CardDetailModal from '@/components/cards/CardDetailModal';
+import PokemonCard from '@/components/cards/PokemonCard';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { useAuth } from '@clerk/nextjs';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -31,9 +33,11 @@ interface CardFilters {
 }
 
 export default function CardsPage() {
+  const { isSignedIn } = useAuth();
   const [view, setView] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [collectionStatus, setCollectionStatus] = useState<Record<string, boolean>>({});
   const [filters, setFilters] = useState<CardFilters>({
     search: '',
     types: [],
@@ -94,6 +98,18 @@ export default function CardsPage() {
       console.error('Error loading sets:', err);
     },
   });
+
+  // Check collection status for visible cards
+  const cardIds = searchResult?.cards.map(c => c.id) || [];
+  const { data: collectionData } = api.collection.checkCardsInCollection.useQuery(
+    { cardIds },
+    { 
+      enabled: isSignedIn && cardIds.length > 0,
+      onSuccess: (data) => {
+        setCollectionStatus(data);
+      },
+    }
+  );
 
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;
@@ -435,96 +451,48 @@ export default function CardsPage() {
                 {view === 'grid' ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {allCards.map((card) => (
-                      <div
+                      <PokemonCard
                         key={card.id}
+                        card={{
+                          ...card,
+                          imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
+                        }}
+                        layout="grid"
+                        viewMode="compact"
                         onClick={() => setSelectedCardId(card.id)}
-                        className="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                      >
-                        <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-700">
-                          {card.imageUrlLarge ? (
-                            <img
-                              src={card.imageUrlLarge}
-                              alt={card.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400">
-                              No Image
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3">
-                          <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                            {card.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {card.set.name} {card.set.releaseDate ? `(${new Date(card.set.releaseDate).getFullYear()})` : ''} • {card.number}
-                          </p>
-                        </div>
-                      </div>
+                        showCollectionToggle={isSignedIn}
+                        isInCollection={collectionStatus[card.id] || false}
+                        onCollectionToggle={(card, isInCollection) => {
+                          setCollectionStatus(prev => ({
+                            ...prev,
+                            [card.id]: isInCollection,
+                          }));
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Card
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Type
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Set
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Rarity
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y dark:divide-gray-700">
-                        {allCards.map((card) => (
-                          <tr
-                            key={card.id}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                            onClick={() => setSelectedCardId(card.id)}
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-12 w-10">
-                                  {card.imageUrlSmall && (
-                                    <img
-                                      className="h-12 w-10 rounded object-cover"
-                                      src={card.imageUrlSmall}
-                                      alt={card.name}
-                                    />
-                                  )}
-                                </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {card.name}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    {card.number}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {card.supertype}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {card.set.name} {card.set.releaseDate ? `(${new Date(card.set.releaseDate).getFullYear()})` : ''}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {card.rarity || 'N/A'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y dark:divide-gray-700">
+                    {allCards.map((card) => (
+                      <PokemonCard
+                        key={card.id}
+                        card={{
+                          ...card,
+                          imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
+                        }}
+                        layout="list"
+                        viewMode="detailed"
+                        onClick={() => setSelectedCardId(card.id)}
+                        showCollectionToggle={isSignedIn}
+                        isInCollection={collectionStatus[card.id] || false}
+                        onCollectionToggle={(card, isInCollection) => {
+                          setCollectionStatus(prev => ({
+                            ...prev,
+                            [card.id]: isInCollection,
+                          }));
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
 
