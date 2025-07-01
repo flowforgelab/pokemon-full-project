@@ -70,7 +70,17 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     onError: (error) => {
       setIsToggling(false);
       console.error('Failed to add card:', error);
-      const errorMessage = error?.message || error?.data?.message || 'Please try again';
+      
+      // Safely extract error message
+      let errorMessage = 'Please try again';
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
+          errorMessage = String(error.data.message);
+        }
+      }
+      
       try {
         toast?.error('Failed to add card', errorMessage);
       } catch (e) {
@@ -93,7 +103,17 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     onError: (error) => {
       setIsToggling(false);
       console.error('Failed to remove card:', error);
-      const errorMessage = error?.message || error?.data?.message || 'Please try again';
+      
+      // Safely extract error message
+      let errorMessage = 'Please try again';
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
+          errorMessage = String(error.data.message);
+        }
+      }
+      
       try {
         toast?.error('Failed to remove card', errorMessage);
       } catch (e) {

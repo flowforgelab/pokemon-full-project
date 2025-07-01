@@ -506,7 +506,28 @@ export const collectionRouter = createTRPCRouter({
         cardId: input.cardId,
         condition: input.condition,
         onWishlist: input.isWishlist,
+        location: input.storageLocation || 'BINDER',
       });
+
+      // First check if ANY entry exists for this card
+      const anyExisting = await ctx.prisma.userCollection.findMany({
+        where: {
+          userId: user.id,
+          cardId: input.cardId,
+        },
+      });
+
+      if (anyExisting.length > 0) {
+        console.log('[Collection] Found existing entries for this card:', anyExisting.length);
+        anyExisting.forEach((entry, index) => {
+          console.log(`[Collection] Entry ${index + 1}:`, {
+            condition: entry.condition,
+            location: entry.location,
+            onWishlist: entry.onWishlist,
+            quantity: entry.quantity,
+          });
+        });
+      }
 
       const existing = await ctx.prisma.userCollection.findFirst({
         where: {
@@ -514,10 +535,11 @@ export const collectionRouter = createTRPCRouter({
           cardId: input.cardId,
           condition: input.condition,
           onWishlist: input.isWishlist,
+          location: (input.storageLocation as any) || 'BINDER',
         },
       });
 
-      console.log('[Collection] Existing entry found:', existing ? 'Yes' : 'No');
+      console.log('[Collection] Exact match found:', existing ? 'Yes' : 'No');
 
       if (existing) {
         // Update quantities
@@ -595,14 +617,27 @@ export const collectionRouter = createTRPCRouter({
         await redis.del(`collection:dashboard:${user.id}`);
 
         return created;
-      } catch (error) {
+      } catch (error: any) {
         console.error('[Collection] Error creating collection entry:', error);
         console.error('[Collection] Error details:', {
           userId: user.id,
           cardId: input.cardId,
           cardName: card.name,
           error: error instanceof Error ? error.message : 'Unknown error',
+          code: error?.code,
+          meta: error?.meta,
         });
+        
+        // Check for unique constraint violation
+        if (error?.code === 'P2002') {
+          const target = error?.meta?.target;
+          console.error('[Collection] Unique constraint violation on:', target);
+          
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `You already have ${card.name} in your collection with the same condition and storage location. Try updating the existing entry instead.`,
+          });
+        }
         
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
