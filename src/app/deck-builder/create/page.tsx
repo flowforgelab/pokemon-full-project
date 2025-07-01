@@ -25,6 +25,7 @@ import { useToastNotification } from '@/hooks/useToastNotification';
 import { useBreakpoint } from '@/hooks/useMediaQuery';
 import { createDeckSchema, sanitizeInput } from '@/lib/validations';
 import RealTimeAnalysisPanel from '@/components/deck-builder/RealTimeAnalysisPanel';
+import { isBasicEnergy, getMaxCardQuantity } from '@/lib/utils/card-utils';
 
 type CreateDeckFormData = z.infer<typeof createDeckSchema>;
 
@@ -46,6 +47,8 @@ export default function DeckBuilderPage() {
   const toast = useToastNotification();
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyOwned, setShowOnlyOwned] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [allSearchResults, setAllSearchResults] = useState<any[]>([]);
   const [deck, setDeck] = useState<DeckSection>({
     pokemon: [],
     trainer: [],
@@ -83,8 +86,8 @@ export default function DeckBuilderPage() {
       },
       includeOwnedStatus: true,
       pagination: {
-        page: 1,
-        limit: 20,
+        page: searchPage,
+        limit: 50,
       },
       sort: {
         field: 'name',
@@ -99,17 +102,22 @@ export default function DeckBuilderPage() {
     }
   );
   
-  // Debug logging
+  // Accumulate search results for infinite scroll
   useEffect(() => {
-    console.log('Search Debug:', {
-      debouncedSearch,
-      searchResults,
-      searchLoading,
-      searchError,
-      showOnlyOwned,
-      watchedFormat,
-    });
-  }, [debouncedSearch, searchResults, searchLoading, searchError, showOnlyOwned, watchedFormat]);
+    if (searchResults?.cards) {
+      if (searchPage === 1) {
+        setAllSearchResults(searchResults.cards);
+      } else {
+        setAllSearchResults(prev => [...prev, ...searchResults.cards]);
+      }
+    }
+  }, [searchResults, searchPage]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setSearchPage(1);
+    setAllSearchResults([]);
+  }, [debouncedSearch, showOnlyOwned, watchedFormat]);
 
   const { data: analysis } = api.analysis.analyzeDeckComposition.useQuery({
     cards: [...deck.pokemon, ...deck.trainer, ...deck.energy],
@@ -147,10 +155,11 @@ export default function DeckBuilderPage() {
   const addCardToDeck = (card: any) => {
     const section = card.supertype.toLowerCase() as keyof DeckSection;
     const existingCard = deck[section].find(c => c.cardId === card.id);
+    const maxQuantity = getMaxCardQuantity(card);
 
     if (existingCard) {
       // Increase quantity
-      if (existingCard.quantity < 4 || card.supertype === 'Energy') {
+      if (existingCard.quantity < maxQuantity) {
         setDeck({
           ...deck,
           [section]: deck[section].map(c =>
@@ -161,7 +170,7 @@ export default function DeckBuilderPage() {
         });
         toast.success(`Added ${card.name}`, `${existingCard.quantity + 1} copies in deck`);
       } else {
-        toast.warning('Card limit reached', 'Maximum 4 copies allowed (except basic energy)');
+        toast.warning('Card limit reached', `Maximum ${maxQuantity} copies allowed`);
       }
     } else {
       // Add new card
@@ -185,7 +194,8 @@ export default function DeckBuilderPage() {
         if (c.cardId === cardId) {
           const newQuantity = c.quantity + delta;
           if (newQuantity <= 0) return null;
-          if (newQuantity > 4 && c.card.supertype !== 'Energy') return c;
+          const maxQuantity = getMaxCardQuantity(c.card);
+          if (newQuantity > maxQuantity) return c;
           return { ...c, quantity: newQuantity };
         }
         return c;
@@ -307,13 +317,14 @@ export default function DeckBuilderPage() {
                   {searchError.message || 'Failed to load cards'}
                 </p>
               </div>
-            ) : searchLoading ? (
+            ) : searchLoading && searchPage === 1 ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-            ) : searchResults && searchResults.cards.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {searchResults.cards.map((card) => (
+            ) : allSearchResults.length > 0 ? (
+              <div>
+                <div className="grid grid-cols-2 gap-3">
+                  {allSearchResults.map((card) => (
                   <div
                     key={card.id}
                     className="group cursor-pointer"
@@ -344,7 +355,19 @@ export default function DeckBuilderPage() {
                       {card.name}
                     </p>
                   </div>
-                ))}
+                  ))}
+                </div>
+                {searchResults && searchPage < searchResults.totalPages && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => setSearchPage(p => p + 1)}
+                      disabled={searchLoading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {searchLoading ? 'Loading...' : 'Load More'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : debouncedSearch ? (
               <p className="text-center text-gray-500 dark:text-gray-400">

@@ -52,7 +52,7 @@ export const deckRouter = createTRPCRouter({
         cards: z.array(
           z.object({
             cardId: z.string(),
-            quantity: z.number().min(1).max(4),
+            quantity: z.number().min(1),
             category: z.nativeEnum(DeckCategory).default(DeckCategory.MAIN),
             position: z.number().optional(),
           })
@@ -120,7 +120,7 @@ export const deckRouter = createTRPCRouter({
           .array(
             z.object({
               cardId: z.string(),
-              quantity: z.number().min(1).max(4),
+              quantity: z.number().min(1),
               category: z.nativeEnum(DeckCategory).default(DeckCategory.MAIN),
               position: z.number().optional(),
             })
@@ -683,7 +683,7 @@ export const deckRouter = createTRPCRouter({
     .input(z.object({
       deckId: z.string(),
       cardId: z.string(),
-      quantity: z.number().min(1).max(4).default(1),
+      quantity: z.number().min(1).default(1),
       category: z.nativeEnum(DeckCategory).default(DeckCategory.MAIN),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -712,6 +712,24 @@ export const deckRouter = createTRPCRouter({
         });
       }
 
+      // Get card details to check if it's basic energy
+      const card = await ctx.prisma.card.findUnique({
+        where: { id: input.cardId },
+        select: { name: true, supertype: true },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Card not found',
+        });
+      }
+
+      // Check if it's basic energy
+      const isBasicEnergy = card.supertype === 'ENERGY' && 
+        ['Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+         'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name);
+
       // Check if card already exists in deck
       const existingCard = await ctx.prisma.deckCard.findUnique({
         where: {
@@ -724,7 +742,8 @@ export const deckRouter = createTRPCRouter({
 
       if (existingCard) {
         // Update quantity if card exists
-        const newQuantity = Math.min(existingCard.quantity + input.quantity, 4);
+        const maxQuantity = isBasicEnergy ? 999 : 4;
+        const newQuantity = Math.min(existingCard.quantity + input.quantity, maxQuantity);
         
         return ctx.prisma.deckCard.update({
           where: {
@@ -745,6 +764,10 @@ export const deckRouter = createTRPCRouter({
           },
         });
       } else {
+        // Check quantity limit for new card
+        const maxQuantity = isBasicEnergy ? 999 : 4;
+        const actualQuantity = Math.min(input.quantity, maxQuantity);
+        
         // Add new card to deck
         const maxPosition = await ctx.prisma.deckCard.findFirst({
           where: { deckId: input.deckId },
@@ -756,7 +779,7 @@ export const deckRouter = createTRPCRouter({
           data: {
             deckId: input.deckId,
             cardId: input.cardId,
-            quantity: input.quantity,
+            quantity: actualQuantity,
             category: input.category,
             position: (maxPosition?.position || 0) + 1,
           },
