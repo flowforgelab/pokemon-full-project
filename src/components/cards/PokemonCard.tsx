@@ -9,6 +9,7 @@ import { CardSkeleton } from './CardSkeleton';
 import { Card as CardType } from '@/types/pokemon';
 import { api } from '@/utils/api';
 import { useToastNotification } from '@/hooks/useToastNotification';
+import { CollectionIndicator } from './CollectionIndicator';
 
 export interface PokemonCardProps {
   card: CardType;
@@ -24,6 +25,10 @@ export interface PokemonCardProps {
   showCollectionToggle?: boolean;
   isInCollection?: boolean;
   onCollectionToggle?: (card: CardType, isInCollection: boolean) => void;
+  collectionQuantity?: number;
+  collectionQuantityFoil?: number;
+  onQuantityChange?: (quantity: number, quantityFoil: number) => void;
+  showCollectionIndicator?: boolean;
 }
 
 const PokemonCard: React.FC<PokemonCardProps> = ({
@@ -40,6 +45,10 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   showCollectionToggle = false,
   isInCollection = false,
   onCollectionToggle,
+  collectionQuantity = 0,
+  collectionQuantityFoil = 0,
+  onQuantityChange,
+  showCollectionIndicator = false,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -456,8 +465,24 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         </div>
       )}
 
+      {/* Collection Indicator for Grid Layout */}
+      {layout === 'grid' && showCollectionIndicator && (
+        <CollectionIndicator
+          cardId={card.id}
+          cardName={card.name}
+          inCollection={collectionQuantity > 0 || collectionQuantityFoil > 0}
+          quantity={collectionQuantity}
+          quantityFoil={collectionQuantityFoil}
+          isBasicEnergy={card.supertype === 'ENERGY' && 
+            ['Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+             'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name)}
+          onQuantityChange={onQuantityChange}
+          layout="grid"
+        />
+      )}
+
       {/* Hover Overlay with Actions */}
-      {layout === 'grid' && (
+      {layout === 'grid' && showCollectionToggle && (
         <AnimatePresence mode="wait">
           {isHovering && (
             <motion.div

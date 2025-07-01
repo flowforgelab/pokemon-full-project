@@ -523,35 +523,26 @@ export default function CardsPage() {
                          'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name);
                       
                       return (
-                        <div key={card.id} className="relative overflow-hidden rounded-lg">
-                          <PokemonCard
-                            card={{
-                              ...card,
-                              imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
-                            }}
-                            layout="grid"
-                            viewMode="compact"
-                            onClick={() => setSelectedCardId(card.id)}
-                            showCollectionToggle={false} // We'll use our new indicator instead
-                          />
-                          {isSignedIn && (
-                            <CollectionIndicator
-                              cardId={card.id}
-                              cardName={card.name}
-                              inCollection={status.inCollection}
-                              quantity={status.quantity}
-                              quantityFoil={status.quantityFoil}
-                              isBasicEnergy={isBasicEnergy}
-                              onQuantityChange={(quantity, quantityFoil) => {
-                                setCollectionStatus(prev => ({
-                                  ...prev,
-                                  [card.id]: { inCollection: quantity > 0 || quantityFoil > 0, quantity, quantityFoil },
-                                }));
-                              }}
-                              layout="grid"
-                            />
-                          )}
-                        </div>
+                        <PokemonCard
+                          key={card.id}
+                          card={{
+                            ...card,
+                            imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
+                          }}
+                          layout="grid"
+                          viewMode="compact"
+                          onClick={() => setSelectedCardId(card.id)}
+                          showCollectionToggle={false}
+                          showCollectionIndicator={isSignedIn}
+                          collectionQuantity={status.quantity}
+                          collectionQuantityFoil={status.quantityFoil}
+                          onQuantityChange={(quantity, quantityFoil) => {
+                            setCollectionStatus(prev => ({
+                              ...prev,
+                              [card.id]: { inCollection: quantity > 0 || quantityFoil > 0, quantity, quantityFoil },
+                            }));
+                          }}
+                        />
                       );
                     })}
                   </div>
@@ -573,7 +564,8 @@ export default function CardsPage() {
                             layout="list"
                             viewMode="detailed"
                             onClick={() => setSelectedCardId(card.id)}
-                            showCollectionToggle={false} // We'll use our new indicator instead
+                            showCollectionToggle={false}
+                            showCollectionIndicator={false}
                             className="flex-1"
                           />
                           {isSignedIn && (
