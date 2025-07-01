@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import Link from 'next/link';
+import CardDetailModal from '@/components/cards/CardDetailModal';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -34,6 +35,7 @@ export default function CollectionPage() {
     sortOrder: 'desc'
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   const { data: stats } = api.collection.getStatistics.useQuery();
   const { data: collection, isLoading, error } = api.collection.searchCards.useQuery({
@@ -110,7 +112,7 @@ export default function CollectionPage() {
                 <ArrowDownTrayIcon className="w-5 h-5" />
               </button>
               <Link
-                href="/collection/add"
+                href="/cards"
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <PlusIcon className="w-5 h-5" />
@@ -261,10 +263,10 @@ export default function CollectionPage() {
           view === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {collection.cards.map((item) => (
-                <Link
+                <div
                   key={item.id}
-                  href={`/collection/${item.cardId}`}
-                  className="group relative bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all"
+                  onClick={() => setSelectedCardId(item.cardId)}
+                  className="group relative bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all cursor-pointer"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-700">
                     {item.card.imageUrlSmall ? (
@@ -297,7 +299,7 @@ export default function CollectionPage() {
                       </p>
                     )}
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           ) : (
@@ -327,7 +329,7 @@ export default function CollectionPage() {
                     <tr
                       key={item.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                      onClick={() => window.location.href = `/collection/${item.cardId}`}
+                      onClick={() => setSelectedCardId(item.cardId)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -378,7 +380,7 @@ export default function CollectionPage() {
               Start adding cards to track your collection and its value.
             </p>
             <Link
-              href="/collection/add"
+              href="/cards"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -387,6 +389,15 @@ export default function CollectionPage() {
           </div>
         )}
       </div>
+
+      {/* Card Detail Modal */}
+      {selectedCardId && (
+        <CardDetailModal
+          cardId={selectedCardId}
+          isOpen={!!selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+        />
+      )}
     </MainLayout>
   );
 }
