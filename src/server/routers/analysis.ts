@@ -176,16 +176,8 @@ export const analysisRouter = createTRPCRouter({
         analyzedAt: new Date(),
       };
       
-      // Update deck with latest analysis
-      await ctx.prisma.deck.update({
-        where: { id: deckId },
-        data: {
-          lastAnalysis: analysis,
-          consistencyScore: analysis.consistency.overallScore,
-          speedScore: analysis.speed.score,
-          synergyScore: analysis.synergy.score,
-        },
-      });
+      // Note: The deck doesn't have lastAnalysis fields in the schema
+      // This would need to be stored separately if we want to persist analysis results
       
       // Cache results
       if (options.cacheResults !== false) {
@@ -279,8 +271,8 @@ export const analysisRouter = createTRPCRouter({
         deck2Analysis: analysis2,
         // Compare key metrics
         consistencyDifference: analysis1.consistency.overallConsistency - analysis2.consistency.overallConsistency,
-        speedDifference: analysis1.speed.score - analysis2.speed.score,
-        synergyDifference: analysis1.synergy.score - analysis2.synergy.score,
+        speedDifference: analysis1.scores.speed - analysis2.scores.speed,
+        synergyDifference: analysis1.synergy.overallSynergy - analysis2.synergy.overallSynergy,
         // Determine which deck is favored
         favoredDeck: analysis1.scores.overall > analysis2.scores.overall ? 'deck1' : 'deck2',
         favoredBy: Math.abs(analysis1.scores.overall - analysis2.scores.overall),
@@ -556,12 +548,9 @@ export const analysisRouter = createTRPCRouter({
         });
       }
       
-      // Get recent analysis or perform new one
-      let analysis = deck.lastAnalysis;
-      if (!analysis || new Date(deck.updatedAt) > new Date(analysis.analyzedAt || 0)) {
-        const analyzer = new DeckAnalyzer();
-        analysis = await analyzer.analyzeDeck(deck);
-      }
+      // Always perform new analysis since we don't store lastAnalysis in the database
+      const analyzer = new DeckAnalyzer();
+      const analysis = await analyzer.analyzeDeck(deck);
       
       // Generate recommendations based on type
       const recommendations = {
