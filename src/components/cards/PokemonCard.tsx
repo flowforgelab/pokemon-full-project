@@ -49,19 +49,33 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
   const toast = useToastNotification();
+  
+  // Ensure we have toast methods
+  if (!toast) {
+    console.error('Toast notification hook is not available');
+  }
 
   // Collection mutations
   const addToCollection = api.collection.addCard.useMutation({
     onSuccess: () => {
       setInCollection(true);
       setIsToggling(false);
-      toast.success('Added to collection', `${card.name} has been added to your collection`);
+      try {
+        toast?.success('Added to collection', `${card.name} has been added to your collection`);
+      } catch (e) {
+        console.error('Toast error:', e);
+      }
       onCollectionToggle?.(card, true);
     },
     onError: (error) => {
       setIsToggling(false);
       console.error('Failed to add card:', error);
-      toast.error('Failed to add card', error.message || 'Please try again');
+      const errorMessage = error?.message || error?.data?.message || 'Please try again';
+      try {
+        toast?.error('Failed to add card', errorMessage);
+      } catch (e) {
+        console.error('Toast error:', e);
+      }
     },
   });
 
@@ -69,13 +83,22 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     onSuccess: () => {
       setInCollection(false);
       setIsToggling(false);
-      toast.success('Removed from collection', `${card.name} has been removed from your collection`);
+      try {
+        toast?.success('Removed from collection', `${card.name} has been removed from your collection`);
+      } catch (e) {
+        console.error('Toast error:', e);
+      }
       onCollectionToggle?.(card, false);
     },
     onError: (error) => {
       setIsToggling(false);
       console.error('Failed to remove card:', error);
-      toast.error('Failed to remove card', error.message || 'Please try again');
+      const errorMessage = error?.message || error?.data?.message || 'Please try again';
+      try {
+        toast?.error('Failed to remove card', errorMessage);
+      } catch (e) {
+        console.error('Toast error:', e);
+      }
     },
   });
 
