@@ -30,7 +30,7 @@ interface CollectionFilters {
 export default function CollectionPage() {
   const [view, setView] = useState<ViewMode>('grid');
   const [filters, setFilters] = useState<CollectionFilters>({
-    sortBy: 'date',
+    sortBy: 'acquiredDate',
     sortOrder: 'desc'
   });
   const [showFilters, setShowFilters] = useState(false);
@@ -240,8 +240,8 @@ export default function CollectionPage() {
                     setFilters({ ...filters, sortBy: sortBy as any, sortOrder });
                   }}
                 >
-                  <option value="date-desc">Recently Added</option>
-                  <option value="date-asc">Oldest First</option>
+                  <option value="acquiredDate-desc">Recently Added</option>
+                  <option value="acquiredDate-asc">Oldest First</option>
                   <option value="name-asc">Name (A-Z)</option>
                   <option value="name-desc">Name (Z-A)</option>
                   <option value="value-desc">Highest Value</option>
