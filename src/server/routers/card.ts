@@ -101,13 +101,27 @@ export const cardRouter = createTRPCRouter({
             if (filters?.supertype) {
               where.supertype = filters.supertype;
             }
+            if (filters?.setId) {
+              where.setId = filters.setId;
+            }
+            if (filters?.setIds && filters.setIds.length > 0) {
+              where.setId = { in: filters.setIds };
+            }
+            if (filters?.types && filters.types.length > 0) {
+              where.types = { hasSome: filters.types };
+            }
+            if (filters?.rarity && filters.rarity.length > 0) {
+              where.rarity = { in: filters.rarity };
+            }
             
             const [cards, total] = await Promise.all([
               tx.card.findMany({
                 where,
                 skip,
                 take: limit,
-                orderBy: { name: 'asc' },
+                orderBy: sort.field === 'price' 
+                  ? { prices: { _count: sort.direction } }
+                  : { [sort.field]: sort.direction },
                 include: {
                   set: true,
                   prices: {
@@ -185,6 +199,22 @@ export const cardRouter = createTRPCRouter({
         if (filters?.series) {
           filterConditions += ' AND s.series = $' + (filterParams.length + baseParamCount + 1);
           filterParams.push(filters.series);
+        }
+        
+        if (filters?.types && filters.types.length > 0) {
+          const placeholders = filters.types.map((_, index) => 
+            '$' + (filterParams.length + baseParamCount + index + 1)
+          ).join(', ');
+          filterConditions += ` AND c.types && ARRAY[${placeholders}]`;
+          filterParams.push(...filters.types);
+        }
+        
+        if (filters?.rarity && filters.rarity.length > 0) {
+          const placeholders = filters.rarity.map((_, index) => 
+            '$' + (filterParams.length + baseParamCount + index + 1)
+          ).join(', ');
+          filterConditions += ` AND c.rarity IN (${placeholders})`;
+          filterParams.push(...filters.rarity);
         }
         
         // Search card names and numbers
