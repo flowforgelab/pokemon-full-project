@@ -29,7 +29,7 @@ interface ToastContextType {
   removeAllToasts: () => void;
 }
 
-const ToastContext = createContext<ToastContextType | null>(null);
+export const ToastContext = createContext<ToastContextType | null>(null);
 
 interface ToastProviderProps {
   children: React.ReactNode;

@@ -1,6 +1,26 @@
 import { useToast } from '@/components/ui/Toast';
+import { useContext } from 'react';
+import { ToastContext } from '@/components/ui/Toast';
 
 export function useToastNotification() {
+  // Check if we're in a Toast context first
+  const context = useContext(ToastContext as any);
+  
+  if (!context) {
+    // Return a no-op implementation when outside provider context
+    console.warn('useToastNotification used outside ToastProvider context');
+    
+    const noOp = () => '';
+    
+    return {
+      success: noOp,
+      error: noOp,
+      warning: noOp,
+      info: noOp,
+      promise: async <T,>(promise: Promise<T>) => promise,
+    };
+  }
+
   const { addToast, removeToast } = useToast();
 
   const success = (title: string, description?: string) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import Link from 'next/link';
@@ -36,12 +36,13 @@ export default function CollectionPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: stats } = api.collection.getStatistics.useQuery();
-  const { data: collection, isLoading } = api.collection.searchCards.useQuery({
+  const { data: collection, isLoading, error } = api.collection.searchCards.useQuery({
     filters: {
       search: filters.search,
       sets: filters.set ? [filters.set] : undefined,
       supertype: filters.type as any,
       rarity: filters.rarity ? [filters.rarity as any] : undefined,
+      isWishlist: false, // Explicitly filter for collection items, not wishlist
     },
     pagination: {
       page: 1,
@@ -52,6 +53,22 @@ export default function CollectionPage() {
       direction: filters.sortOrder || 'asc',
     },
   });
+  
+  // Log any query errors or debug data
+  if (error) {
+    console.error('Collection query error:', error);
+  }
+  
+  // Debug logging
+  React.useEffect(() => {
+    if (collection) {
+      console.log('Collection data:', {
+        totalCards: collection.total,
+        pageData: collection.cards?.length || 0,
+        firstCard: collection.cards?.[0],
+      });
+    }
+  }, [collection]);
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },

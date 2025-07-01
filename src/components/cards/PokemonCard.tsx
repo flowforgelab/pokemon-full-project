@@ -47,23 +47,26 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   const [inCollection, setInCollection] = useState(isInCollection);
   const [isToggling, setIsToggling] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
   const toast = useToastNotification();
   
-  // Ensure we have toast methods
-  if (!toast) {
-    console.error('Toast notification hook is not available');
-  }
+  // Handle client-side mounting
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Collection mutations
   const addToCollection = api.collection.addCard.useMutation({
     onSuccess: () => {
       setInCollection(true);
       setIsToggling(false);
-      try {
-        toast?.success('Added to collection', `${card.name} has been added to your collection`);
-      } catch (e) {
-        console.error('Toast error:', e);
+      if (isMounted && toast) {
+        try {
+          toast.success('Added to collection', `${card.name} has been added to your collection`);
+        } catch (e) {
+          console.error('Toast error:', e);
+        }
       }
       onCollectionToggle?.(card, true);
     },
@@ -81,10 +84,12 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         }
       }
       
-      try {
-        toast?.error('Failed to add card', errorMessage);
-      } catch (e) {
-        console.error('Toast error:', e);
+      if (isMounted && toast) {
+        try {
+          toast.error('Failed to add card', errorMessage);
+        } catch (e) {
+          console.error('Toast error:', e);
+        }
       }
     },
   });
@@ -93,10 +98,12 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     onSuccess: () => {
       setInCollection(false);
       setIsToggling(false);
-      try {
-        toast?.success('Removed from collection', `${card.name} has been removed from your collection`);
-      } catch (e) {
-        console.error('Toast error:', e);
+      if (isMounted && toast) {
+        try {
+          toast.success('Removed from collection', `${card.name} has been removed from your collection`);
+        } catch (e) {
+          console.error('Toast error:', e);
+        }
       }
       onCollectionToggle?.(card, false);
     },
@@ -114,10 +121,12 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         }
       }
       
-      try {
-        toast?.error('Failed to remove card', errorMessage);
-      } catch (e) {
-        console.error('Toast error:', e);
+      if (isMounted && toast) {
+        try {
+          toast.error('Failed to remove card', errorMessage);
+        } catch (e) {
+          console.error('Toast error:', e);
+        }
       }
     },
   });
