@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { CardCondition, Rarity, Supertype } from '@prisma/client';
 import { getCollectionCache } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
+import { getDbUser } from '@/lib/auth/clerk';
 import { 
   requireResourcePermission,
   requireSubscriptionFeature,
@@ -62,10 +63,8 @@ export const collectionRouter = createTRPCRouter({
       cardIds: z.array(z.string()).max(100),
     }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -122,10 +121,8 @@ export const collectionRouter = createTRPCRouter({
     .use(requireResourcePermission('collection', 'read'))
     .use(rateLimitBySubscription('collection:dashboard'))
     .query(async ({ ctx }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -307,10 +304,8 @@ export const collectionRouter = createTRPCRouter({
       const { page, limit } = pagination;
       const skip = (page - 1) * limit;
 
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -448,10 +443,8 @@ export const collectionRouter = createTRPCRouter({
       wishlistPriority: z.number().min(1).max(10).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -559,10 +552,8 @@ export const collectionRouter = createTRPCRouter({
   bulkAddCards: protectedProcedure
     .input(bulkAddSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -648,10 +639,8 @@ export const collectionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -714,10 +703,8 @@ export const collectionRouter = createTRPCRouter({
       cardId: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -758,10 +745,8 @@ export const collectionRouter = createTRPCRouter({
    */
   getStatistics: protectedProcedure
     .query(async ({ ctx }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -897,10 +882,8 @@ export const collectionRouter = createTRPCRouter({
       budget: z.number().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -973,10 +956,8 @@ export const collectionRouter = createTRPCRouter({
       }),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -1009,10 +990,8 @@ export const collectionRouter = createTRPCRouter({
       includePrices: z.boolean().default(true),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({
@@ -1119,10 +1098,8 @@ export const collectionRouter = createTRPCRouter({
       description: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { clerkUserId: ctx.userId },
-        select: { id: true },
-      });
+      // Use getDbUser to ensure user exists (creates if needed)
+      const user = await getDbUser(ctx.userId);
 
       if (!user) {
         throw new TRPCError({

@@ -58,9 +58,10 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       toast.success('Added to collection', `${card.name} has been added to your collection`);
       onCollectionToggle?.(card, true);
     },
-    onError: () => {
+    onError: (error) => {
       setIsToggling(false);
-      toast.error('Failed to add card', 'Please try again');
+      console.error('Failed to add card:', error);
+      toast.error('Failed to add card', error.message || 'Please try again');
     },
   });
 
@@ -71,9 +72,10 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       toast.success('Removed from collection', `${card.name} has been removed from your collection`);
       onCollectionToggle?.(card, false);
     },
-    onError: () => {
+    onError: (error) => {
       setIsToggling(false);
-      toast.error('Failed to remove card', 'Please try again');
+      console.error('Failed to remove card:', error);
+      toast.error('Failed to remove card', error.message || 'Please try again');
     },
   });
 

@@ -37,15 +37,20 @@ export default function CollectionPage() {
 
   const { data: stats } = api.collection.getStatistics.useQuery();
   const { data: collection, isLoading } = api.collection.searchCards.useQuery({
-    query: filters.search || '',
     filters: {
-      setId: filters.set,
-      supertype: filters.type,
-      rarity: filters.rarity,
+      search: filters.search,
+      sets: filters.set ? [filters.set] : undefined,
+      supertype: filters.type as any,
+      rarity: filters.rarity ? [filters.rarity as any] : undefined,
     },
-    sortBy: filters.sortBy,
-    sortOrder: filters.sortOrder,
-    limit: 50,
+    pagination: {
+      page: 1,
+      limit: 50,
+    },
+    sort: {
+      field: filters.sortBy || 'name',
+      direction: filters.sortOrder || 'asc',
+    },
   });
 
   const breadcrumbs = [
