@@ -329,7 +329,7 @@ export default function CardsPage() {
           {/* Filters Sidebar */}
           {showFilters && (
             <div className="w-80 flex-shrink-0 h-full">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full overflow-y-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full overflow-y-auto p-6 space-y-6">
                 {/* Card Type */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Card Type</h3>
@@ -357,7 +357,7 @@ export default function CardsPage() {
                 {/* Pokemon Types */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Pokémon Type</h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2">
                     {pokemonTypes.map((type) => (
                       <label key={type} className="flex items-center">
                         <input
@@ -381,7 +381,7 @@ export default function CardsPage() {
                 {/* Rarity */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Rarity</h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2">
                     {rarities.map((rarity) => (
                       <label key={rarity} className="flex items-center">
                         <input
@@ -405,7 +405,7 @@ export default function CardsPage() {
                 {/* Series */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Series</h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2">
                     {setsLoading ? (
                       <p className="text-sm text-gray-500 dark:text-gray-400">Loading series...</p>
                     ) : setsError ? (
