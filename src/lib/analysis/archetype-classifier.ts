@@ -1,5 +1,6 @@
 import { Card, DeckCard, Supertype } from '@prisma/client';
-import type { ArchetypeClassification, DeckArchetype } from './types';
+import { DeckArchetype } from './types';
+import type { ArchetypeClassification } from './types';
 
 interface ArchetypeFeatures {
   attackerCount: number;

@@ -1,9 +1,9 @@
 import { DeckAnalyzer } from './deck-analyzer';
 import type { Deck, DeckCard, Card } from '@prisma/client';
+import { DeckArchetype } from './types';
 import type { 
   DeckAnalysisResult, 
-  AnalysisConfig,
-  DeckArchetype,
+  AnalysisConfig
 } from './types';
 
 /**

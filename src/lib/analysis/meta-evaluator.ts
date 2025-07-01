@@ -1,4 +1,5 @@
 import { Card, DeckCard, Deck } from '@prisma/client';
+import { DeckArchetype } from './types';
 import type {
   MetaGameAnalysis,
   PopularMatchup,
@@ -6,8 +7,7 @@ import type {
   MetaWeakness,
   FormatEvaluation,
   RotationImpact,
-  TechCardRecommendation,
-  DeckArchetype,
+  TechCardRecommendation
 } from './types';
 
 interface MetaDeck {

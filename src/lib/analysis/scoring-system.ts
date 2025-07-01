@@ -1,3 +1,4 @@
+import { DeckArchetype } from './types';
 import type {
   DeckScores,
   ScoreBreakdown,
@@ -5,8 +6,7 @@ import type {
   SynergyAnalysis,
   SpeedAnalysis,
   MetaGameAnalysis,
-  ArchetypeClassification,
-  DeckArchetype,
+  ArchetypeClassification
 } from './types';
 
 export class ScoringSystem {
