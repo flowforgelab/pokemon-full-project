@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Check, ChevronRight, AlertCircle, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from './CardSkeleton';
-import { Card as CardType } from '@/types/game';
+import { Card as CardType } from '@/types/pokemon';
 import { api } from '@/utils/api';
 import { useToastNotification } from '@/hooks/useToastNotification';
 
@@ -204,7 +204,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         <div className={cn('relative flex-shrink-0', currentLayout.image[viewMode])}>
           {isLoading && <CardSkeleton />}
           <Image
-            src={card.imageUrl}
+            src={card.imageUrl || card.imageUrlLarge || card.imageUrlSmall}
             alt={card.name}
             fill
             className={cn(
@@ -228,7 +228,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
 
         {/* Card info */}
         <div className={currentLayout.content}>
-          <h3 className="font-medium text-sm truncate">{card.name}</h3>
+          <h3 className="font-medium text-sm truncate">
+            {card.name} {card.number && <span className="text-muted-foreground">#{card.number}</span>}
+          </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{card.set.name}</span>
             {viewMode === 'detailed' && (
@@ -318,7 +320,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       <div className={cn('relative', currentLayout.image[viewMode])}>
         {isLoading && <CardSkeleton />}
         <Image
-          src={card.imageUrl}
+          src={card.imageUrl || card.imageUrlLarge || card.imageUrlSmall}
           alt={card.name}
           fill
           className={cn(
@@ -361,7 +363,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       {/* Card details (for grid layout) */}
       {layout === 'grid' && viewMode !== 'minimal' && (
         <div className={cn(currentLayout.content, 'space-y-1')}>
-          <h3 className="font-medium text-sm truncate">{card.name}</h3>
+          <h3 className="font-medium text-sm truncate">
+            {card.name} {card.number && <span className="text-muted-foreground text-xs">#{card.number}</span>}
+          </h3>
           {viewMode === 'detailed' && (
             <>
               <p className="text-xs text-muted-foreground truncate">
@@ -378,7 +382,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       {/* Compact layout overlay */}
       {layout === 'compact' && (
         <div className={currentLayout.content}>
-          <h3 className="font-medium text-sm text-white truncate">{card.name}</h3>
+          <h3 className="font-medium text-sm text-white truncate">
+            {card.name} {card.number && <span className="text-white/70">#{card.number}</span>}
+          </h3>
           {viewMode === 'detailed' && (
             <p className="text-xs text-white/80 truncate">
               {card.set.name} • {card.rarity}

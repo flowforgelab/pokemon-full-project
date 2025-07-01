@@ -41,6 +41,7 @@ export interface Card {
   
   imageUrlSmall: string;
   imageUrlLarge: string;
+  imageUrl?: string; // Optional for convenience when passing to components
   
   cardmarketId?: string | null;
   
