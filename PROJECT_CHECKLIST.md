@@ -796,9 +796,20 @@ To deploy successfully on Vercel, configure these environment variables:
     - [x] Created robots.txt with proper crawling rules
     - [x] Implemented dynamic sitemap generation
     - [x] Protected private routes from crawling
-  - [ ] Activate design tokens with generateCSSVariables()
+  - [x] Activate design tokens with generateCSSVariables()
   - [ ] Replace hardcoded values with design tokens
   - [ ] Consolidate energy colors to single source
+- [x] **Week 5 - Collection Management & Deck Builder Integration** (Completed 2025-07-01):
+  - [x] Fixed console errors including CSP warnings and deprecated Clerk props
+  - [x] Added collection indicators to cards with inline quantity editing
+  - [x] Fixed collection value calculation to exclude basic energy cards
+  - [x] Implemented collection filter in deck builder search
+  - [x] Fixed deck display issues (dashboard showed 0 decks)
+  - [x] Enabled unlimited basic energy cards in deck builder
+  - [x] Added pagination with "Load More" button for collection cards
+  - [x] Created comprehensive deck detail page
+  - [x] Fixed 500 error on deck creation (missing category field)
+  - [x] Updated all related backend routes and validation
 
 ### Future Features (Post-MVP)
 - [ ] Trading System UI:
@@ -878,8 +889,43 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-07-01
-- Version: 1.0.20-MVP
+- Version: 1.0.22-MVP
 - Latest Updates:
+  - Week 5 - Collection Management & Deck Builder Integration (2025-07-01):
+    - ✅ Fixed console errors including CSP warnings and deprecated Clerk props
+    - ✅ Added persistent collection indicators on cards with inline quantity editing
+    - ✅ Fixed collection value calculation to exclude basic energy cards
+    - ✅ Loaded Rayquaza GX Battle Arena deck (25 cards) into collection
+    - ✅ Fixed deck search returning no results (Prisma field name issues)
+    - ✅ Added collection filter checkbox in deck builder search
+    - ✅ Fixed dashboard showing 0 decks (missing pagination parameters)
+    - ✅ Created comprehensive deck detail page at /decks/[id]
+    - ✅ Fixed 404 error on deck analyzer link
+    - ✅ Enabled unlimited basic energy cards in deck builder
+    - ✅ Added "Load More" pagination for collection cards
+    - ✅ Fixed 500 error on deck creation (missing category field)
+    - ✅ Resolved multiple layers of deck creation issues
+    - ✅ Fixed z-index stacking issues by removing scale transforms
+    - ✅ Added event propagation stopping for all click handlers
+    - ✅ Created deck template system for pre-built decks
+    - ✅ Fixed Tapu Koko ◇ card search (uses diamond symbol, not "Prism Star")
+    - ✅ Created comprehensive DeckSelector component for mobile-friendly card addition
+    - ✅ Implemented isBasicEnergy utility for consistent energy card identification
+    - ✅ Updated PROJECT_CHECKLIST.md with all completed work
+    - ✅ Fixed 404 error on deck analyzer link (changed to /decks)
+    - ✅ Integrated collection with deck builder search
+    - ✅ Fixed deck display issues (pagination parameters)
+    - ✅ Created missing deck detail page at /decks/[id]
+    - ✅ Added "Add to Deck" functionality from collection page
+    - ✅ Created DeckSelector modal with mobile-first design
+    - ✅ Fixed deck builder search validation errors (missing sort parameter)
+    - ✅ Fixed unlimited basic energy card limits in deck builder
+    - ✅ Added pagination to deck builder search with "Load More" button
+    - ✅ Fixed deck save validation for basic energy cards
+    - ✅ Fixed 500 error on deck creation (missing category field, undefined builder references)
+    - ✅ Removed problematic middleware causing "a is not a function" errors
+    - ✅ Fixed Prisma field name from userCollections to collections
+    - ✅ Added comprehensive debug logging and error handling
   - Collection System Fixes & Enhancements (2025-07-01 PM):
     - ✅ Fixed collection toggle functionality not working properly
     - ✅ Resolved import path issue (`@/types/game` → `@/types/pokemon`)

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
-import { getAnalysisCache } from '@/server/db/redis';
+import { getAnalysisCache, redis } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 import { 
   requireResourcePermission,
@@ -42,8 +42,8 @@ export const analysisRouter = createTRPCRouter({
       
       // Check cache first
       if (options.cacheResults !== false) {
-        const cacheKey = `analysis:${deckId}:${mode}`;
-        const cached = await getAnalysisCache().get(cacheKey);
+        const cacheKey = `${deckId}:${mode}`;
+        const cached = await getAnalysisCache(cacheKey);
         if (cached) {
           return cached;
         }
@@ -90,11 +90,23 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Check if deck is public or belongs to user
-      if (!deck.isPublic && deck.user.id !== ctx.user?.id) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to analyze this deck',
-        });
+      if (!deck.isPublic) {
+        // Get the current user if authenticated
+        let currentUserId = null;
+        if (ctx.userId) {
+          const currentUser = await ctx.prisma.user.findUnique({
+            where: { clerkUserId: ctx.userId },
+            select: { id: true },
+          });
+          currentUserId = currentUser?.id;
+        }
+        
+        if (deck.user.id !== currentUserId) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to analyze this deck',
+          });
+        }
       }
       
       // Create analyzer instance
@@ -203,7 +215,7 @@ export const analysisRouter = createTRPCRouter({
       if (options.cacheResults !== false) {
         const cacheKey = `analysis:${deckId}:${mode}`;
         const ttl = mode === 'quick' ? 300 : 3600; // 5 min for quick, 1 hour for others
-        await getAnalysisCache().set(cacheKey, result, ttl);
+        await redis.setex(cacheKey, ttl, JSON.stringify(result));
       }
       
       return result;
@@ -267,8 +279,17 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Check permissions
-      const canAccessDeck1 = deck1.isPublic || deck1.userId === ctx.user?.id;
-      const canAccessDeck2 = deck2.isPublic || deck2.userId === ctx.user?.id;
+      let currentUserId = null;
+      if (ctx.userId) {
+        const currentUser = await ctx.prisma.user.findUnique({
+          where: { clerkUserId: ctx.userId },
+          select: { id: true },
+        });
+        currentUserId = currentUser?.id;
+      }
+      
+      const canAccessDeck1 = deck1.isPublic || deck1.userId === currentUserId;
+      const canAccessDeck2 = deck2.isPublic || deck2.userId === currentUserId;
       
       if (!canAccessDeck1 || !canAccessDeck2) {
         throw new TRPCError({
@@ -337,13 +358,26 @@ export const analysisRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { deckId, timeframe } = input;
       
+      // Get current user
+      const currentUser = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!currentUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+      
       // Verify deck ownership
       const deck = await ctx.prisma.deck.findUnique({
         where: { id: deckId },
         select: { userId: true },
       });
       
-      if (!deck || deck.userId !== ctx.user?.id) {
+      if (!deck || deck.userId !== currentUser.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to view stats for this deck',
@@ -446,13 +480,26 @@ export const analysisRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { deckId, frequency, options } = input;
       
+      // Get current user
+      const currentUser = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!currentUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+      
       // Verify deck ownership
       const deck = await ctx.prisma.deck.findUnique({
         where: { id: deckId },
         select: { userId: true },
       });
       
-      if (!deck || deck.userId !== ctx.user?.id) {
+      if (!deck || deck.userId !== currentUser.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to schedule analysis for this deck',
@@ -462,7 +509,7 @@ export const analysisRouter = createTRPCRouter({
       // Queue analysis job
       const job = await pokemonTCGQueue.add('analyzeDeck', {
         deckId,
-        userId: ctx.user.id,
+        userId: currentUser.id,
         options: {
           ...options,
           mode: 'comprehensive',
@@ -519,8 +566,21 @@ export const analysisRouter = createTRPCRouter({
         });
       }
       
+      // Get current user
+      const currentUser = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!currentUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+      
       // Check permissions
-      if (!deck.isPublic && deck.userId !== ctx.user?.id) {
+      if (!deck.isPublic && deck.userId !== currentUser.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to view recommendations for this deck',
@@ -689,8 +749,21 @@ export const analysisRouter = createTRPCRouter({
         });
       }
       
+      // Get current user
+      const currentUser = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!currentUser) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+      
       // Check permissions
-      if (!deck.isPublic && deck.userId !== ctx.user?.id) {
+      if (!deck.isPublic && deck.userId !== currentUser.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to export this analysis',
