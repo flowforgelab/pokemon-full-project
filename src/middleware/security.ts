@@ -13,6 +13,7 @@ export function securityMiddleware(request: NextRequest, response: NextResponse)
     img-src 'self' https: data: blob:;
     font-src 'self' https://fonts.gstatic.com;
     connect-src 'self' https://api.pokemontcg.io https://*.clerk.accounts.dev https://*.vercel-insights.com wss://localhost:* ws://localhost:*;
+    worker-src 'self' blob:;
     media-src 'self';
     object-src 'none';
     base-uri 'self';
