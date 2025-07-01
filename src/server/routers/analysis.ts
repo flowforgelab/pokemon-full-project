@@ -58,10 +58,6 @@ export const analysisRouter = createTRPCRouter({
               card: {
                 include: {
                   set: true,
-                  attacks: true,
-                  abilities: true,
-                  weaknesses: true,
-                  resistances: true,
                   ...(options.includePricing ? {
                     prices: {
                       orderBy: { updatedAt: 'desc' },
@@ -239,10 +235,6 @@ export const analysisRouter = createTRPCRouter({
                 card: {
                   include: {
                     set: true,
-                    attacks: true,
-                    abilities: true,
-                    weaknesses: true,
-                    resistances: true,
                   },
                 },
               },
@@ -258,10 +250,6 @@ export const analysisRouter = createTRPCRouter({
                 card: {
                   include: {
                     set: true,
-                    attacks: true,
-                    abilities: true,
-                    weaknesses: true,
-                    resistances: true,
                   },
                 },
               },
@@ -549,8 +537,6 @@ export const analysisRouter = createTRPCRouter({
               card: {
                 include: {
                   set: true,
-                  attacks: true,
-                  abilities: true,
                 },
               },
             },
