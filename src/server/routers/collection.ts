@@ -144,9 +144,16 @@ export const collectionRouter = createTRPCRouter({
 
       // Cache key for dashboard
       const cacheKey = `collection:dashboard:${user.id}`;
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        return cached;
+      try {
+        if (redis && typeof redis.get === 'function') {
+          const cached = await redis.get(cacheKey);
+          if (cached) {
+            return cached;
+          }
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache get error:', cacheError);
+        // Continue without cache
       }
 
       // Aggregate collection statistics
@@ -290,7 +297,14 @@ export const collectionRouter = createTRPCRouter({
       };
 
       // Cache for 1 hour
-      await redis.setex(cacheKey, 3600, dashboard);
+      try {
+        if (redis && typeof redis.setex === 'function') {
+          await redis.setex(cacheKey, 3600, dashboard);
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache set error:', cacheError);
+        // Continue without cache
+      }
 
       return dashboard;
     }),
@@ -588,7 +602,14 @@ export const collectionRouter = createTRPCRouter({
         });
 
         // Invalidate cache
-        await redis.del(`collection:dashboard:${user.id}`);
+        try {
+          if (redis && typeof redis.del === 'function') {
+            await redis.del(`collection:dashboard:${user.id}`);
+          }
+        } catch (cacheError) {
+          console.error('[Collection] Cache invalidation error:', cacheError);
+          // Don't throw - cache is not critical for operation success
+        }
 
         return updated;
       }
@@ -635,23 +656,37 @@ export const collectionRouter = createTRPCRouter({
         console.log('[Collection] Successfully created collection entry:', created.id);
 
         // Invalidate cache
-        await redis.del(`collection:dashboard:${user.id}`);
+        try {
+          if (redis && typeof redis.del === 'function') {
+            await redis.del(`collection:dashboard:${user.id}`);
+          }
+        } catch (cacheError) {
+          console.error('[Collection] Cache invalidation error:', cacheError);
+          // Don't throw - cache is not critical for operation success
+        }
 
         return created;
       } catch (error: any) {
         console.error('[Collection] Error creating collection entry:', error);
+        
+        // Ensure error is defined
+        const errorMessage = error ? (error.message || error.toString() || 'Unknown error') : 'Unknown error';
+        const errorCode = error?.code;
+        const errorMeta = error?.meta;
+        
         console.error('[Collection] Error details:', {
           userId: user.id,
           cardId: input.cardId,
           cardName: card.name,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          code: error?.code,
-          meta: error?.meta,
+          errorMessage,
+          errorCode,
+          errorMeta,
+          errorType: error ? error.constructor.name : 'undefined',
         });
         
         // Check for unique constraint violation
-        if (error?.code === 'P2002') {
-          const target = error?.meta?.target;
+        if (errorCode === 'P2002') {
+          const target = errorMeta?.target;
           console.error('[Collection] Unique constraint violation on:', target);
           
           throw new TRPCError({
@@ -662,7 +697,7 @@ export const collectionRouter = createTRPCRouter({
         
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to add ${card.name} to collection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `Failed to add ${card.name} to collection: ${errorMessage}`,
         });
       }
     }),
@@ -745,7 +780,14 @@ export const collectionRouter = createTRPCRouter({
       );
 
       // Invalidate cache
-      await redis.del(`collection:dashboard:${user.id}`);
+      try {
+        if (redis && typeof redis.del === 'function') {
+          await redis.del(`collection:dashboard:${user.id}`);
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache invalidation error:', cacheError);
+        // Don't throw - cache is not critical for operation success
+      }
 
       // Queue collection indexing job
       await pokemonTCGQueue.add('indexCollection', { userId: user.id }, { delay: 5000 });
@@ -806,7 +848,14 @@ export const collectionRouter = createTRPCRouter({
         });
 
         // Invalidate cache
-        await redis.del(`collection:dashboard:${user.id}`);
+        try {
+          if (redis && typeof redis.del === 'function') {
+            await redis.del(`collection:dashboard:${user.id}`);
+          }
+        } catch (cacheError) {
+          console.error('[Collection] Cache invalidation error:', cacheError);
+          // Don't throw - cache is not critical for operation success
+        }
 
         return { deleted: true };
       }
@@ -828,7 +877,14 @@ export const collectionRouter = createTRPCRouter({
       });
 
       // Invalidate cache
-      await redis.del(`collection:dashboard:${user.id}`);
+      try {
+        if (redis && typeof redis.del === 'function') {
+          await redis.del(`collection:dashboard:${user.id}`);
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache invalidation error:', cacheError);
+        // Don't throw - cache is not critical for operation success
+      }
 
       return updated;
     }),
@@ -873,7 +929,14 @@ export const collectionRouter = createTRPCRouter({
       });
 
       // Invalidate cache
-      await redis.del(`collection:dashboard:${user.id}`);
+      try {
+        if (redis && typeof redis.del === 'function') {
+          await redis.del(`collection:dashboard:${user.id}`);
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache invalidation error:', cacheError);
+        // Don't throw - cache is not critical for operation success
+      }
 
       return { deleted: true, cardId: input.cardId };
     }),
