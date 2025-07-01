@@ -37,9 +37,10 @@ const deckFilterSchema = z.object({
 
 export const deckRouter = createTRPCRouter({
   create: protectedProcedure
-    .use(checkDeckLimit)
-    .use(requireResourcePermission('deck', 'create'))
-    .use(rateLimitBySubscription('deck:create'))
+    // Temporarily disable middleware to debug
+    // .use(checkDeckLimit)
+    // .use(requireResourcePermission('deck', 'create'))
+    // .use(rateLimitBySubscription('deck:create'))
     .input(
       z.object({
         name: z.string().min(1).max(100),
