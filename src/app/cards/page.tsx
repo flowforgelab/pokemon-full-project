@@ -523,7 +523,7 @@ export default function CardsPage() {
                          'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name);
                       
                       return (
-                        <div key={card.id} className="relative">
+                        <div key={card.id} className="relative overflow-hidden rounded-lg">
                           <PokemonCard
                             card={{
                               ...card,

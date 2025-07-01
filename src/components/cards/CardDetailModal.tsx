@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { api } from '@/utils/api';
+import { useAuth } from '@clerk/nextjs';
+import { CollectionIndicator } from '@/components/cards/CollectionIndicator';
+import { useToastNotification } from '@/hooks/useToastNotification';
 
 interface CardDetailModalProps {
   cardId: string;
@@ -12,9 +15,35 @@ interface CardDetailModalProps {
 
 export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailModalProps) {
   const [imageError, setImageError] = useState(false);
+  const { isSignedIn } = useAuth();
+  const toast = useToastNotification();
+  const utils = api.useUtils();
 
   const { data: card, isLoading } = api.card.getById.useQuery(cardId, {
     enabled: isOpen && !!cardId,
+  });
+
+  // Check collection status
+  const { data: collectionData } = api.collection.checkCardsInCollection.useQuery(
+    { cardIds: [cardId] },
+    { 
+      enabled: isSignedIn && isOpen && !!cardId,
+      refetchOnWindowFocus: true,
+    }
+  );
+
+  const collectionStatus = collectionData?.[cardId] || { inCollection: false, quantity: 0, quantityFoil: 0 };
+
+  // Add to collection mutation
+  const addToCollection = api.collection.addCard.useMutation({
+    onSuccess: () => {
+      utils.collection.checkCardsInCollection.invalidate();
+      toast?.success('Added to collection', `${card?.name} has been added to your collection`);
+    },
+    onError: (error) => {
+      console.error('Failed to add card:', error);
+      toast?.error('Failed to add card', error.message || 'Please try again');
+    },
   });
 
   // Handle escape key
@@ -113,14 +142,90 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                 
                 {/* Quick Actions */}
                 <div className="mt-6 space-y-3">
-                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
-                    <PlusIcon className="h-5 w-5" />
-                    Add to Collection
-                  </button>
+                  {isSignedIn ? (
+                    card && (
+                      <div className="space-y-3">
+                        {/* Collection Status and Management */}
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Collection Status
+                            </span>
+                            {collectionStatus.inCollection && (
+                              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <CheckIcon className="h-4 w-4" />
+                                <span className="text-sm">In Collection</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Check if it's a basic energy card */}
+                          {card.supertype === 'ENERGY' && 
+                           ['Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+                            'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name) ? (
+                            <div className="text-center py-2">
+                              <span className="text-2xl">∞</span>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Basic energy cards are unlimited
+                              </p>
+                            </div>
+                          ) : (
+                            <CollectionIndicator
+                              cardId={card.id}
+                              cardName={card.name}
+                              inCollection={collectionStatus.inCollection}
+                              quantity={collectionStatus.quantity}
+                              quantityFoil={collectionStatus.quantityFoil}
+                              isBasicEnergy={false}
+                              onQuantityChange={() => {
+                                utils.collection.checkCardsInCollection.invalidate();
+                              }}
+                              layout="list"
+                              className="w-full"
+                            />
+                          )}
+                        </div>
+                        
+                        {/* Quick Add Button (if not in collection and not basic energy) */}
+                        {!collectionStatus.inCollection && card.supertype !== 'ENERGY' && (
+                          <button 
+                            onClick={() => {
+                              addToCollection.mutate({
+                                cardId: card.id,
+                                quantity: 1,
+                                quantityFoil: 0,
+                                condition: 'NEAR_MINT',
+                                language: 'EN',
+                                isWishlist: false,
+                              });
+                            }}
+                            disabled={addToCollection.isLoading}
+                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {addToCollection.isLoading ? (
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                            ) : (
+                              <>
+                                <PlusIcon className="h-5 w-5" />
+                                Add to Collection
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-4">
+                      Sign in to manage your collection
+                    </p>
+                  )}
+                  
+                  {/* Other Actions */}
                   <button className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                     Add to Deck
                   </button>
-                  {card.purchaseUrl && (
+                  
+                  {card && card.purchaseUrl && (
                     <a
                       href={card.purchaseUrl}
                       target="_blank"
