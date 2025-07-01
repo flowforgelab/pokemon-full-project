@@ -443,27 +443,54 @@ export const collectionRouter = createTRPCRouter({
       wishlistPriority: z.number().min(1).max(10).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      console.log('[Collection] addCard called with:', {
+        cardId: input.cardId,
+        userId: ctx.userId,
+        condition: input.condition,
+        isWishlist: input.isWishlist,
+      });
+
       // Use getDbUser to ensure user exists (creates if needed)
       const user = await getDbUser(ctx.userId);
 
       if (!user) {
+        console.error('[Collection] User not found for clerkUserId:', ctx.userId);
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'User not found',
         });
       }
 
+      console.log('[Collection] Found database user:', user.id);
+
       // Check if card exists
       const card = await ctx.prisma.card.findUnique({
         where: { id: input.cardId },
+        select: {
+          id: true,
+          name: true,
+          supertype: true,
+          set: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       if (!card) {
+        console.error('[Collection] Card not found:', input.cardId);
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Card not found',
+          message: `Card not found: ${input.cardId}`,
         });
       }
+
+      console.log('[Collection] Found card:', {
+        id: card.id,
+        name: card.name,
+        setName: card.set.name,
+      });
 
       // Check if this is a basic energy card
       const basicEnergyNames = [
@@ -474,6 +501,13 @@ export const collectionRouter = createTRPCRouter({
       const isBasicEnergy = card.supertype === 'ENERGY' && basicEnergyNames.includes(card.name);
 
       // Check for existing card with same attributes
+      console.log('[Collection] Checking for existing entry with:', {
+        userId: user.id,
+        cardId: input.cardId,
+        condition: input.condition,
+        onWishlist: input.isWishlist,
+      });
+
       const existing = await ctx.prisma.userCollection.findFirst({
         where: {
           userId: user.id,
@@ -482,6 +516,8 @@ export const collectionRouter = createTRPCRouter({
           onWishlist: input.isWishlist,
         },
       });
+
+      console.log('[Collection] Existing entry found:', existing ? 'Yes' : 'No');
 
       if (existing) {
         // Update quantities
@@ -515,39 +551,64 @@ export const collectionRouter = createTRPCRouter({
       }
 
       // Create new collection entry
-      const created = await ctx.prisma.userCollection.create({
-        data: {
+      try {
+        console.log('[Collection] Creating new collection entry for:', {
           userId: user.id,
           cardId: input.cardId,
-          quantity: isBasicEnergy ? 9999 : input.quantity,
-          quantityFoil: input.quantityFoil,
+          cardName: card.name,
           condition: input.condition,
-          language: input.language,
-          purchasePrice: input.purchasePrice,
-          acquiredAt: input.acquiredDate || new Date(),
-          notes: isBasicEnergy ? 'Basic energy - unlimited quantity' : input.notes,
-          onWishlist: input.isWishlist,
-          forTrade: input.isForTrade,
-          tags: input.tags || [],
-          location: input.storageLocation as any || 'BINDER',
-        },
-        include: {
-          card: {
-            include: {
-              set: true,
-              prices: {
-                orderBy: { updatedAt: 'desc' },
-                take: 1,
+          isBasicEnergy,
+        });
+
+        const created = await ctx.prisma.userCollection.create({
+          data: {
+            userId: user.id,
+            cardId: input.cardId,
+            quantity: isBasicEnergy ? 9999 : input.quantity,
+            quantityFoil: input.quantityFoil,
+            condition: input.condition,
+            language: input.language,
+            purchasePrice: input.purchasePrice,
+            acquiredAt: input.acquiredDate || new Date(),
+            notes: isBasicEnergy ? 'Basic energy - unlimited quantity' : input.notes,
+            onWishlist: input.isWishlist,
+            forTrade: input.isForTrade,
+            tags: input.tags || [],
+            location: input.storageLocation as any || 'BINDER',
+          },
+          include: {
+            card: {
+              include: {
+                set: true,
+                prices: {
+                  orderBy: { updatedAt: 'desc' },
+                  take: 1,
+                },
               },
             },
           },
-        },
-      });
+        });
 
-      // Invalidate cache
-      await redis.del(`collection:dashboard:${user.id}`);
+        console.log('[Collection] Successfully created collection entry:', created.id);
 
-      return created;
+        // Invalidate cache
+        await redis.del(`collection:dashboard:${user.id}`);
+
+        return created;
+      } catch (error) {
+        console.error('[Collection] Error creating collection entry:', error);
+        console.error('[Collection] Error details:', {
+          userId: user.id,
+          cardId: input.cardId,
+          cardName: card.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to add ${card.name} to collection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
     }),
 
   /**

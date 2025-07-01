@@ -121,7 +121,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         quantityFoil: 0,
         condition: 'NEAR_MINT',
         language: 'EN',
-        onWishlist: false,
+        isWishlist: false,
       });
     }
   }, [card, inCollection, isToggling, addToCollection, removeFromCollection]);
