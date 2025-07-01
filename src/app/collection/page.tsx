@@ -69,7 +69,7 @@ export default function CollectionPage() {
                 My Collection
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {stats?.totalCards || 0} cards • ${stats?.totalValue?.toFixed(2) || '0.00'} value
+                {stats?.summary?.totalCards || 0} cards • ${stats?.summary?.totalValue?.toFixed(2) || '0.00'} value
               </p>
             </div>
             
@@ -107,25 +107,25 @@ export default function CollectionPage() {
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Sets</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats?.totalSets || 0}
+                {stats?.valueBySet?.length || 0}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Unique Cards</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats?.uniqueCards || 0}
+                {stats?.summary?.unique_cards || 0}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Value</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                ${((stats?.totalValue || 0) / (stats?.totalCards || 1)).toFixed(2)}
+                ${((stats?.summary?.market_value || 0) / (stats?.summary?.total_cards || 1)).toFixed(2)}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Want List</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats?.wantListCount || 0}
+                {stats?.summary?.wishlistCount || 0}
               </p>
             </div>
           </div>
@@ -274,9 +274,9 @@ export default function CollectionPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {item.card.set.name}
                     </p>
-                    {item.marketPrice && (
+                    {item.card.prices?.[0]?.marketPrice && (
                       <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-1">
-                        ${item.marketPrice.toFixed(2)}
+                        ${Number(item.card.prices[0].marketPrice).toFixed(2)}
                       </p>
                     )}
                   </div>
@@ -343,7 +343,7 @@ export default function CollectionPage() {
                         {item.quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 dark:text-green-400">
-                        ${(item.marketPrice || 0).toFixed(2)}
+                        ${(item.card.prices?.[0]?.marketPrice ? Number(item.card.prices[0].marketPrice) : 0).toFixed(2)}
                       </td>
                     </tr>
                   ))}

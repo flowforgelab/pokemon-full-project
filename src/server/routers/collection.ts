@@ -174,7 +174,7 @@ export const collectionRouter = createTRPCRouter({
                  SUM(uc.quantity + uc."quantityFoil") as total_quantity
           FROM "UserCollection" uc
           JOIN "Card" c ON c.id = uc."cardId"
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
           GROUP BY c.supertype
         `,
         
@@ -186,7 +186,7 @@ export const collectionRouter = createTRPCRouter({
                  ROUND(COUNT(DISTINCT uc."cardId")::numeric / COUNT(DISTINCT c.id) * 100, 2) as completion_percentage
           FROM "Set" s
           JOIN "Card" c ON c."setId" = s.id
-          LEFT JOIN "UserCollection" uc ON uc."cardId" = c.id AND uc."userId" = ${user.id} AND uc."isWishlist" = false
+          LEFT JOIN "UserCollection" uc ON uc."cardId" = c.id AND uc."userId" = ${user.id} AND uc."onWishlist" = false
           GROUP BY s.id, s.name, s.series, s."symbolUrl"
           HAVING COUNT(DISTINCT uc."cardId") > 0
           ORDER BY completion_percentage DESC
@@ -230,19 +230,19 @@ export const collectionRouter = createTRPCRouter({
             ORDER BY "updatedAt" DESC 
             LIMIT 1
           ) cp ON true
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
           ORDER BY cp."marketPrice" DESC NULLS LAST
           LIMIT 10
         `,
         
         // Wishlist count
         ctx.prisma.userCollection.count({
-          where: { userId: user.id, isWishlist: true },
+          where: { userId: user.id, onWishlist: true },
         }),
         
         // Tradeable count
         ctx.prisma.userCollection.count({
-          where: { userId: user.id, isForTrade: true },
+          where: { userId: user.id, forTrade: true },
         }),
       ]);
 
@@ -256,7 +256,7 @@ export const collectionRouter = createTRPCRouter({
           ORDER BY "updatedAt" DESC 
           LIMIT 1
         ) cp ON true
-        WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+        WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
       `;
 
       const dashboard = {
@@ -323,7 +323,7 @@ export const collectionRouter = createTRPCRouter({
         where.onWishlist = filters.isWishlist;
       }
       if (filters.isForTrade !== undefined) {
-        where.isForTrade = filters.isForTrade;
+        where.forTrade = filters.isForTrade;
       }
       if (filters.condition?.length) {
         where.condition = { in: filters.condition };
@@ -335,12 +335,12 @@ export const collectionRouter = createTRPCRouter({
         where.tags = { hasSome: filters.tags };
       }
       if (filters.acquiredAfter || filters.acquiredBefore) {
-        where.acquiredDate = {};
+        where.acquiredAt = {};
         if (filters.acquiredAfter) {
-          where.acquiredDate.gte = filters.acquiredAfter;
+          where.acquiredAt.gte = filters.acquiredAfter;
         }
         if (filters.acquiredBefore) {
-          where.acquiredDate.lte = filters.acquiredBefore;
+          where.acquiredAt.lte = filters.acquiredBefore;
         }
       }
 
@@ -386,7 +386,7 @@ export const collectionRouter = createTRPCRouter({
           orderBy = { quantity: sort.direction };
           break;
         case 'acquiredDate':
-          orderBy = { acquiredDate: sort.direction };
+          orderBy = { acquiredAt: sort.direction };
           break;
         case 'set':
           orderBy = { card: { set: { releaseDate: sort.direction } } };
@@ -895,7 +895,7 @@ export const collectionRouter = createTRPCRouter({
             ORDER BY "updatedAt" DESC 
             LIMIT 1
           ) cp ON true
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
         `,
         
         // Value breakdown by set
@@ -912,7 +912,7 @@ export const collectionRouter = createTRPCRouter({
             ORDER BY "updatedAt" DESC 
             LIMIT 1
           ) cp ON true
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
           GROUP BY s.id, s.name, s.series
           ORDER BY value DESC
           LIMIT 20
@@ -931,7 +931,7 @@ export const collectionRouter = createTRPCRouter({
             ORDER BY "updatedAt" DESC 
             LIMIT 1
           ) cp ON true
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
           GROUP BY c.rarity
           ORDER BY value DESC
         `,
@@ -939,13 +939,13 @@ export const collectionRouter = createTRPCRouter({
         // Monthly spending
         ctx.prisma.$queryRaw`
           SELECT 
-            DATE_TRUNC('month', uc."acquiredDate") as month,
+            DATE_TRUNC('month', uc."acquiredAt") as month,
             SUM(uc."purchasePrice") as spent,
             COUNT(*) as cards_added
           FROM "UserCollection" uc
           WHERE uc."userId" = ${user.id} 
-            AND uc."isWishlist" = false 
-            AND uc."acquiredDate" >= NOW() - INTERVAL '12 months'
+            AND uc."onWishlist" = false 
+            AND uc."acquiredAt" >= NOW() - INTERVAL '12 months'
           GROUP BY month
           ORDER BY month DESC
         `,
@@ -958,7 +958,7 @@ export const collectionRouter = createTRPCRouter({
             SUM(uc.quantity + uc."quantityFoil") as total_added
           FROM "UserCollection" uc
           WHERE uc."userId" = ${user.id} 
-            AND uc."isWishlist" = false
+            AND uc."onWishlist" = false
             AND uc."createdAt" >= NOW() - INTERVAL '6 months'
           GROUP BY week
           ORDER BY week
@@ -972,7 +972,7 @@ export const collectionRouter = createTRPCRouter({
           FROM "UserCollection" uc
           JOIN "Card" c ON c.id = uc."cardId"
           JOIN "Set" s ON s.id = c."setId"
-          WHERE uc."userId" = ${user.id} AND uc."isWishlist" = false
+          WHERE uc."userId" = ${user.id} AND uc."onWishlist" = false
           GROUP BY c.id, c.name, s.name
           HAVING SUM(uc.quantity + uc."quantityFoil") > 4
           ORDER BY total_owned DESC
