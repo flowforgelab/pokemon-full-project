@@ -24,7 +24,7 @@ interface CollectionFilters {
   set?: string;
   type?: string;
   rarity?: string;
-  sortBy?: 'name' | 'value' | 'date' | 'rarity';
+  sortBy?: 'name' | 'value' | 'acquiredDate' | 'quantity' | 'set';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -88,7 +88,7 @@ export default function CollectionPage() {
                 My Collection
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {stats?.summary?.totalCards || 0} cards • ${stats?.summary?.totalValue?.toFixed(2) || '0.00'} value
+                {stats?.summary?.total_cards || 0} cards • ${stats?.summary?.market_value?.toFixed(2) || '0.00'} value
               </p>
             </div>
             
@@ -236,7 +236,7 @@ export default function CollectionPage() {
                 </select>
                 <select
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  value={`${filters.sortBy || 'date'}-${filters.sortOrder || 'desc'}`}
+                  value={`${filters.sortBy || 'acquiredDate'}-${filters.sortOrder || 'desc'}`}
                   onChange={(e) => {
                     const [sortBy, sortOrder] = e.target.value.split('-') as [string, 'asc' | 'desc'];
                     setFilters({ ...filters, sortBy: sortBy as any, sortOrder });

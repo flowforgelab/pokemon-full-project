@@ -878,8 +878,27 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-07-01
-- Version: 1.0.19-MVP
+- Version: 1.0.20-MVP
 - Latest Updates:
+  - Collection System Fixes & Enhancements (2025-07-01 PM):
+    - ✅ Fixed collection toggle functionality not working properly
+    - ✅ Resolved import path issue (`@/types/game` → `@/types/pokemon`)
+    - ✅ Fixed card images not displaying (added Next.js image domain config)
+    - ✅ Fixed collection toggle using wrong ID (created new `removeCardByCardId` mutation)
+    - ✅ Fixed scrolling issue on main card list (removed overflow-hidden)
+    - ✅ Removed internal scrolling from filter sections for better UX
+    - ✅ Implemented sophisticated hover-based collection management UI
+    - ✅ Created automatic basic energy card system for all users
+    - ✅ Fixed hover overlay not showing (removed sign-in requirement)
+    - ✅ Fixed collection errors for new Google sign-in users (auto-create DB records)
+    - ✅ Fixed Prisma schema field mismatches (isWishlist→onWishlist, acquiredDate→acquiredAt)
+    - ✅ Fixed Redis cache errors with proper error handling
+    - ✅ Fixed toast notification "Cannot read properties of undefined" errors
+    - ✅ Fixed collection page not showing cards (SQL query field name issues)
+    - ✅ Fixed collection page 404 errors (replaced Link with modal approach)
+    - ✅ Simplified getStatistics query to avoid PostgreSQL-specific functions
+    - ✅ Enhanced error handling throughout collection system
+    - ✅ Cards now properly persist across page refreshes
   - Collection Toggle API Fix (2025-07-01):
     - ✅ Fixed collection toggle API implementation that was using wrong ID
     - ✅ Created new `removeCardByCardId` mutation in collection router
