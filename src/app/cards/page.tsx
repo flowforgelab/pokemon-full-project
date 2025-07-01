@@ -118,10 +118,20 @@ export default function CardsPage() {
     { 
       enabled: isSignedIn && cardIds.length > 0,
       onSuccess: (data) => {
+        console.log('[Cards Page] Collection status updated:', data);
         setCollectionStatus(data);
       },
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
     }
   );
+
+  // Use the fresh collection data directly if available
+  React.useEffect(() => {
+    if (collectionData) {
+      setCollectionStatus(collectionData);
+    }
+  }, [collectionData]);
 
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;

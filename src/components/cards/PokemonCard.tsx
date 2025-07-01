@@ -50,17 +50,25 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   const [isMounted, setIsMounted] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
   const toast = useToastNotification();
+  const utils = api.useUtils();
   
   // Handle client-side mounting
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Sync internal state when prop changes
+  React.useEffect(() => {
+    setInCollection(isInCollection);
+  }, [isInCollection]);
+
   // Collection mutations
   const addToCollection = api.collection.addCard.useMutation({
     onSuccess: () => {
       setInCollection(true);
       setIsToggling(false);
+      // Invalidate the collection check query to ensure fresh data
+      utils.collection.checkCardsInCollection.invalidate();
       if (isMounted && toast) {
         try {
           toast.success('Added to collection', `${card.name} has been added to your collection`);
@@ -98,6 +106,8 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     onSuccess: () => {
       setInCollection(false);
       setIsToggling(false);
+      // Invalidate the collection check query to ensure fresh data
+      utils.collection.checkCardsInCollection.invalidate();
       if (isMounted && toast) {
         try {
           toast.success('Removed from collection', `${card.name} has been removed from your collection`);

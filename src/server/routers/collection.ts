@@ -105,13 +105,24 @@ export const collectionRouter = createTRPCRouter({
         },
       });
 
+      console.log('[Collection] checkCardsInCollection:', {
+        userId: user.id,
+        requestedCards: input.cardIds.length,
+        foundInCollection: userCollectionCards.length,
+        foundCardIds: userCollectionCards.map(uc => uc.cardId),
+      });
+
       const inCollectionSet = new Set(userCollectionCards.map(uc => uc.cardId));
       
-      return input.cardIds.reduce((acc, cardId) => {
+      const result = input.cardIds.reduce((acc, cardId) => {
         // Basic energy cards are always in collection
         acc[cardId] = basicEnergyCardIds.has(cardId) || inCollectionSet.has(cardId);
         return acc;
       }, {} as Record<string, boolean>);
+      
+      console.log('[Collection] checkCardsInCollection result:', result);
+      
+      return result;
     }),
 
   /**
@@ -521,12 +532,16 @@ export const collectionRouter = createTRPCRouter({
         console.log('[Collection] Found existing entries for this card:', anyExisting.length);
         anyExisting.forEach((entry, index) => {
           console.log(`[Collection] Entry ${index + 1}:`, {
+            id: entry.id,
             condition: entry.condition,
             location: entry.location,
             onWishlist: entry.onWishlist,
             quantity: entry.quantity,
+            quantityFoil: entry.quantityFoil,
           });
         });
+      } else {
+        console.log('[Collection] No existing entries found for this card');
       }
 
       const existing = await ctx.prisma.userCollection.findFirst({
@@ -540,6 +555,12 @@ export const collectionRouter = createTRPCRouter({
       });
 
       console.log('[Collection] Exact match found:', existing ? 'Yes' : 'No');
+      
+      // If we're not adding to wishlist and an entry already exists for this card
+      // regardless of location/condition, we might want to update instead
+      if (!input.isWishlist && anyExisting.length > 0 && !existing) {
+        console.log('[Collection] Card exists with different condition/location. Consider updating existing entry.');
+      }
 
       if (existing) {
         // Update quantities
@@ -596,7 +617,7 @@ export const collectionRouter = createTRPCRouter({
             onWishlist: input.isWishlist,
             forTrade: input.isForTrade,
             tags: input.tags || [],
-            location: input.storageLocation as any || 'BINDER',
+            location: (input.storageLocation as any) || 'BINDER',
           },
           include: {
             card: {
