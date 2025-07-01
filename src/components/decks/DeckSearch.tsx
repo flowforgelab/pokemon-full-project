@@ -30,6 +30,7 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
     types: [] as string[],
     rarity: '',
     set: '',
+    ownedOnly: false,
   });
   const [page, setPage] = useState(1);
   
@@ -52,7 +53,9 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
       types: filters.types.length > 0 ? filters.types : undefined,
       rarity: filters.rarity ? [filters.rarity.toUpperCase().replace(' ', '_') as any] : undefined,
       setId: filters.set || undefined,
+      ownedOnly: filters.ownedOnly || undefined,
     },
+    includeOwnedStatus: true,
     pagination: {
       page,
       limit: 50,
@@ -194,6 +197,16 @@ export const DeckSearch: React.FC<DeckSearchProps> = ({
                 <Filter className="w-3 h-3" />
                 More Filters
               </button>
+
+              <label className="flex items-center gap-2 px-3 py-1.5 text-sm border rounded-md hover:bg-accent transition-colors cursor-pointer whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={filters.ownedOnly}
+                  onChange={(e) => setFilters({ ...filters, ownedOnly: e.target.checked })}
+                  className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
+                />
+                <span>My Collection</span>
+              </label>
             </div>
           </div>
         </div>

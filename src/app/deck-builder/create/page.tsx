@@ -45,6 +45,7 @@ export default function DeckBuilderPage() {
   const router = useRouter();
   const toast = useToastNotification();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showOnlyOwned, setShowOnlyOwned] = useState(false);
   const [deck, setDeck] = useState<DeckSection>({
     pokemon: [],
     trainer: [],
@@ -72,14 +73,21 @@ export default function DeckBuilderPage() {
   const { isMobile } = useBreakpoint();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const { data: searchResults, isLoading: searchLoading } = api.card.search.useQuery(
+  const { data: searchResults, isLoading: searchLoading } = api.card.searchOptimized.useQuery(
     {
       query: debouncedSearch,
-      filters: { format: watchedFormat },
-      limit: 20,
+      filters: { 
+        format: watchedFormat,
+        ownedOnly: showOnlyOwned || undefined,
+      },
+      includeOwnedStatus: true,
+      pagination: {
+        page: 1,
+        limit: 20,
+      },
     },
     {
-      enabled: debouncedSearch.length > 0,
+      enabled: debouncedSearch.length > 0 || showOnlyOwned,
     }
   );
 
@@ -234,6 +242,8 @@ export default function DeckBuilderPage() {
         searchResults={searchResults?.cards}
         onSearch={setSearchQuery}
         isSearching={searchLoading}
+        showOnlyOwned={showOnlyOwned}
+        onToggleOwned={setShowOnlyOwned}
       />
     );
   }
@@ -258,6 +268,15 @@ export default function DeckBuilderPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <label className="flex items-center gap-2 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyOwned}
+                onChange={(e) => setShowOnlyOwned(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Show only cards in my collection</span>
+            </label>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
@@ -288,6 +307,11 @@ export default function DeckBuilderPage() {
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <PlusIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
+                      {card.ownedQuantity > 0 && (
+                        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          {card.ownedQuantity}
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs font-medium text-gray-900 dark:text-white mt-1 truncate">
                       {card.name}
