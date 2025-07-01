@@ -2,6 +2,8 @@
 
 A comprehensive Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks with AI-powered recommendations.
 
+**Last Updated**: January 2025
+
 ## 🌟 Features
 
 ### Core Features
