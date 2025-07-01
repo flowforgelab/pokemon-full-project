@@ -642,6 +642,135 @@ export const deckRouter = createTRPCRouter({
     }),
 
   // Test deck hands
+  // Get which decks contain a specific card
+  getCardInDecks: protectedProcedure
+    .input(z.object({
+      cardId: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      const deckCards = await ctx.prisma.deckCard.findMany({
+        where: {
+          cardId: input.cardId,
+          deck: {
+            userId: user.id,
+          },
+        },
+        select: {
+          deckId: true,
+          quantity: true,
+          category: true,
+        },
+      });
+
+      return deckCards;
+    }),
+
+  // Add a card to a deck
+  addCard: protectedProcedure
+    .use(requireResourcePermission('deck', 'update'))
+    .input(z.object({
+      deckId: z.string(),
+      cardId: z.string(),
+      quantity: z.number().min(1).max(4).default(1),
+      category: z.nativeEnum(DeckCategory).default(DeckCategory.MAIN),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Check deck ownership
+      const deck = await ctx.prisma.deck.findUnique({
+        where: { id: input.deckId },
+        select: { userId: true },
+      });
+
+      if (!deck || deck.userId !== user.id) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You do not have permission to modify this deck',
+        });
+      }
+
+      // Check if card already exists in deck
+      const existingCard = await ctx.prisma.deckCard.findUnique({
+        where: {
+          deckId_cardId: {
+            deckId: input.deckId,
+            cardId: input.cardId,
+          },
+        },
+      });
+
+      if (existingCard) {
+        // Update quantity if card exists
+        const newQuantity = Math.min(existingCard.quantity + input.quantity, 4);
+        
+        return ctx.prisma.deckCard.update({
+          where: {
+            deckId_cardId: {
+              deckId: input.deckId,
+              cardId: input.cardId,
+            },
+          },
+          data: {
+            quantity: newQuantity,
+          },
+          include: {
+            card: {
+              include: {
+                set: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Add new card to deck
+        const maxPosition = await ctx.prisma.deckCard.findFirst({
+          where: { deckId: input.deckId },
+          orderBy: { position: 'desc' },
+          select: { position: true },
+        });
+
+        return ctx.prisma.deckCard.create({
+          data: {
+            deckId: input.deckId,
+            cardId: input.cardId,
+            quantity: input.quantity,
+            category: input.category,
+            position: (maxPosition?.position || 0) + 1,
+          },
+          include: {
+            card: {
+              include: {
+                set: true,
+              },
+            },
+          },
+        });
+      }
+    }),
+
   testHands: publicProcedure
     .input(z.object({
       deckId: z.string(),
@@ -686,7 +815,7 @@ export const deckRouter = createTRPCRouter({
       }
 
       // Use deckBuilderManager instead of creating new instance
-      const testResults = await builder.testHands({
+      const testResults = await deckBuilderManager.testHands({
         cards: deck.cards.map(dc => ({
           ...dc.card,
           quantity: dc.quantity,

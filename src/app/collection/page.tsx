@@ -5,6 +5,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import Link from 'next/link';
 import CardDetailModal from '@/components/cards/CardDetailModal';
+import PokemonCard from '@/components/cards/PokemonCard';
+import DeckSelector from '@/components/decks/DeckSelector';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -16,6 +18,7 @@ import {
   ChartBarIcon,
   RectangleStackIcon,
 } from '@heroicons/react/24/outline';
+import { Card as CardType } from '@/types/pokemon';
 
 type ViewMode = 'grid' | 'list';
 
@@ -36,6 +39,8 @@ export default function CollectionPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedCardForDeck, setSelectedCardForDeck] = useState<CardType | null>(null);
+  const [showDeckSelector, setShowDeckSelector] = useState(false);
 
   const { data: stats } = api.collection.getStatistics.useQuery();
   const { data: collection, isLoading, error } = api.collection.searchCards.useQuery({
@@ -71,6 +76,11 @@ export default function CollectionPage() {
       });
     }
   }, [collection]);
+
+  const handleAddToDeck = (card: CardType) => {
+    setSelectedCardForDeck(card);
+    setShowDeckSelector(true);
+  };
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -263,43 +273,18 @@ export default function CollectionPage() {
           view === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {collection.cards.map((item) => (
-                <div
+                <PokemonCard
                   key={item.id}
+                  card={item.card}
+                  layout="grid"
+                  viewMode="compact"
                   onClick={() => setSelectedCardId(item.cardId)}
-                  className="group relative bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                >
-                  <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-700">
-                    {item.card.imageUrlSmall ? (
-                      <img
-                        src={item.card.imageUrlSmall}
-                        alt={item.card.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        No Image
-                      </div>
-                    )}
-                    {item.quantity > 1 && (
-                      <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
-                        x{item.quantity}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                      {item.card.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {item.card.set.name}
-                    </p>
-                    {item.card.prices?.[0]?.marketPrice && (
-                      <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-1">
-                        ${Number(item.card.prices[0].marketPrice).toFixed(2)}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                  onAddToDeck={handleAddToDeck}
+                  showAddToDeck={true}
+                  showCollectionIndicator={true}
+                  collectionQuantity={item.quantity}
+                  collectionQuantityFoil={item.quantityFoil || 0}
+                />
               ))}
             </div>
           ) : (
@@ -398,6 +383,16 @@ export default function CollectionPage() {
           onClose={() => setSelectedCardId(null)}
         />
       )}
+
+      {/* Deck Selector Modal */}
+      <DeckSelector
+        isOpen={showDeckSelector}
+        onClose={() => {
+          setShowDeckSelector(false);
+          setSelectedCardForDeck(null);
+        }}
+        card={selectedCardForDeck}
+      />
     </MainLayout>
   );
 }

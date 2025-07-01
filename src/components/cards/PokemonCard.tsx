@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronRight, AlertCircle, Plus, Minus, Eye } from 'lucide-react';
+import { Check, ChevronRight, AlertCircle, Plus, Minus, Eye, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardSkeleton } from './CardSkeleton';
 import { Card as CardType } from '@/types/pokemon';
@@ -29,6 +29,8 @@ export interface PokemonCardProps {
   collectionQuantityFoil?: number;
   onQuantityChange?: (quantity: number, quantityFoil: number) => void;
   showCollectionIndicator?: boolean;
+  onAddToDeck?: (card: CardType) => void;
+  showAddToDeck?: boolean;
 }
 
 const PokemonCard: React.FC<PokemonCardProps> = ({
@@ -49,6 +51,8 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   collectionQuantityFoil = 0,
   onQuantityChange,
   showCollectionIndicator = false,
+  onAddToDeck,
+  showAddToDeck = false,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -57,7 +61,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   const [isToggling, setIsToggling] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isTouching, setIsTouching] = useState(false);
   const longPressTimer = React.useRef<NodeJS.Timeout>();
+  const touchTimer = React.useRef<NodeJS.Timeout>();
   const toast = useToastNotification();
   const utils = api.useUtils();
   
@@ -202,18 +208,37 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
   }, [card, onClick, onSelectionToggle, selectionMode]);
 
   const handleTouchStart = useCallback(() => {
+    setIsTouching(true);
     if (onLongPress) {
       longPressTimer.current = setTimeout(() => {
         onLongPress(card);
       }, 500);
     }
-  }, [card, onLongPress]);
+    // Show actions after a brief delay on touch
+    if (showAddToDeck && layout === 'grid') {
+      touchTimer.current = setTimeout(() => {
+        setIsHovering(true);
+      }, 200);
+    }
+  }, [card, onLongPress, showAddToDeck, layout]);
 
   const handleTouchEnd = useCallback(() => {
+    setIsTouching(false);
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
-  }, []);
+    if (touchTimer.current) {
+      clearTimeout(touchTimer.current);
+    }
+    // Hide actions after a delay
+    if (layout === 'grid') {
+      setTimeout(() => {
+        if (!isTouching) {
+          setIsHovering(false);
+        }
+      }, 3000);
+    }
+  }, [layout, isTouching]);
 
   // Layout-specific classes
   const layoutClasses = {
@@ -498,7 +523,25 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
               style={{ zIndex: 10 }}
             >
               {/* Action Buttons Container */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-auto">
+              <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-auto space-y-2">
+                {/* Add to Deck Button */}
+                {showAddToDeck && onAddToDeck && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddToDeck(card);
+                    }}
+                    className="w-full py-2 px-3 rounded-lg font-medium text-sm
+                      bg-blue-600/90 hover:bg-blue-700/90 text-white
+                      flex items-center justify-center gap-2
+                      transition-all transform hover:scale-105
+                      backdrop-blur-sm"
+                  >
+                    <Layers className="w-4 h-4" />
+                    Add to Deck
+                  </button>
+                )}
+                
                 {/* View Details Button */}
                 <button
                   onClick={(e) => {
