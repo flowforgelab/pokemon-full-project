@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import CardDetailModal from '@/components/cards/CardDetailModal';
 import PokemonCard from '@/components/cards/PokemonCard';
+import FilterSection from '@/components/cards/FilterSection';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuth } from '@clerk/nextjs';
 import {
@@ -14,6 +15,7 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
@@ -39,6 +41,13 @@ export default function CardsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [collectionStatus, setCollectionStatus] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    cardType: true,
+    pokemonType: false,
+    rarity: false,
+    series: true,
+    sort: false,
+  });
   const [filters, setFilters] = useState<CardFilters>({
     search: '',
     types: [],
@@ -117,8 +126,38 @@ export default function CardsPage() {
   const allCards = searchResult?.cards || [];
   const totalPages = searchResult?.totalPages || 0;
 
-  // Extract unique series from sets
-  const uniqueSeries = sets ? [...new Set(sets.map(set => set.series))].sort() : [];
+  // Extract unique series with year ranges
+  const seriesData = React.useMemo(() => {
+    if (!sets || sets.length === 0) return [];
+    
+    // Group sets by series
+    const seriesMap = new Map<string, { minYear: number; maxYear: number }>();
+    
+    sets.forEach(set => {
+      if (set.releaseDate) {
+        const year = new Date(set.releaseDate).getFullYear();
+        const existing = seriesMap.get(set.series);
+        
+        if (existing) {
+          existing.minYear = Math.min(existing.minYear, year);
+          existing.maxYear = Math.max(existing.maxYear, year);
+        } else {
+          seriesMap.set(set.series, { minYear: year, maxYear: year });
+        }
+      }
+    });
+    
+    // Convert to array and sort by most recent first
+    return Array.from(seriesMap.entries())
+      .map(([series, years]) => ({
+        name: series,
+        yearRange: years.minYear === years.maxYear 
+          ? `${years.minYear}` 
+          : `${years.minYear}-${years.maxYear}`,
+        sortKey: years.maxYear // Sort by most recent year
+      }))
+      .sort((a, b) => b.sortKey - a.sortKey);
+  }, [sets]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -286,11 +325,11 @@ export default function CardsPage() {
           )}
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex gap-6 h-[calc(100vh-16rem)] overflow-hidden">
           {/* Filters Sidebar */}
           {showFilters && (
-            <div className="w-64 flex-shrink-0">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-6 sticky top-20">
+            <div className="w-80 flex-shrink-0 h-full">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full overflow-y-auto">
                 {/* Card Type */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Card Type</h3>
@@ -371,23 +410,28 @@ export default function CardsPage() {
                       <p className="text-sm text-gray-500 dark:text-gray-400">Loading series...</p>
                     ) : setsError ? (
                       <p className="text-sm text-red-500 dark:text-red-400">Error loading series</p>
-                    ) : uniqueSeries.length > 0 ? (
-                      uniqueSeries.map((series) => (
-                        <label key={series} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={filters.series.includes(series)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFilters({ ...filters, series: [...filters.series, series] });
-                              } else {
-                                setFilters({ ...filters, series: filters.series.filter(s => s !== series) });
-                              }
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {series}
+                    ) : seriesData.length > 0 ? (
+                      seriesData.map((series) => (
+                        <label key={series.name} className="flex items-center justify-between w-full hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={filters.series.includes(series.name)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFilters({ ...filters, series: [...filters.series, series.name] });
+                                } else {
+                                  setFilters({ ...filters, series: filters.series.filter(s => s !== series.name) });
+                                }
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {series.name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            {series.yearRange}
                           </span>
                         </label>
                       ))
