@@ -98,7 +98,7 @@ export const collectionRouter = createTRPCRouter({
         where: {
           userId: user.id,
           cardId: { in: input.cardIds },
-          isWishlist: false,
+          onWishlist: false,
         },
         select: {
           cardId: true,
@@ -152,7 +152,7 @@ export const collectionRouter = createTRPCRouter({
       ] = await ctx.prisma.$transaction([
         // Total collection stats
         ctx.prisma.userCollection.aggregate({
-          where: { userId: user.id, isWishlist: false },
+          where: { userId: user.id, onWishlist: false },
           _sum: {
             quantity: true,
             quantityFoil: true,
@@ -164,7 +164,7 @@ export const collectionRouter = createTRPCRouter({
         // Condition breakdown
         ctx.prisma.userCollection.groupBy({
           by: ['condition'],
-          where: { userId: user.id, isWishlist: false },
+          where: { userId: user.id, onWishlist: false },
           _sum: { quantity: true, quantityFoil: true },
         }),
         
@@ -196,13 +196,13 @@ export const collectionRouter = createTRPCRouter({
         // Rarity breakdown
         ctx.prisma.userCollection.groupBy({
           by: ['card.rarity'],
-          where: { userId: user.id, isWishlist: false },
+          where: { userId: user.id, onWishlist: false },
           _count: true,
         }),
         
         // Recent additions
         ctx.prisma.userCollection.findMany({
-          where: { userId: user.id, isWishlist: false },
+          where: { userId: user.id, onWishlist: false },
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
@@ -320,7 +320,7 @@ export const collectionRouter = createTRPCRouter({
       };
 
       if (filters.isWishlist !== undefined) {
-        where.isWishlist = filters.isWishlist;
+        where.onWishlist = filters.isWishlist;
       }
       if (filters.isForTrade !== undefined) {
         where.isForTrade = filters.isForTrade;
@@ -474,15 +474,12 @@ export const collectionRouter = createTRPCRouter({
       const isBasicEnergy = card.supertype === 'ENERGY' && basicEnergyNames.includes(card.name);
 
       // Check for existing card with same attributes
-      const existing = await ctx.prisma.userCollection.findUnique({
+      const existing = await ctx.prisma.userCollection.findFirst({
         where: {
-          userId_cardId_condition_language_isWishlist: {
-            userId: user.id,
-            cardId: input.cardId,
-            condition: input.condition,
-            language: input.language,
-            isWishlist: input.isWishlist,
-          },
+          userId: user.id,
+          cardId: input.cardId,
+          condition: input.condition,
+          onWishlist: input.isWishlist,
         },
       });
 
@@ -520,12 +517,19 @@ export const collectionRouter = createTRPCRouter({
       // Create new collection entry
       const created = await ctx.prisma.userCollection.create({
         data: {
-          ...input,
           userId: user.id,
-          acquiredDate: input.acquiredDate || new Date(),
-          // Basic energy cards get unlimited quantity
+          cardId: input.cardId,
           quantity: isBasicEnergy ? 9999 : input.quantity,
+          quantityFoil: input.quantityFoil,
+          condition: input.condition,
+          language: input.language,
+          purchasePrice: input.purchasePrice,
+          acquiredAt: input.acquiredDate || new Date(),
           notes: isBasicEnergy ? 'Basic energy - unlimited quantity' : input.notes,
+          onWishlist: input.isWishlist,
+          forTrade: input.isForTrade,
+          tags: input.tags || [],
+          location: input.storageLocation as any || 'BINDER',
         },
         include: {
           card: {
@@ -563,7 +567,7 @@ export const collectionRouter = createTRPCRouter({
       }
 
       // Validate all cards exist
-      const cardIds = input.map(item => item.cardId);
+      const cardIds = input.cards.map(item => item.cardId);
       const existingCards = await ctx.prisma.card.findMany({
         where: { id: { in: cardIds } },
         select: { id: true },
@@ -581,29 +585,46 @@ export const collectionRouter = createTRPCRouter({
 
       // Process bulk add
       const results = await ctx.prisma.$transaction(
-        input.map(item => {
-          return ctx.prisma.userCollection.upsert({
-            where: {
-              userId_cardId_condition_language_isWishlist: {
+        async (prisma) => {
+          const addedCards = [];
+          
+          for (const item of input.cards) {
+            // Check if card already exists
+            const existing = await prisma.userCollection.findFirst({
+              where: {
                 userId: user.id,
                 cardId: item.cardId,
                 condition: item.condition,
-                language: item.language,
-                isWishlist: false,
+                onWishlist: false,
               },
-            },
-            update: {
-              quantity: { increment: item.quantity },
-              quantityFoil: { increment: item.quantityFoil },
-            },
-            create: {
-              ...item,
-              userId: user.id,
-              isWishlist: false,
-              acquiredDate: new Date(),
-            },
-          });
-        })
+            });
+
+            if (existing) {
+              // Update existing
+              const updated = await prisma.userCollection.update({
+                where: { id: existing.id },
+                data: {
+                  quantity: existing.quantity + item.quantity,
+                  quantityFoil: existing.quantityFoil + item.quantityFoil,
+                },
+              });
+              addedCards.push(updated);
+            } else {
+              // Create new
+              const created = await prisma.userCollection.create({
+                data: {
+                  ...item,
+                  userId: user.id,
+                  onWishlist: false,
+                  acquiredAt: new Date(),
+                },
+              });
+              addedCards.push(created);
+            }
+          }
+          
+          return addedCards;
+        }
       );
 
       // Invalidate cache
@@ -718,7 +739,7 @@ export const collectionRouter = createTRPCRouter({
         where: {
           userId: user.id,
           cardId: input.cardId,
-          isWishlist: false,
+          onWishlist: false,
         },
       });
 
@@ -895,7 +916,7 @@ export const collectionRouter = createTRPCRouter({
       const wantList = await ctx.prisma.userCollection.findMany({
         where: {
           userId: user.id,
-          isWishlist: true,
+          onWishlist: true,
         },
         include: {
           card: {

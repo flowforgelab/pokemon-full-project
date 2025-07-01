@@ -98,7 +98,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         quantityFoil: 0,
         condition: 'NEAR_MINT',
         language: 'EN',
-        isWishlist: false,
+        onWishlist: false,
       });
     }
   }, [card, inCollection, isToggling, addToCollection, removeFromCollection]);
