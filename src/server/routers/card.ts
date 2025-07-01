@@ -154,7 +154,7 @@ export const cardRouter = createTRPCRouter({
                 });
                 
                 if (user) {
-                  where.userCollections = {
+                  where.collections = {
                     some: { userId: user.id },
                   };
                 }
@@ -201,7 +201,7 @@ export const cardRouter = createTRPCRouter({
                       take: 1,
                     },
                     ...(includeOwnedStatus && ctx.userId ? {
-                      userCollections: {
+                      collections: {
                         where: {
                           user: {
                             clerkUserId: ctx.userId,
@@ -221,8 +221,8 @@ export const cardRouter = createTRPCRouter({
               // Process cards to add owned quantity if requested
               const processedCards = includeOwnedStatus ? cards.map(card => ({
                 ...card,
-                ownedQuantity: card.userCollections?.[0] 
-                  ? (card.userCollections[0].quantity || 0) + (card.userCollections[0].quantityFoil || 0)
+                ownedQuantity: card.collections?.[0] 
+                  ? (card.collections[0].quantity || 0) + (card.collections[0].quantityFoil || 0)
                   : 0,
               })) : cards;
               
@@ -646,7 +646,7 @@ export const cardRouter = createTRPCRouter({
           });
           
           if (user) {
-            where.userCollections = {
+            where.collections = {
               some: { userId: user.id },
             };
           }
@@ -721,7 +721,7 @@ export const cardRouter = createTRPCRouter({
               take: 1,
             },
             ...(includeOwnedStatus && ctx.userId ? {
-              userCollections: {
+              collections: {
                 where: {
                   user: { clerkUserId: ctx.userId },
                 },

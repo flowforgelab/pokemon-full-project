@@ -73,7 +73,7 @@ export default function DeckBuilderPage() {
   const { isMobile } = useBreakpoint();
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const { data: searchResults, isLoading: searchLoading } = api.card.searchOptimized.useQuery(
+  const { data: searchResults, isLoading: searchLoading, error: searchError } = api.card.searchOptimized.useQuery(
     {
       query: debouncedSearch || undefined, // Pass undefined instead of empty string
       filters: { 
@@ -89,8 +89,23 @@ export default function DeckBuilderPage() {
     },
     {
       enabled: true, // Always enable to show all cards when collection filter is on
+      onError: (error) => {
+        console.error('Search error:', error);
+      },
     }
   );
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Search Debug:', {
+      debouncedSearch,
+      searchResults,
+      searchLoading,
+      searchError,
+      showOnlyOwned,
+      watchedFormat,
+    });
+  }, [debouncedSearch, searchResults, searchLoading, searchError, showOnlyOwned, watchedFormat]);
 
   const { data: analysis } = api.analysis.analyzeDeckComposition.useQuery({
     cards: [...deck.pokemon, ...deck.trainer, ...deck.energy],
@@ -281,7 +296,14 @@ export default function DeckBuilderPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {searchLoading ? (
+            {searchError ? (
+              <div className="text-center p-4">
+                <p className="text-red-500 dark:text-red-400 font-medium">Search Error</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {searchError.message || 'Failed to load cards'}
+                </p>
+              </div>
+            ) : searchLoading ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
