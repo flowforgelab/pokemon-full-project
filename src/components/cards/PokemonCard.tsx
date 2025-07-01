@@ -285,10 +285,11 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     <motion.div
       className={cn(
         currentLayout.container,
-        'rounded-lg overflow-hidden',
+        'rounded-lg overflow-hidden relative',
         selectionMode && isSelected && 'ring-2 ring-primary',
         className
       )}
+      onClick={handleClick}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onTouchStart={handleTouchStart}
@@ -393,20 +394,24 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
 
       {/* Hover Overlay with Actions */}
       {showCollectionToggle && layout === 'grid' && (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isHovering && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-auto"
+              style={{ zIndex: 20 }}
             >
               {/* Action Buttons Container */}
               <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
                 {/* Collection Button */}
                 <button
-                  onClick={handleCollectionToggle}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCollectionToggle(e);
+                  }}
                   disabled={isToggling}
                   className={cn(
                     'w-full py-2 px-3 rounded-lg font-medium text-sm',
@@ -436,7 +441,10 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
                 
                 {/* View Details Button */}
                 <button
-                  onClick={handleClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClick();
+                  }}
                   className="w-full py-2 px-3 rounded-lg font-medium text-sm
                     bg-gray-800/90 hover:bg-gray-900/90 text-white
                     flex items-center justify-center gap-2
