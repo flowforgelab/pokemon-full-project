@@ -620,9 +620,9 @@ export default function DeckBuilderPage() {
               ...deck.trainer.map(dc => ({ card: dc.card, count: dc.quantity })),
               ...deck.energy.map(dc => ({ card: dc.card, count: dc.quantity }))
             ]}
-            format={format}
+            format={watchedFormat}
             analysis={analysis}
-            isAnalyzing={analysisLoading}
+            isAnalyzing={false}
           />
         </div>
       </div>
