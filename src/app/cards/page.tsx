@@ -8,6 +8,7 @@ import CardDetailModal from '@/components/cards/CardDetailModal';
 import PokemonCard from '@/components/cards/PokemonCard';
 import FilterSection from '@/components/cards/FilterSection';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { CollectionIndicator } from '@/components/cards/CollectionIndicator';
 import { useAuth } from '@clerk/nextjs';
 import {
   MagnifyingGlassIcon,
@@ -40,7 +41,7 @@ export default function CardsPage() {
   const [view, setView] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [collectionStatus, setCollectionStatus] = useState<Record<string, boolean>>({});
+  const [collectionStatus, setCollectionStatus] = useState<Record<string, { inCollection: boolean; quantity: number; quantityFoil: number }>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     cardType: true,
     pokemonType: false,
@@ -515,49 +516,87 @@ export default function CardsPage() {
               <>
                 {view === 'grid' ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {allCards.map((card) => (
-                      <PokemonCard
-                        key={card.id}
-                        card={{
-                          ...card,
-                          imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
-                        }}
-                        layout="grid"
-                        viewMode="compact"
-                        onClick={() => setSelectedCardId(card.id)}
-                        showCollectionToggle={isSignedIn}
-                        isInCollection={collectionStatus[card.id] || false}
-                        onCollectionToggle={(card, isInCollection) => {
-                          setCollectionStatus(prev => ({
-                            ...prev,
-                            [card.id]: isInCollection,
-                          }));
-                        }}
-                      />
-                    ))}
+                    {allCards.map((card) => {
+                      const status = collectionStatus[card.id] || { inCollection: false, quantity: 0, quantityFoil: 0 };
+                      const isBasicEnergy = card.supertype === 'ENERGY' && 
+                        ['Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+                         'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name);
+                      
+                      return (
+                        <div key={card.id} className="relative">
+                          <PokemonCard
+                            card={{
+                              ...card,
+                              imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
+                            }}
+                            layout="grid"
+                            viewMode="compact"
+                            onClick={() => setSelectedCardId(card.id)}
+                            showCollectionToggle={false} // We'll use our new indicator instead
+                          />
+                          {isSignedIn && (
+                            <CollectionIndicator
+                              cardId={card.id}
+                              cardName={card.name}
+                              inCollection={status.inCollection}
+                              quantity={status.quantity}
+                              quantityFoil={status.quantityFoil}
+                              isBasicEnergy={isBasicEnergy}
+                              onQuantityChange={(quantity, quantityFoil) => {
+                                setCollectionStatus(prev => ({
+                                  ...prev,
+                                  [card.id]: { inCollection: quantity > 0 || quantityFoil > 0, quantity, quantityFoil },
+                                }));
+                              }}
+                              layout="grid"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y dark:divide-gray-700">
-                    {allCards.map((card) => (
-                      <PokemonCard
-                        key={card.id}
-                        card={{
-                          ...card,
-                          imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
-                        }}
-                        layout="list"
-                        viewMode="detailed"
-                        onClick={() => setSelectedCardId(card.id)}
-                        showCollectionToggle={isSignedIn}
-                        isInCollection={collectionStatus[card.id] || false}
-                        onCollectionToggle={(card, isInCollection) => {
-                          setCollectionStatus(prev => ({
-                            ...prev,
-                            [card.id]: isInCollection,
-                          }));
-                        }}
-                      />
-                    ))}
+                    {allCards.map((card) => {
+                      const status = collectionStatus[card.id] || { inCollection: false, quantity: 0, quantityFoil: 0 };
+                      const isBasicEnergy = card.supertype === 'ENERGY' && 
+                        ['Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+                         'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'].includes(card.name);
+                      
+                      return (
+                        <div key={card.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <PokemonCard
+                            card={{
+                              ...card,
+                              imageUrl: card.imageUrlLarge || card.imageUrlSmall || '',
+                            }}
+                            layout="list"
+                            viewMode="detailed"
+                            onClick={() => setSelectedCardId(card.id)}
+                            showCollectionToggle={false} // We'll use our new indicator instead
+                            className="flex-1"
+                          />
+                          {isSignedIn && (
+                            <CollectionIndicator
+                              cardId={card.id}
+                              cardName={card.name}
+                              inCollection={status.inCollection}
+                              quantity={status.quantity}
+                              quantityFoil={status.quantityFoil}
+                              isBasicEnergy={isBasicEnergy}
+                              onQuantityChange={(quantity, quantityFoil) => {
+                                setCollectionStatus(prev => ({
+                                  ...prev,
+                                  [card.id]: { inCollection: quantity > 0 || quantityFoil > 0, quantity, quantityFoil },
+                                }));
+                              }}
+                              layout="list"
+                              className="ml-4"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 

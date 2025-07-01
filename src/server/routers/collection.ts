@@ -102,6 +102,8 @@ export const collectionRouter = createTRPCRouter({
         },
         select: {
           cardId: true,
+          quantity: true,
+          quantityFoil: true,
         },
       });
 
@@ -112,13 +114,30 @@ export const collectionRouter = createTRPCRouter({
         foundCardIds: userCollectionCards.map(uc => uc.cardId),
       });
 
-      const inCollectionSet = new Set(userCollectionCards.map(uc => uc.cardId));
+      // Create a map of card quantities
+      const collectionMap = new Map(
+        userCollectionCards.map(uc => [
+          uc.cardId, 
+          { quantity: uc.quantity, quantityFoil: uc.quantityFoil }
+        ])
+      );
       
       const result = input.cardIds.reduce((acc, cardId) => {
-        // Basic energy cards are always in collection
-        acc[cardId] = basicEnergyCardIds.has(cardId) || inCollectionSet.has(cardId);
+        if (basicEnergyCardIds.has(cardId)) {
+          // Basic energy cards have unlimited quantity
+          acc[cardId] = { inCollection: true, quantity: 9999, quantityFoil: 0 };
+        } else if (collectionMap.has(cardId)) {
+          const cardData = collectionMap.get(cardId)!;
+          acc[cardId] = { 
+            inCollection: true, 
+            quantity: cardData.quantity,
+            quantityFoil: cardData.quantityFoil
+          };
+        } else {
+          acc[cardId] = { inCollection: false, quantity: 0, quantityFoil: 0 };
+        }
         return acc;
-      }, {} as Record<string, boolean>);
+      }, {} as Record<string, { inCollection: boolean; quantity: number; quantityFoil: number }>);
       
       console.log('[Collection] checkCardsInCollection result:', result);
       
@@ -244,7 +263,7 @@ export const collectionRouter = createTRPCRouter({
           JOIN "Set" s ON s.id = c."setId"
           LEFT JOIN LATERAL (
             SELECT "marketPrice" FROM "CardPrice" 
-            WHERE "cardId" = c.id 
+            WHERE "cardId" = c.id AND currency = 'USD'
             ORDER BY "updatedAt" DESC 
             LIMIT 1
           ) cp ON true
@@ -270,7 +289,7 @@ export const collectionRouter = createTRPCRouter({
         FROM "UserCollection" uc
         LEFT JOIN LATERAL (
           SELECT "marketPrice" FROM "CardPrice" 
-          WHERE "cardId" = uc."cardId" 
+          WHERE "cardId" = uc."cardId" AND currency = 'USD'
           ORDER BY "updatedAt" DESC 
           LIMIT 1
         ) cp ON true
@@ -942,6 +961,149 @@ export const collectionRouter = createTRPCRouter({
     }),
 
   /**
+   * Update card quantity by cardId
+   */
+  updateQuantityByCardId: protectedProcedure
+    .input(z.object({
+      cardId: z.string(),
+      quantity: z.number().min(0).max(9999),
+      quantityFoil: z.number().min(0).max(9999).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await getDbUser(ctx.userId);
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Check if card exists
+      const card = await ctx.prisma.card.findUnique({
+        where: { id: input.cardId },
+        select: {
+          id: true,
+          name: true,
+          supertype: true,
+        },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Card not found',
+        });
+      }
+
+      // Check if it's a basic energy card
+      const basicEnergyNames = [
+        'Grass Energy', 'Fire Energy', 'Water Energy', 'Lightning Energy',
+        'Psychic Energy', 'Fighting Energy', 'Darkness Energy', 'Metal Energy', 'Fairy Energy'
+      ];
+      const isBasicEnergy = card.supertype === 'ENERGY' && basicEnergyNames.includes(card.name);
+
+      if (isBasicEnergy) {
+        // Don't allow modifying basic energy quantities
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Basic energy cards have unlimited quantity and cannot be modified',
+        });
+      }
+
+      // Find existing collection entry
+      const existing = await ctx.prisma.userCollection.findFirst({
+        where: {
+          userId: user.id,
+          cardId: input.cardId,
+          onWishlist: false,
+        },
+      });
+
+      if (input.quantity === 0 && (!input.quantityFoil || input.quantityFoil === 0)) {
+        // If both quantities are 0, remove from collection
+        if (existing) {
+          await ctx.prisma.userCollection.delete({
+            where: { id: existing.id },
+          });
+        }
+        
+        // Invalidate cache
+        try {
+          if (redis && typeof redis.del === 'function') {
+            await redis.del(`collection:dashboard:${user.id}`);
+          }
+        } catch (cacheError) {
+          console.error('[Collection] Cache invalidation error:', cacheError);
+        }
+
+        return { 
+          cardId: input.cardId, 
+          quantity: 0, 
+          quantityFoil: 0,
+          deleted: true 
+        };
+      }
+
+      let result;
+      if (existing) {
+        // Update existing entry
+        result = await ctx.prisma.userCollection.update({
+          where: { id: existing.id },
+          data: {
+            quantity: input.quantity,
+            quantityFoil: input.quantityFoil !== undefined ? input.quantityFoil : existing.quantityFoil,
+          },
+          include: {
+            card: {
+              include: {
+                set: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Create new entry
+        result = await ctx.prisma.userCollection.create({
+          data: {
+            userId: user.id,
+            cardId: input.cardId,
+            quantity: input.quantity,
+            quantityFoil: input.quantityFoil || 0,
+            condition: 'NEAR_MINT',
+            language: 'EN',
+            onWishlist: false,
+            forTrade: false,
+            location: 'BINDER',
+          },
+          include: {
+            card: {
+              include: {
+                set: true,
+              },
+            },
+          },
+        });
+      }
+
+      // Invalidate cache
+      try {
+        if (redis && typeof redis.del === 'function') {
+          await redis.del(`collection:dashboard:${user.id}`);
+        }
+      } catch (cacheError) {
+        console.error('[Collection] Cache invalidation error:', cacheError);
+      }
+
+      return {
+        cardId: result.cardId,
+        quantity: result.quantity,
+        quantityFoil: result.quantityFoil,
+        deleted: false,
+      };
+    }),
+
+  /**
    * Get collection statistics
    */
   getStatistics: protectedProcedure
@@ -985,7 +1147,9 @@ export const collectionRouter = createTRPCRouter({
 
         userCollection.forEach(item => {
           totalCards += item.quantity + item.quantityFoil;
-          const price = item.card.prices?.[0]?.marketPrice ? Number(item.card.prices[0].marketPrice) : 0;
+          // Find USD market price
+          const usdPrice = item.card.prices?.find(p => p.currency === 'USD' && p.marketPrice);
+          const price = usdPrice?.marketPrice ? Number(usdPrice.marketPrice) : 0;
           const itemValue = price * (item.quantity + item.quantityFoil);
           totalValue += itemValue;
 
