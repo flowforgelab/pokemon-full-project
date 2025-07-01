@@ -325,7 +325,7 @@ export default function CardsPage() {
           )}
         </div>
 
-        <div className="flex gap-6 h-[calc(100vh-16rem)] overflow-hidden">
+        <div className="flex gap-6 h-[calc(100vh-16rem)]">
           {/* Filters Sidebar */}
           {showFilters && (
             <div className="w-80 flex-shrink-0 h-full">
@@ -473,7 +473,7 @@ export default function CardsPage() {
           )}
 
           {/* Results */}
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             {error ? (
               <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-8">
                 <p className="text-red-800 dark:text-red-200 font-medium text-center">Error loading cards</p>

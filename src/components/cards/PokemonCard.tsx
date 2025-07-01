@@ -63,7 +63,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     },
   });
 
-  const updateCollection = api.collection.updateCard.useMutation({
+  const removeFromCollection = api.collection.removeCardByCardId.useMutation({
     onSuccess: () => {
       setInCollection(false);
       setIsToggling(false);
@@ -83,13 +83,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
     setIsToggling(true);
     
     if (inCollection) {
-      // Remove from collection by setting quantity to 0
-      // First we need to find the collection entry ID
-      // For now, we'll use a simplified approach
-      updateCollection.mutate({
-        id: card.id, // This should be the userCollection ID, not card ID
-        quantity: 0,
-        quantityFoil: 0,
+      // Remove from collection
+      removeFromCollection.mutate({
+        cardId: card.id,
       });
     } else {
       // Add to collection
@@ -102,7 +98,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         isWishlist: false,
       });
     }
-  }, [card, inCollection, isToggling, addToCollection, updateCollection]);
+  }, [card, inCollection, isToggling, addToCollection, removeFromCollection]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!showHolographic || !shouldShowHolographic()) return;

@@ -878,9 +878,36 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-07-01
-- Version: 1.0.17-MVP
+- Version: 1.0.19-MVP
 - Latest Updates:
-  - Filter Error Fix & UI Improvements (2025-07-01):
+  - Collection Toggle API Fix (2025-07-01):
+    - ✅ Fixed collection toggle API implementation that was using wrong ID
+    - ✅ Created new `removeCardByCardId` mutation in collection router
+    - ✅ Updated PokemonCard component to use the new mutation
+    - ✅ Collection toggle now properly adds and removes cards from collection
+  - Deck Analysis & Budget Optimization System (2025-07-01):
+    - ✅ Created comprehensive deck analysis page with 7 visualization components
+    - ✅ Implemented ScoreRadar chart for deck scoring visualization
+    - ✅ Created ConsistencyMetrics component with probability calculations
+    - ✅ Built SynergyNetwork for card relationship visualization
+    - ✅ Added SpeedChart showing energy curve and acceleration
+    - ✅ Created WeaknessAnalysis with type coverage matrix
+    - ✅ Implemented StrategyBreakdown with AI-powered recommendations
+    - ✅ Added MetaMatchups showing win rates against popular decks
+    - ✅ Enhanced deck builder with real-time analysis panel
+    - ✅ Created budget optimization system with smart card alternatives
+    - ✅ Built budget optimizer algorithm with performance retention
+    - ✅ Added collection toggle feature (plus/minus buttons) - later reverted per user request
+    - ✅ Fixed missing logger module and build errors
+    - ✅ Fixed card image display issues (import path and Next.js config)
+    - ✅ Added card number display (#123) next to all card names
+    - ✅ Added series name display (e.g., "Sword & Shield • Brilliant Stars")
+    - ✅ Replaced set-level filtering with series-level filtering
+    - ✅ Added year ranges to series display (e.g., "Sun & Moon (2017-2019)")
+    - ✅ Series now sorted in reverse chronological order
+    - ✅ Created FilterSection component for improved filter UI
+    - ✅ Budget optimization available on free plan
+  - Filter Error Fix & UI Improvements (2025-07-01 AM):
     - ✅ Fixed filter error that caused error page when clicking filters
     - ✅ Added comprehensive error handling with ErrorBoundary component
     - ✅ Fixed React array mutation issue with sets sorting

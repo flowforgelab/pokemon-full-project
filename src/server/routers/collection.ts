@@ -674,6 +674,53 @@ export const collectionRouter = createTRPCRouter({
     }),
 
   /**
+   * Remove card from collection by cardId
+   */
+  removeCardByCardId: protectedProcedure
+    .input(z.object({
+      cardId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Find the user's collection entry for this card
+      const userCollection = await ctx.prisma.userCollection.findFirst({
+        where: {
+          userId: user.id,
+          cardId: input.cardId,
+          isWishlist: false,
+        },
+      });
+
+      if (!userCollection) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Card not found in collection',
+        });
+      }
+
+      // Delete the collection entry
+      await ctx.prisma.userCollection.delete({
+        where: { id: userCollection.id },
+      });
+
+      // Invalidate cache
+      await getCollectionCache().del(`collection:dashboard:${user.id}`);
+
+      return { deleted: true, cardId: input.cardId };
+    }),
+
+  /**
    * Get collection statistics
    */
   getStatistics: protectedProcedure
