@@ -232,7 +232,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
             {card.name} {card.number && <span className="text-muted-foreground">#{card.number}</span>}
           </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{card.set.name}</span>
+            <span>{card.set?.series}</span>
+            <span>•</span>
+            <span>{card.set?.name}</span>
             {viewMode === 'detailed' && (
               <>
                 <span>•</span>
@@ -366,15 +368,13 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
           <h3 className="font-medium text-sm truncate">
             {card.name} {card.number && <span className="text-muted-foreground text-xs">#{card.number}</span>}
           </h3>
+          <p className="text-xs text-muted-foreground truncate">
+            {card.set?.series} • {card.set?.name}
+          </p>
           {viewMode === 'detailed' && (
-            <>
-              <p className="text-xs text-muted-foreground truncate">
-                {card.set.name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {card.rarity}
-              </p>
-            </>
+            <p className="text-xs text-muted-foreground">
+              {card.rarity}
+            </p>
           )}
         </div>
       )}
@@ -387,7 +387,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
           </h3>
           {viewMode === 'detailed' && (
             <p className="text-xs text-white/80 truncate">
-              {card.set.name} • {card.rarity}
+              {card.set?.series} • {card.set?.name} • {card.rarity}
             </p>
           )}
         </div>
