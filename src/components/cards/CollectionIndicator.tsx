@@ -66,7 +66,8 @@ export function CollectionIndicator({
     },
   });
 
-  const handleEdit = () => {
+  const handleEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (isBasicEnergy) return;
     setIsEditing(true);
     setTempQuantity(quantity);
@@ -74,7 +75,8 @@ export function CollectionIndicator({
     setTimeout(() => quantityInputRef.current?.select(), 50);
   };
 
-  const handleSave = () => {
+  const handleSave = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const newQuantity = Math.max(0, Math.min(9999, tempQuantity));
     const newQuantityFoil = Math.max(0, Math.min(9999, tempQuantityFoil));
     
@@ -89,7 +91,8 @@ export function CollectionIndicator({
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setTempQuantity(quantity);
     setTempQuantityFoil(quantityFoil);
     setIsEditing(false);
@@ -103,7 +106,8 @@ export function CollectionIndicator({
     }
   };
 
-  const handleQuickAdd = () => {
+  const handleQuickAdd = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (isBasicEnergy) return;
     const newQuantity = quantity + 1;
     updateQuantity.mutate({
@@ -113,7 +117,8 @@ export function CollectionIndicator({
     });
   };
 
-  const handleQuickRemove = () => {
+  const handleQuickRemove = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (isBasicEnergy || quantity === 0) return;
     const newQuantity = Math.max(0, quantity - 1);
     updateQuantity.mutate({
@@ -252,9 +257,9 @@ export function CollectionIndicator({
 
   // Grid layout - more compact
   return (
-    <div className={cn('absolute top-0 right-0 z-20', className)}>
+    <div className={cn('absolute top-0 right-0 z-20', className)} onClick={(e) => e.stopPropagation()}>
       {isEditing ? (
-        <div className="absolute top-2 right-2 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700">
+        <div className="absolute top-2 right-2 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <input
@@ -263,6 +268,7 @@ export function CollectionIndicator({
                 value={tempQuantity}
                 onChange={(e) => setTempQuantity(parseInt(e.target.value) || 0)}
                 onKeyDown={handleKeyDown}
+                onClick={(e) => e.stopPropagation()}
                 className="w-16 px-2 py-1 text-sm text-center border rounded bg-white dark:bg-gray-700 dark:border-gray-600"
                 min="0"
                 max="9999"
@@ -277,6 +283,7 @@ export function CollectionIndicator({
                 value={tempQuantityFoil}
                 onChange={(e) => setTempQuantityFoil(parseInt(e.target.value) || 0)}
                 onKeyDown={handleKeyDown}
+                onClick={(e) => e.stopPropagation()}
                 className="w-16 px-2 py-1 text-sm text-center border rounded bg-white dark:bg-gray-700 dark:border-gray-600"
                 min="0"
                 max="9999"
