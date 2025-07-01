@@ -37,10 +37,7 @@ const deckFilterSchema = z.object({
 
 export const deckRouter = createTRPCRouter({
   create: protectedProcedure
-    // Temporarily disable middleware to debug
-    // .use(checkDeckLimit)
-    // .use(requireResourcePermission('deck', 'create'))
-    // .use(rateLimitBySubscription('deck:create'))
+    // Removed middleware temporarily - they're causing issues with context structure
     .input(
       z.object({
         name: z.string().min(1).max(100),

@@ -21,7 +21,11 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest --testMatch='**/*.test.{ts,tsx}'",
     "test:integration": "jest --testMatch='**/*.integration.test.{ts,tsx}'",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "script:ensure-user": "tsx src/scripts/ensure-user-exists.ts",
+    "script:debug-user": "tsx src/scripts/debug-user-creation.ts",
+    "script:quick-fix": "tsx src/scripts/quick-user-fix.ts",
+    "script:test-deck": "tsx src/scripts/test-deck-creation.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.22.0",
