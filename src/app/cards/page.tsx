@@ -316,20 +316,6 @@ export default function CardsPage() {
                 {/* Set */}
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white mb-3">Set</h3>
-                  <input
-                    type="text"
-                    placeholder="Search sets..."
-                    className="w-full px-3 py-2 mb-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                    onChange={(e) => {
-                      const searchTerm = e.target.value.toLowerCase();
-                      const filterElement = e.target.nextElementSibling as HTMLDivElement;
-                      const labels = filterElement?.querySelectorAll('label');
-                      labels?.forEach(label => {
-                        const text = label.textContent?.toLowerCase() || '';
-                        label.style.display = text.includes(searchTerm) ? 'flex' : 'none';
-                      });
-                    }}
-                  />
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {sets?.sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)).map((set) => (
                       <label key={set.id} className="flex items-center">
