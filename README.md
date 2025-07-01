@@ -24,6 +24,7 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - **Smart Suggestions**: AI-powered card recommendations based on deck composition
 - **Collaboration**: Share decks with version history and commenting
 - **Import/Export**: Support for text, JSON, and PTCGO formats
+- **Deck Templates**: Pre-built official decks including Battle Arena decks (e.g., Rayquaza-GX)
 - **Mobile Optimized**: Touch gestures and responsive design for all devices
 - **Accessibility**: Full keyboard navigation and screen reader support
 

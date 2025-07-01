@@ -1,0 +1,196 @@
+{
+  "rayquaza-gx-battle-arena": {
+    "name": "Rayquaza-GX Battle Arena Deck",
+    "description": "Official Pokémon TCG Battle Arena Deck featuring Rayquaza-GX from the Battle Arena Decks—Rayquaza-GX vs. Ultra Necrozma-GX set (October 2019)",
+    "format": "standard",
+    "releaseDate": "2019-10-25",
+    "cards": [
+      {
+        "name": "Rayquaza-GX",
+        "set": "CES",
+        "number": "109",
+        "quantity": 2,
+        "category": "pokemon"
+      },
+      {
+        "name": "Tapu Koko Prism Star",
+        "set": "TEU",
+        "number": "51",
+        "quantity": 1,
+        "category": "pokemon"
+      },
+      {
+        "name": "Magnezone",
+        "set": "FLI",
+        "number": "36",
+        "quantity": 3,
+        "category": "pokemon"
+      },
+      {
+        "name": "Magneton",
+        "set": "FLI",
+        "number": "35",
+        "quantity": 2,
+        "category": "pokemon"
+      },
+      {
+        "name": "Magnemite",
+        "set": "FLI",
+        "number": "34",
+        "quantity": 3,
+        "category": "pokemon"
+      },
+      {
+        "name": "Zebstrika",
+        "set": "LOT",
+        "number": "82",
+        "quantity": 2,
+        "category": "pokemon"
+      },
+      {
+        "name": "Blitzle",
+        "set": "LOT",
+        "number": "81",
+        "quantity": 2,
+        "category": "pokemon"
+      },
+      {
+        "name": "Zapdos",
+        "set": "TEU",
+        "number": "40",
+        "quantity": 2,
+        "category": "pokemon"
+      },
+      {
+        "name": "Zeraora",
+        "set": "UNB",
+        "number": "60",
+        "quantity": 1,
+        "category": "pokemon"
+      },
+      {
+        "name": "Heracross",
+        "set": "SUM",
+        "number": "6",
+        "quantity": 1,
+        "category": "pokemon"
+      },
+      {
+        "name": "Acro Bike",
+        "set": "CES",
+        "number": "123",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Brock's Grit",
+        "set": "TEU",
+        "number": "135",
+        "quantity": 1,
+        "category": "trainer"
+      },
+      {
+        "name": "Cynthia",
+        "set": "UPR",
+        "number": "119",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Energy Spinner",
+        "set": "UNB",
+        "number": "170",
+        "quantity": 1,
+        "category": "trainer"
+      },
+      {
+        "name": "Erika's Hospitality",
+        "set": "TEU",
+        "number": "140",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Fisherman",
+        "set": "CES",
+        "number": "130",
+        "quantity": 1,
+        "category": "trainer"
+      },
+      {
+        "name": "Lillie",
+        "set": "UPR",
+        "number": "125",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Pokémon Communication",
+        "set": "TEU",
+        "number": "152",
+        "quantity": 3,
+        "category": "trainer"
+      },
+      {
+        "name": "Pokémon Fan Club",
+        "set": "UPR",
+        "number": "133",
+        "quantity": 3,
+        "category": "trainer"
+      },
+      {
+        "name": "Rare Candy",
+        "set": "CES",
+        "number": "142",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Switch",
+        "set": "CES",
+        "number": "147",
+        "quantity": 3,
+        "category": "trainer"
+      },
+      {
+        "name": "Tate & Liza",
+        "set": "CES",
+        "number": "148",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Volkner",
+        "set": "UPR",
+        "number": "135",
+        "quantity": 2,
+        "category": "trainer"
+      },
+      {
+        "name": "Grass Energy",
+        "set": "Energy",
+        "number": "1",
+        "quantity": 5,
+        "category": "energy"
+      },
+      {
+        "name": "Lightning Energy",
+        "set": "Energy",
+        "number": "4",
+        "quantity": 10,
+        "category": "energy"
+      }
+    ],
+    "strategy": {
+      "overview": "The Rayquaza-GX Battle Arena Deck is designed to overwhelm the opponent by combining speed with power. With help from its star's Stormy Winds Ability and Tapu Koko Prism Star's Dance of the Ancients Ability, Rayquaza-GX can start doing serious damage with the first attack of the game.",
+      "keyCards": [
+        "Rayquaza-GX: Main attacker with Stormy Winds Ability",
+        "Magnezone: Magnetic Circuit Ability allows unlimited Lightning Energy attachments per turn",
+        "Zebstrika: Sprint Ability provides card draw",
+        "Tapu Koko Prism Star: Dance of the Ancients Ability accelerates energy",
+        "Zapdos: Efficient early game attacker (80 damage for 1 Lightning Energy)"
+      ],
+      "gameplan": "Set up Magnezone on the bench to enable unlimited Lightning Energy attachments. Use Zebstrika for draw power and Tapu Koko Prism Star to accelerate energy. Power up Rayquaza-GX quickly and start attacking early. Use Zapdos as an efficient single-prize attacker when needed."
+    }
+  }
+}

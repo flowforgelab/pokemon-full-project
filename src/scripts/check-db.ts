@@ -52,11 +52,28 @@ async function checkDatabase() {
     const totalSets = await prisma.set.count();
     const totalCards = await prisma.card.count();
     const totalPrices = await prisma.cardPrice.count();
+    const totalUsers = await prisma.user.count();
+    const totalDecks = await prisma.deck.count();
+    const totalCollections = await prisma.userCollection.count();
     
     console.log('\nDatabase totals:');
+    console.log(`- Total users: ${totalUsers}`);
     console.log(`- Total sets: ${totalSets}`);
     console.log(`- Total cards: ${totalCards}`);
     console.log(`- Total prices: ${totalPrices}`);
+    console.log(`- Total decks: ${totalDecks}`);
+    console.log(`- Total collection items: ${totalCollections}`);
+    
+    // User breakdown by subscription tier
+    const usersByTier = await prisma.user.groupBy({
+      by: ['subscriptionTier'],
+      _count: true,
+    });
+    
+    console.log('\nUsers by subscription tier:');
+    usersByTier.forEach(tier => {
+      console.log(`- ${tier.subscriptionTier}: ${tier._count} users`);
+    });
     
     await prisma.$disconnect();
   }

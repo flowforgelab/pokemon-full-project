@@ -27,6 +27,7 @@ import { DragDropManager } from './drag-drop-manager';
 import { SmartSuggestionEngine } from './smart-suggestion-engine';
 import { CollaborationManager } from './collaboration-manager';
 import crypto from 'crypto';
+import { getDeckTemplate, formatDeckListForPTCGO } from '@/data/deck-templates';
 
 export class DeckBuilderManager {
   private searchEngine: CardSearchEngine;
@@ -403,26 +404,44 @@ export class DeckBuilderManager {
   }
 
   private async loadTemplate(templateId: string): Promise<DeckComposition> {
-    // Load predefined templates
-    const templates: Record<string, Partial<DeckComposition>> = {
-      'basic-fire': {
-        // Fire deck template
-      },
-      'basic-water': {
-        // Water deck template
-      },
-      // Add more templates
-    };
-
-    const template = templates[templateId];
-    if (!template) {
+    // Try to load from predefined deck templates
+    const deckTemplate = getDeckTemplate(templateId);
+    
+    if (!deckTemplate) {
       return this.createEmptyComposition();
     }
 
-    return {
-      ...this.createEmptyComposition(),
-      ...template,
-    };
+    // Convert template format to deck import format
+    const deckListText = formatDeckListForPTCGO(deckTemplate);
+    
+    // Import the deck list
+    const importResult = await this.importFromText(deckListText);
+    
+    if (!importResult.success || importResult.cards.length === 0) {
+      console.warn(`Failed to load template ${templateId}:`, importResult.errors);
+      return this.createEmptyComposition();
+    }
+
+    // Create composition from imported cards
+    const composition = this.createEmptyComposition();
+    
+    for (const cardEntry of importResult.cards) {
+      const category = this.getCardCategory(cardEntry.card);
+      const section = composition.mainDeck;
+      
+      if (category === 'pokemon') {
+        section.pokemon.push(cardEntry);
+      } else if (category === 'trainers') {
+        section.trainers.push(cardEntry);
+      } else if (category === 'energy') {
+        section.energy.push(cardEntry);
+      }
+    }
+    
+    // Update counts
+    this.updateCounts(composition);
+    
+    return composition;
   }
 
   private deckToComposition(deck: any): DeckComposition {
