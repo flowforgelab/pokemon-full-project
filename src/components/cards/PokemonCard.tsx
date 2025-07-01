@@ -482,7 +482,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
       )}
 
       {/* Hover Overlay with Actions */}
-      {layout === 'grid' && showCollectionToggle && (
+      {layout === 'grid' && (
         <AnimatePresence mode="wait">
           {isHovering && (
             <motion.div
@@ -494,42 +494,7 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
               style={{ zIndex: 20 }}
             >
               {/* Action Buttons Container */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                {/* Collection Button - Only show when signed in */}
-                {showCollectionToggle && (
-                  <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCollectionToggle(e);
-                  }}
-                  disabled={isToggling}
-                  className={cn(
-                    'w-full py-2 px-3 rounded-lg font-medium text-sm',
-                    'flex items-center justify-center gap-2',
-                    'transition-all transform hover:scale-105',
-                    'backdrop-blur-sm',
-                    inCollection 
-                      ? 'bg-green-500/90 hover:bg-green-600/90 text-white' 
-                      : 'bg-white/90 hover:bg-white text-gray-900',
-                    isToggling && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {isToggling ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                  ) : inCollection ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      In Collection
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      Add to Collection
-                    </>
-                  )}
-                  </button>
-                )}
-                
+              <div className="absolute bottom-0 left-0 right-0 p-3">
                 {/* View Details Button */}
                 <button
                   onClick={(e) => {
@@ -547,14 +512,6 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
                 </button>
               </div>
 
-              {/* Collection Status Badge */}
-              {inCollection && (
-                <div className="absolute top-2 right-2">
-                  <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg">
-                    <Check className="w-4 h-4" />
-                  </div>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
