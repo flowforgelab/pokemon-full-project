@@ -75,9 +75,10 @@ export default function DeckBuilderPage() {
 
   const { data: searchResults, isLoading: searchLoading } = api.card.searchOptimized.useQuery(
     {
-      query: debouncedSearch,
+      query: debouncedSearch || undefined, // Pass undefined instead of empty string
       filters: { 
-        format: watchedFormat,
+        isLegalStandard: watchedFormat === 'standard' ? true : undefined,
+        isLegalExpanded: watchedFormat === 'expanded' ? true : undefined,
         ownedOnly: showOnlyOwned || undefined,
       },
       includeOwnedStatus: true,
@@ -87,7 +88,7 @@ export default function DeckBuilderPage() {
       },
     },
     {
-      enabled: debouncedSearch.length > 0 || showOnlyOwned,
+      enabled: true, // Always enable to show all cards when collection filter is on
     }
   );
 

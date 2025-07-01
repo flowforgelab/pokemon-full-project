@@ -146,6 +146,20 @@ export const cardRouter = createTRPCRouter({
                 where.rarity = { in: filters.rarity };
               }
               
+              // Owned cards filter
+              if (filters?.ownedOnly && ctx.userId) {
+                const user = await tx.user.findUnique({
+                  where: { clerkUserId: ctx.userId },
+                  select: { id: true },
+                });
+                
+                if (user) {
+                  where.userCollections = {
+                    some: { userId: user.id },
+                  };
+                }
+              }
+              
               console.log('Prisma where clause:', JSON.stringify(where, null, 2));
               
               const [cards, total] = await Promise.all([
@@ -186,13 +200,34 @@ export const cardRouter = createTRPCRouter({
                       orderBy: { updatedAt: 'desc' },
                       take: 1,
                     },
+                    ...(includeOwnedStatus && ctx.userId ? {
+                      userCollections: {
+                        where: {
+                          user: {
+                            clerkUserId: ctx.userId,
+                          },
+                        },
+                        select: {
+                          quantity: true,
+                          quantityFoil: true,
+                        },
+                      },
+                    } : {}),
                   },
                 }),
                 tx.card.count({ where }),
               ]);
               
+              // Process cards to add owned quantity if requested
+              const processedCards = includeOwnedStatus ? cards.map(card => ({
+                ...card,
+                ownedQuantity: card.userCollections?.[0] 
+                  ? (card.userCollections[0].quantity || 0) + (card.userCollections[0].quantityFoil || 0)
+                  : 0,
+              })) : cards;
+              
               return {
-                cards,
+                cards: processedCards,
                 total,
                 page,
                 pageSize: limit,
@@ -283,6 +318,22 @@ export const cardRouter = createTRPCRouter({
           ).join(', ');
           filterConditions += ` AND c.rarity IN (${placeholders})`;
           filterParams.push(...filters.rarity);
+        }
+        
+        // Owned cards filter
+        if (filters?.ownedOnly && ctx.userId) {
+          const user = await ctx.prisma.user.findUnique({
+            where: { clerkUserId: ctx.userId },
+            select: { id: true },
+          });
+          
+          if (user) {
+            filterConditions += ` AND EXISTS (
+              SELECT 1 FROM "UserCollection" uc 
+              WHERE uc."cardId" = c.id AND uc."userId" = $${filterParams.length + baseParamCount + 1}
+            )`;
+            filterParams.push(user.id);
+          }
         }
         
         // Search card names and numbers
@@ -384,12 +435,25 @@ export const cardRouter = createTRPCRouter({
         
         const total = Number(countResult[0]?.count || 0);
         
-        // Fetch related data (prices)
+        // Fetch related data (prices and owned status)
         const cardIds = searchResults.map(r => r.id);
-        const prices = await ctx.prisma.cardPrice.findMany({
-          where: { cardId: { in: cardIds } },
-          orderBy: { updatedAt: 'desc' },
-        });
+        const [prices, userCollections] = await Promise.all([
+          ctx.prisma.cardPrice.findMany({
+            where: { cardId: { in: cardIds } },
+            orderBy: { updatedAt: 'desc' },
+          }),
+          includeOwnedStatus && ctx.userId ? ctx.prisma.userCollection.findMany({
+            where: {
+              cardId: { in: cardIds },
+              user: { clerkUserId: ctx.userId },
+            },
+            select: {
+              cardId: true,
+              quantity: true,
+              quantityFoil: true,
+            },
+          }) : [],
+        ]);
         
         // Group prices by card
         const pricesByCard = prices.reduce((acc, price) => {
@@ -398,15 +462,27 @@ export const cardRouter = createTRPCRouter({
           return acc;
         }, {} as Record<string, typeof prices>);
         
+        // Group user collections by card
+        const collectionsByCard = userCollections.reduce((acc, collection) => {
+          acc[collection.cardId] = collection;
+          return acc;
+        }, {} as Record<string, typeof userCollections[0]>);
+        
         // Format results
-        const cards = searchResults.map(result => ({
-          ...result,
-          set: {
-            id: result.set_id,
-            name: result.set_name,
-          },
-          prices: pricesByCard[result.id]?.slice(0, 1) || [],
-        }));
+        const cards = searchResults.map(result => {
+          const collection = collectionsByCard[result.id];
+          return {
+            ...result,
+            set: {
+              id: result.set_id,
+              name: result.set_name,
+            },
+            prices: pricesByCard[result.id]?.slice(0, 1) || [],
+            ownedQuantity: collection 
+              ? (collection.quantity || 0) + (collection.quantityFoil || 0)
+              : 0,
+          };
+        });
         
         return {
           cards,

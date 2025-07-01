@@ -19,7 +19,11 @@ import {
 export default function DashboardPage() {
   const { user } = useUser();
   const { data: stats } = api.user.getDashboardStats.useQuery();
-  const { data: recentDecks } = api.deck.getUserDecks.useQuery({ limit: 5 });
+  const { data: recentDecksData } = api.deck.getUserDecks.useQuery({ 
+    page: 1,
+    pageSize: 5 
+  });
+  const recentDecks = recentDecksData?.decks || [];
   const { data: recentActivity } = api.user.getRecentActivity.useQuery();
   const { data: recommendations } = api.recommendation.getQuickRecommendations.useQuery();
 
@@ -94,7 +98,7 @@ export default function DashboardPage() {
                             {deck.name}
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {deck.format} • {deck.cardCount || 0} cards
+                            {deck.format?.name || 'Standard'} • {deck._count?.cards || 0} cards
                           </p>
                         </div>
                         <div className="text-right">

@@ -34,13 +34,22 @@ export default function DecksPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: myDecks, isLoading: myDecksLoading } = api.deck.getUserDecks.useQuery();
-  const { data: publicDecks, isLoading: publicDecksLoading } = api.deck.getPublicDecks.useQuery({
-    search: activeTab === 'discover' ? filters.search : undefined,
-    format: filters.format,
-    sortBy: filters.sortBy,
+  const { data: myDecksData, isLoading: myDecksLoading } = api.deck.getUserDecks.useQuery({
+    page: 1,
+    pageSize: 50,
   });
-  const { data: templates, isLoading: templatesLoading } = api.deck.getTemplates.useQuery();
+  const myDecks = myDecksData?.decks || [];
+  
+  const { data: publicDecksData, isLoading: publicDecksLoading } = api.deck.getPublicDecks.useQuery({
+    page: 1,
+    pageSize: 50,
+    search: activeTab === 'discover' ? filters.search : undefined,
+  });
+  const publicDecks = publicDecksData?.decks || [];
+  
+  // Templates not implemented yet, using empty array
+  const templates: any[] = [];
+  const templatesLoading = false;
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard' },
@@ -282,7 +291,7 @@ function DeckCard({ deck, showActions, showCreator }: { deck: any; showActions?:
             {deck.name}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {deck.format} • {deck.cardCount || 60} cards
+            {deck.format?.name || 'Standard'} • {deck._count?.cards || 0} cards
           </p>
         </div>
         {deck.isPublic && (
