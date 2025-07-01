@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { CardCondition, Rarity, Supertype } from '@prisma/client';
-import { getCollectionCache } from '@/server/db/redis';
+import { redis } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 import { getDbUser } from '@/lib/auth/clerk';
 import { 
@@ -133,7 +133,7 @@ export const collectionRouter = createTRPCRouter({
 
       // Cache key for dashboard
       const cacheKey = `collection:dashboard:${user.id}`;
-      const cached = await getCollectionCache().get(cacheKey);
+      const cached = await redis.get(cacheKey);
       if (cached) {
         return cached;
       }
@@ -279,7 +279,7 @@ export const collectionRouter = createTRPCRouter({
       };
 
       // Cache for 1 hour
-      await getCollectionCache().set(cacheKey, dashboard, 3600);
+      await redis.setex(cacheKey, 3600, dashboard);
 
       return dashboard;
     }),
@@ -509,7 +509,7 @@ export const collectionRouter = createTRPCRouter({
         });
 
         // Invalidate cache
-        await getCollectionCache().del(`collection:dashboard:${user.id}`);
+        await redis.del(`collection:dashboard:${user.id}`);
 
         return updated;
       }
@@ -545,7 +545,7 @@ export const collectionRouter = createTRPCRouter({
       });
 
       // Invalidate cache
-      await getCollectionCache().del(`collection:dashboard:${user.id}`);
+      await redis.del(`collection:dashboard:${user.id}`);
 
       return created;
     }),
@@ -628,7 +628,7 @@ export const collectionRouter = createTRPCRouter({
       );
 
       // Invalidate cache
-      await getCollectionCache().del(`collection:dashboard:${user.id}`);
+      await redis.del(`collection:dashboard:${user.id}`);
 
       // Queue collection indexing job
       await pokemonTCGQueue.add('indexCollection', { userId: user.id }, { delay: 5000 });
@@ -689,7 +689,7 @@ export const collectionRouter = createTRPCRouter({
         });
 
         // Invalidate cache
-        await getCollectionCache().del(`collection:dashboard:${user.id}`);
+        await redis.del(`collection:dashboard:${user.id}`);
 
         return { deleted: true };
       }
@@ -711,7 +711,7 @@ export const collectionRouter = createTRPCRouter({
       });
 
       // Invalidate cache
-      await getCollectionCache().del(`collection:dashboard:${user.id}`);
+      await redis.del(`collection:dashboard:${user.id}`);
 
       return updated;
     }),
@@ -756,7 +756,7 @@ export const collectionRouter = createTRPCRouter({
       });
 
       // Invalidate cache
-      await getCollectionCache().del(`collection:dashboard:${user.id}`);
+      await redis.del(`collection:dashboard:${user.id}`);
 
       return { deleted: true, cardId: input.cardId };
     }),
