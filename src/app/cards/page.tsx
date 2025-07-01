@@ -223,9 +223,10 @@ export default function CardsPage() {
               ))}
               {filters.sets.map((setId) => {
                 const set = sets?.find(s => s.id === setId);
+                const year = set?.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
                 return (
                   <span key={setId} className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
-                    {set?.name || setId}
+                    {set ? `${set.name} ${year ? `(${year})` : ''}` : setId}
                     <button
                       onClick={() => setFilters({ ...filters, sets: filters.sets.filter(s => s !== setId) })}
                       className="hover:text-green-600"
@@ -341,23 +342,28 @@ export default function CardsPage() {
                         if (!a.releaseDate || !b.releaseDate) return 0;
                         // Convert to Date objects for proper comparison
                         return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
-                      }).map((set) => (
-                        <label key={set.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={filters.sets.includes(set.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFilters({ ...filters, sets: [...filters.sets, set.id] });
-                              } else {
-                                setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
-                              }
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{set.name}</span>
-                        </label>
-                      ))
+                      }).map((set) => {
+                        const year = set.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
+                        return (
+                          <label key={set.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={filters.sets.includes(set.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFilters({ ...filters, sets: [...filters.sets, set.id] });
+                                } else {
+                                  setFilters({ ...filters, sets: filters.sets.filter(s => s !== set.id) });
+                                }
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {set.name} {year && `(${year})`}
+                            </span>
+                          </label>
+                        );
+                      })
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">No sets available</p>
                     )}
@@ -453,7 +459,7 @@ export default function CardsPage() {
                             {card.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {card.set.name} • {card.number}
+                            {card.set.name} {card.set.releaseDate ? `(${new Date(card.set.releaseDate).getFullYear()})` : ''} • {card.number}
                           </p>
                         </div>
                       </div>
@@ -510,7 +516,7 @@ export default function CardsPage() {
                               {card.supertype}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {card.set.name}
+                              {card.set.name} {card.set.releaseDate ? `(${new Date(card.set.releaseDate).getFullYear()})` : ''}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {card.rarity || 'N/A'}

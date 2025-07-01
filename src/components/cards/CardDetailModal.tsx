@@ -144,7 +144,7 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                         {card.name}
                       </h2>
                       <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
-                        {card.set.name} • {card.number}/{card.set.printedTotal || card.set.total}
+                        {card.set.name} {card.set.releaseDate ? `(${new Date(card.set.releaseDate).getFullYear()})` : ''} • {card.number}/{card.set.printedTotal || card.set.total}
                       </p>
                     </div>
                   </div>
