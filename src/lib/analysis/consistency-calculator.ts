@@ -271,9 +271,18 @@ export class ConsistencyCalculator {
    * Calculate mulligan probability
    */
   private calculateMulliganProbability(): number {
+    // Handle edge case: empty deck
+    if (this.totalCards === 0) return 1; // 100% mulligan chance with no cards
+    
     const basicPokemonCount = Array.from(this.cards.values())
       .filter(card => card.supertype === Supertype.POKEMON && !card.evolvesFrom)
       .reduce((sum, card) => sum + card.quantity, 0);
+
+    // Handle edge case: no basic Pokemon
+    if (basicPokemonCount === 0) return 1; // 100% mulligan chance
+
+    // Handle edge case: deck too small
+    if (this.totalCards < 7) return basicPokemonCount === 0 ? 1 : 0;
 
     // Hypergeometric probability of NOT drawing a basic in 7 cards
     return this.hypergeometricProbability(
@@ -326,6 +335,9 @@ export class ConsistencyCalculator {
    * Calculate dead draw probability
    */
   private calculateDeadDrawProbability(): number {
+    // Handle edge case: empty deck
+    if (this.totalCards === 0) return 1; // 100% dead draw chance with no cards
+    
     // Dead draw = no playable cards (no Pokemon, no draw supporters)
     const playableCards = Array.from(this.cards.values())
       .filter(card => 
@@ -333,6 +345,12 @@ export class ConsistencyCalculator {
         this.categorizeTrainer(card) === 'draw'
       )
       .reduce((sum, card) => sum + card.quantity, 0);
+
+    // Handle edge case: no playable cards
+    if (playableCards === 0) return 1; // 100% dead draw chance
+
+    // Handle edge case: deck too small
+    if (this.totalCards < 7) return playableCards === 0 ? 1 : 0;
 
     // Probability of drawing no playable cards in hand
     return this.hypergeometricProbability(
@@ -494,10 +512,22 @@ export class ConsistencyCalculator {
     draws: number,
     desired: number
   ): number {
+    // Handle edge cases
+    if (population === 0 || draws === 0) return 0;
+    if (draws > population) return 0;
+    if (desired > successes) return 0;
+    if (desired > draws) return 0;
+    if ((draws - desired) > (population - successes)) return 0;
+    
     // Hypergeometric distribution calculation
-    return this.combination(successes, desired) *
-           this.combination(population - successes, draws - desired) /
-           this.combination(population, draws);
+    const numerator = this.combination(successes, desired) *
+                     this.combination(population - successes, draws - desired);
+    const denominator = this.combination(population, draws);
+    
+    // Handle potential division by zero
+    if (denominator === 0) return 0;
+    
+    return numerator / denominator;
   }
 
   private combination(n: number, k: number): number {
