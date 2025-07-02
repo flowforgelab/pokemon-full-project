@@ -23,13 +23,16 @@ import SpeedGauge from '@/components/analysis/SpeedGauge';
 import MetaMatchups from '@/components/analysis/MetaMatchups';
 import RecommendationPanel from '@/components/analysis/RecommendationPanel';
 import AnalysisOverview from '@/components/analysis/AnalysisOverview';
+import AnalysisDashboard from '@/components/analysis/AnalysisDashboard';
+import CardRecommendations from '@/components/analysis/CardRecommendations';
+import DeckOptimizer from '@/components/analysis/DeckOptimizer';
 import { SafeAnalysisWrapper } from '@/components/analysis/SafeAnalysisWrapper';
 
 export default function DeckAnalyzePage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params?.id as string;
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Fetch deck data
   const { data: deck, isLoading: deckLoading } = api.deck.getById.useQuery(deckId, {
@@ -57,12 +60,15 @@ export default function DeckAnalyzePage() {
   ];
 
   const tabs = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
+    { id: 'dashboard', name: 'Dashboard', icon: ChartBarIcon },
+    { id: 'overview', name: 'Details', icon: SparklesIcon },
     { id: 'consistency', name: 'Consistency', icon: ShieldCheckIcon },
     { id: 'synergy', name: 'Synergy', icon: SparklesIcon },
     { id: 'speed', name: 'Speed', icon: ClockIcon },
     { id: 'meta', name: 'Meta Position', icon: ArrowTrendingUpIcon },
     { id: 'recommendations', name: 'Recommendations', icon: LightBulbIcon },
+    { id: 'improvements', name: 'Improvements', icon: SparklesIcon },
+    { id: 'optimizer', name: 'Optimizer', icon: SparklesIcon },
   ];
 
   const exportAnalysis = () => {
@@ -172,6 +178,9 @@ export default function DeckAnalyzePage() {
             ) : analysis ? (
               <SafeAnalysisWrapper>
                 <>
+                  {activeTab === 'dashboard' && (
+                    <AnalysisDashboard analysis={analysis} deckName={deck?.name || 'Deck'} />
+                  )}
                   {activeTab === 'overview' && (
                     <AnalysisOverview analysis={analysis} deck={deck} />
                   )}
@@ -191,6 +200,19 @@ export default function DeckAnalyzePage() {
                     <RecommendationPanel 
                       recommendations={analysis.recommendations} 
                       warnings={analysis.warnings}
+                    />
+                  )}
+                  {activeTab === 'improvements' && (
+                    <CardRecommendations
+                      recommendations={analysis.recommendations}
+                      warnings={analysis.warnings}
+                      deckId={deckId}
+                    />
+                  )}
+                  {activeTab === 'optimizer' && deck && (
+                    <DeckOptimizer
+                      deck={deck}
+                      analysis={analysis}
                     />
                   )}
                 </>

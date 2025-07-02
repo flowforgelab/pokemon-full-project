@@ -832,8 +832,7 @@ export class EnhancedDeckAnalyzer {
     // Check card limits
     const cardCounts = new Map<string, number>();
     deck.cards.forEach(dc => {
-      const isBasicEnergy = dc.card.supertype === 'ENERGY' && 
-                           dc.card.name.includes('Basic');
+      const isBasicEnergy = this.isBasicEnergyCard(dc.card);
       if (!isBasicEnergy) {
         cardCounts.set(dc.card.name, (cardCounts.get(dc.card.name) || 0) + dc.quantity);
       }
@@ -953,9 +952,25 @@ export class EnhancedDeckAnalyzer {
       .filter(dc => !this.isBasicEnergyCard(dc.card))
       .reduce((sum, dc) => sum + dc.quantity, 0);
     
+    // Count by supertype
+    const pokemonCount = deckCards
+      .filter(dc => dc.card.supertype === 'POKEMON' || dc.card.supertype === Supertype.POKEMON)
+      .reduce((sum, dc) => sum + dc.quantity, 0);
+    
+    const trainerCount = deckCards
+      .filter(dc => dc.card.supertype === 'TRAINER' || dc.card.supertype === Supertype.TRAINER)
+      .reduce((sum, dc) => sum + dc.quantity, 0);
+    
+    const energyCount = deckCards
+      .filter(dc => dc.card.supertype === 'ENERGY' || dc.card.supertype === Supertype.ENERGY)
+      .reduce((sum, dc) => sum + dc.quantity, 0);
+
     return {
       totalCards,
       uniqueCards,
+      pokemonCount,
+      trainerCount,
+      energyCount,
       quantityDistribution,
       cardsByQuantity,
       energyBreakdown: {

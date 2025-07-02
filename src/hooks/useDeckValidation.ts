@@ -53,7 +53,8 @@ export function useDeckValidation(deck: DeckCard[], formatId: string): Validatio
 
     cardCounts.forEach((count, cardId) => {
       const card = deck.find(dc => dc.cardId === cardId)?.card;
-      if (card && count > 4 && card.supertype !== 'ENERGY') {
+      const isBasicEnergy = card?.supertype === 'ENERGY' && card?.subtypes?.includes('Basic');
+      if (card && count > 4 && !isBasicEnergy) {
         errors.push({
           id: `card-limit-${cardId}`,
           message: `You have ${count} copies of ${card.name}. Maximum allowed is 4.`,

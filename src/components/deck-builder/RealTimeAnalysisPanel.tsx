@@ -236,9 +236,9 @@ export default function RealTimeAnalysisPanel({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">First Attack</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    Turn {analysis?.speed?.firstAttackTurn || '--'}
+                  <span className="text-gray-600 dark:text-gray-400">Speed Rating</span>
+                  <span className="font-medium text-gray-900 dark:text-white capitalize">
+                    {analysis?.speed?.overallSpeed || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex justify-between">
