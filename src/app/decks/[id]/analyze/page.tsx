@@ -68,17 +68,24 @@ export default function DeckAnalyzePage() {
   const exportAnalysis = () => {
     if (!analysis || !deck) return;
 
+    const totalCards = deck.cards.reduce((sum, dc) => sum + dc.quantity, 0);
     const report = {
       deck: {
         name: deck.name,
         format: deck.formatId,
-        cards: deck.cards.length,
+        uniqueCards: deck.cards.length,
+        totalCards: totalCards,
       },
       analysis: {
         timestamp: analysis.timestamp,
         scores: analysis.scores,
         consistency: analysis.consistency,
         recommendations: analysis.recommendations,
+        cardList: deck.cards.map(dc => ({
+          name: dc.card.name,
+          quantity: dc.quantity,
+          type: dc.card.supertype
+        }))
       },
     };
 

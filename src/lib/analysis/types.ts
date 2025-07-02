@@ -14,6 +14,23 @@ export interface DeckAnalysisResult {
   scores: DeckScores;
   recommendations: Recommendation[];
   warnings: AnalysisWarning[];
+  deckInfo?: DeckComposition;
+}
+
+export interface DeckComposition {
+  totalCards: number;
+  uniqueCards: number;
+  quantityDistribution: Record<number, number>;
+  cardsByQuantity: Array<{
+    name: string;
+    quantity: number;
+    type: string;
+  }>;
+  energyBreakdown: {
+    basic: number;
+    special: number;
+    total: number;
+  };
 }
 
 // Consistency Analysis

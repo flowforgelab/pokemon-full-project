@@ -257,21 +257,36 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Pokémon</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {deck.cards.filter(c => c.card.supertype === 'POKEMON').reduce((sum, c) => sum + c.count, 0)}
+                {deck.cards.filter(c => c.card.supertype === 'POKEMON').reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Trainers</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {deck.cards.filter(c => c.card.supertype === 'TRAINER').reduce((sum, c) => sum + c.count, 0)}
+                {deck.cards.filter(c => c.card.supertype === 'TRAINER').reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
             <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Energy</p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {deck.cards.filter(c => c.card.supertype === 'ENERGY').reduce((sum, c) => sum + c.count, 0)}
+                {deck.cards.filter(c => c.card.supertype === 'ENERGY').reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium">{deck.cards.reduce((sum, c) => sum + c.quantity, 0)}</span> total cards
+              {' • '}
+              <span className="font-medium">{deck.cards.length}</span> unique cards
+            </p>
+            {analysis?.deckInfo && (
+              <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                Quantity distribution: {Object.entries(analysis.deckInfo.quantityDistribution)
+                  .sort(([a], [b]) => Number(b) - Number(a))
+                  .map(([qty, count]) => `${count}×${qty}`)
+                  .join(', ')}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -91,6 +91,9 @@ export class EnhancedDeckAnalyzer {
       categorizedCards
     );
     
+    // Add deck composition info
+    const deckComposition = this.analyzeDeckComposition(deck.cards);
+    
     // Build comprehensive result
     const result: DeckAnalysisResult = {
       deckId: deck.id,
@@ -114,6 +117,8 @@ export class EnhancedDeckAnalyzer {
       scores,
       recommendations,
       warnings,
+      // Add deck composition as additional data
+      deckInfo: deckComposition
     };
     
     return result;
@@ -916,6 +921,70 @@ export class EnhancedDeckAnalyzer {
     return warnings;
   }
   
+  /**
+   * Analyze deck composition with card quantities
+   */
+  private analyzeDeckComposition(deckCards: (DeckCard & { card: Card })[]) {
+    const totalCards = deckCards.reduce((sum, dc) => sum + dc.quantity, 0);
+    const uniqueCards = deckCards.length;
+    
+    // Count by quantity
+    const quantityDistribution: Record<number, number> = {};
+    deckCards.forEach(dc => {
+      quantityDistribution[dc.quantity] = (quantityDistribution[dc.quantity] || 0) + 1;
+    });
+    
+    // Get most common cards
+    const cardsByQuantity = deckCards
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10)
+      .map(dc => ({
+        name: dc.card.name,
+        quantity: dc.quantity,
+        type: dc.card.supertype
+      }));
+    
+    // Energy breakdown
+    const energyCards = deckCards.filter(dc => dc.card.supertype === 'ENERGY');
+    const basicEnergyCount = energyCards
+      .filter(dc => this.isBasicEnergyCard(dc.card))
+      .reduce((sum, dc) => sum + dc.quantity, 0);
+    const specialEnergyCount = energyCards
+      .filter(dc => !this.isBasicEnergyCard(dc.card))
+      .reduce((sum, dc) => sum + dc.quantity, 0);
+    
+    return {
+      totalCards,
+      uniqueCards,
+      quantityDistribution,
+      cardsByQuantity,
+      energyBreakdown: {
+        basic: basicEnergyCount,
+        special: specialEnergyCount,
+        total: basicEnergyCount + specialEnergyCount
+      }
+    };
+  }
+  
+  /**
+   * Helper to check if a card is basic energy
+   */
+  private isBasicEnergyCard(card: Card): boolean {
+    const basicEnergyNames = [
+      'Basic Fire Energy', 'Basic Water Energy', 'Basic Grass Energy', 
+      'Basic Lightning Energy', 'Basic Psychic Energy', 'Basic Fighting Energy', 
+      'Basic Darkness Energy', 'Basic Metal Energy', 'Basic Fairy Energy',
+      'Fire Energy', 'Water Energy', 'Grass Energy',
+      'Lightning Energy', 'Psychic Energy', 'Fighting Energy',
+      'Darkness Energy', 'Metal Energy', 'Fairy Energy'
+    ];
+    
+    return basicEnergyNames.some(name => 
+      card.name === name || 
+      (card.name.includes(name) && !card.name.includes('Special'))
+    );
+  }
+
   /**
    * Map archetype names to enum values
    */

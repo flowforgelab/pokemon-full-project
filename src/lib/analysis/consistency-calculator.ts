@@ -1,4 +1,5 @@
 import { Card, DeckCard, Supertype } from '@prisma/client';
+import { EvolutionLineTracker } from './evolution-line-tracker';
 import type {
   ConsistencyAnalysis,
   EnergyRatioAnalysis,
@@ -13,10 +14,12 @@ import type {
 export class ConsistencyCalculator {
   private cards: Map<string, Card & { quantity: number }>;
   private totalCards: number;
+  private deckCards: (DeckCard & { card: Card })[];
 
   constructor(deckCards: (DeckCard & { card: Card })[]) {
     this.cards = new Map();
     this.totalCards = 0;
+    this.deckCards = deckCards;
 
     deckCards.forEach(dc => {
       this.cards.set(dc.card.id, {
@@ -204,12 +207,12 @@ export class ConsistencyCalculator {
           support += card.quantity;
         }
 
-        // Track evolution lines
-        this.trackEvolutionLine(card, evolutionLineMap);
       }
     });
 
-    const evolutionLines = Array.from(evolutionLineMap.values());
+    // Use the proper evolution line tracker
+    const evolutionTracker = new EvolutionLineTracker(this.deckCards);
+    const evolutionLines = evolutionTracker.buildEvolutionLines();
     const pokemonBalance = basics >= 8 && basics <= 20 && 
                           totalPokemon >= 12 && totalPokemon <= 20;
 
@@ -439,8 +442,21 @@ export class ConsistencyCalculator {
   // Helper methods
 
   private isBasicEnergy(card: Card): boolean {
-    const basicEnergyNames = ['Fire', 'Water', 'Grass', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Fairy'];
-    return basicEnergyNames.some(name => card.name.includes(`Basic ${name} Energy`));
+    const basicEnergyNames = [
+      'Basic Fire Energy', 'Basic Water Energy', 'Basic Grass Energy', 
+      'Basic Lightning Energy', 'Basic Psychic Energy', 'Basic Fighting Energy', 
+      'Basic Darkness Energy', 'Basic Metal Energy', 'Basic Fairy Energy',
+      // Also check for simple energy names (some sets use these)
+      'Fire Energy', 'Water Energy', 'Grass Energy',
+      'Lightning Energy', 'Psychic Energy', 'Fighting Energy',
+      'Darkness Energy', 'Metal Energy', 'Fairy Energy'
+    ];
+    
+    // Exact match or includes
+    return basicEnergyNames.some(name => 
+      card.name === name || 
+      (card.name.includes(name) && !card.name.includes('Special'))
+    );
   }
 
   private isEnergySearch(card: Card): boolean {
@@ -476,21 +492,6 @@ export class ConsistencyCalculator {
            this.categorizeTrainer(card) === 'draw';
   }
 
-  private trackEvolutionLine(card: Card, lineMap: Map<string, EvolutionLine>) {
-    // This is simplified - would need full evolution data
-    if (!card.evolvesFrom) {
-      // Basic Pokemon - start of evolution line
-      if (!lineMap.has(card.name)) {
-        lineMap.set(card.name, {
-          basePokemon: card.name,
-          stage1: [],
-          stage2: [],
-          completeness: 100,
-          consistency: 100,
-        });
-      }
-    }
-  }
 
   private calculateEnergyEfficiency(averageCost: number): number {
     if (averageCost <= 1.5) return 100;
