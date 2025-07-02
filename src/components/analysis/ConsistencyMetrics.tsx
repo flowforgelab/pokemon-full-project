@@ -17,6 +17,14 @@ interface ConsistencyMetricsProps {
 }
 
 export default function ConsistencyMetrics({ consistency }: ConsistencyMetricsProps) {
+  if (!consistency) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No consistency data available</p>
+      </div>
+    );
+  }
+
   const getStatusIcon = (isOptimal: boolean) => {
     return isOptimal ? (
       <CheckCircleIcon className="h-5 w-5 text-green-500" />

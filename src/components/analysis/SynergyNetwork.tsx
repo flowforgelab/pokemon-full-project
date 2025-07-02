@@ -13,6 +13,14 @@ interface SynergyNetworkProps {
 export default function SynergyNetwork({ synergy, cards }: SynergyNetworkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  if (!synergy) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No synergy data available</p>
+      </div>
+    );
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !synergy.synergyGraph) return;

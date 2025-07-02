@@ -17,6 +17,14 @@ interface MetaMatchupsProps {
 }
 
 export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
+  if (!meta || !matchups) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No meta matchup data available</p>
+      </div>
+    );
+  }
+
   const getWinRateColor = (winRate: number) => {
     if (winRate >= 60) return 'text-green-600 dark:text-green-400';
     if (winRate >= 50) return 'text-blue-600 dark:text-blue-400';

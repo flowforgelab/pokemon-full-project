@@ -36,13 +36,15 @@ export default function DeckAnalyzePage() {
   });
 
   // Fetch analysis data
-  const { data: analysis, isLoading: analysisLoading, refetch } = api.analysis.analyzeDeck.useQuery(
+  const { data: analysisResponse, isLoading: analysisLoading, refetch } = api.analysis.analyzeDeck.useQuery(
     { deckId },
     { 
       enabled: !!deckId,
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     }
   );
+
+  const analysis = analysisResponse?.analysis;
 
   const isLoading = deckLoading || analysisLoading;
 
@@ -201,26 +203,26 @@ export default function DeckAnalyzePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Overall Score</p>
                   <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                    {analysis.scores.overall}
+                    {analysis?.scores?.overall || 0}
                   </p>
                 </div>
                 <div className={`
                   p-3 rounded-full
-                  ${analysis.scores.overall >= 80 ? 'bg-green-100 dark:bg-green-900' : 
-                    analysis.scores.overall >= 60 ? 'bg-yellow-100 dark:bg-yellow-900' : 
+                  ${(analysis?.scores?.overall || 0) >= 80 ? 'bg-green-100 dark:bg-green-900' : 
+                    (analysis?.scores?.overall || 0) >= 60 ? 'bg-yellow-100 dark:bg-yellow-900' : 
                     'bg-red-100 dark:bg-red-900'}
                 `}>
                   <ChartBarIcon className={`
                     h-6 w-6
-                    ${analysis.scores.overall >= 80 ? 'text-green-600 dark:text-green-400' : 
-                      analysis.scores.overall >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 
+                    ${(analysis?.scores?.overall || 0) >= 80 ? 'text-green-600 dark:text-green-400' : 
+                      (analysis?.scores?.overall || 0) >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 
                       'text-red-600 dark:text-red-400'}
                   `} />
                 </div>
               </div>
               <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                {analysis.scores.overall >= 80 ? 'Tournament Ready' : 
-                 analysis.scores.overall >= 60 ? 'Competitive' : 
+                {(analysis?.scores?.overall || 0) >= 80 ? 'Tournament Ready' : 
+                 (analysis?.scores?.overall || 0) >= 60 ? 'Competitive' : 
                  'Needs Improvement'}
               </p>
             </div>
@@ -230,13 +232,13 @@ export default function DeckAnalyzePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Consistency</p>
                   <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                    {analysis.scores.consistency}%
+                    {analysis?.scores?.consistency || 0}%
                   </p>
                 </div>
                 <ShieldCheckIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                {analysis.consistency.mulliganProbability.toFixed(1)}% mulligan rate
+                {(analysis?.consistency?.mulliganProbability || 0).toFixed(1)}% mulligan rate
               </p>
             </div>
 
@@ -245,7 +247,7 @@ export default function DeckAnalyzePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Speed</p>
                   <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                    T{analysis.speed.averageSetupTurn}
+                    T{analysis?.speed?.averageSetupTurn || 0}
                   </p>
                 </div>
                 <ClockIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -260,13 +262,13 @@ export default function DeckAnalyzePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Archetype</p>
                   <p className="mt-2 text-xl font-bold text-gray-900 dark:text-white capitalize">
-                    {analysis.archetype.primaryArchetype}
+                    {analysis?.archetype?.primaryArchetype || 'Unknown'}
                   </p>
                 </div>
                 <SparklesIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                {analysis.archetype.confidence}% confidence
+                {analysis?.archetype?.confidence || 0}% confidence
               </p>
             </div>
           </div>

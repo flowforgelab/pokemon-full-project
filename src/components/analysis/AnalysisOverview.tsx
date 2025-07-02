@@ -20,6 +20,14 @@ interface AnalysisOverviewProps {
 }
 
 export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewProps) {
+  if (!analysis || !analysis.scores) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No analysis data available</p>
+      </div>
+    );
+  }
+
   const scores = analysis.scores;
   const performance = analysis.performance;
 

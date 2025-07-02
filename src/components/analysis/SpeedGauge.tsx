@@ -10,6 +10,14 @@ interface SpeedGaugeProps {
 }
 
 export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
+  if (!speed) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No speed data available</p>
+      </div>
+    );
+  }
+
   const getSpeedRating = (setupTurn: number) => {
     if (setupTurn <= 1.5) return 'Lightning Fast';
     if (setupTurn <= 2) return 'Very Fast';

@@ -11,6 +11,14 @@ interface ScoreRadarProps {
 export default function ScoreRadar({ scores, size = 300 }: ScoreRadarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  if (!scores) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+        <p className="text-gray-500 dark:text-gray-400">No score data available</p>
+      </div>
+    );
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

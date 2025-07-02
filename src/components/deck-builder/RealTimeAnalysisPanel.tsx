@@ -161,26 +161,26 @@ export default function RealTimeAnalysisPanel({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Overall</span>
-                  <span className={`text-lg font-bold ${getScoreColor(analysis.scores.overall)}`}>
-                    {analysis.scores.overall || '--'}
+                  <span className={`text-lg font-bold ${getScoreColor(analysis?.scores?.overall)}`}>
+                    {analysis?.scores?.overall || '--'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Consistency</span>
-                  <span className={`font-medium ${getScoreColor(analysis.scores.consistency)}`}>
-                    {analysis.scores.consistency || '--'}%
+                  <span className={`font-medium ${getScoreColor(analysis?.scores?.consistency)}`}>
+                    {analysis?.scores?.consistency || '--'}%
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Power</span>
-                  <span className={`font-medium ${getScoreColor(analysis.scores.power)}`}>
-                    {analysis.scores.power || '--'}
+                  <span className={`font-medium ${getScoreColor(analysis?.scores?.power)}`}>
+                    {analysis?.scores?.power || '--'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Speed</span>
-                  <span className={`font-medium ${getScoreColor(analysis.scores.speed)}`}>
-                    {analysis.scores.speed || '--'}
+                  <span className={`font-medium ${getScoreColor(analysis?.scores?.speed)}`}>
+                    {analysis?.scores?.speed || '--'}
                   </span>
                 </div>
               </div>
@@ -198,9 +198,9 @@ export default function RealTimeAnalysisPanel({
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Mulligan Rate</span>
                   <span className={`font-medium ${
-                    analysis.consistency.mulliganProbability <= 15 ? 'text-green-600' : 'text-red-600'
+                    (analysis?.consistency?.mulliganProbability || 0) <= 15 ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {analysis.consistency.mulliganProbability?.toFixed(1) || '--'}%
+                    {analysis?.consistency?.mulliganProbability?.toFixed(1) || '--'}%
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -232,13 +232,13 @@ export default function RealTimeAnalysisPanel({
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Setup Turn</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    Turn {analysis.speed.averageSetupTurn || '--'}
+                    Turn {analysis?.speed?.averageSetupTurn || '--'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">First Attack</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    Turn {analysis.speed.firstAttackTurn || '--'}
+                    Turn {analysis?.speed?.firstAttackTurn || '--'}
                   </span>
                 </div>
                 <div className="flex justify-between">

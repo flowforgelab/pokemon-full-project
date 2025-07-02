@@ -22,6 +22,14 @@ interface RecommendationPanelProps {
 export default function RecommendationPanel({ recommendations, warnings }: RecommendationPanelProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['HIGH']));
 
+  if (!recommendations && !warnings) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+        <p>No recommendations available</p>
+      </div>
+    );
+  }
+
   // Group recommendations by priority
   const groupedRecommendations = recommendations.reduce((groups, rec) => {
     const priority = rec.priority || 'MEDIUM';
