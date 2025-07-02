@@ -1,6 +1,7 @@
 import { Deck, DeckCard, Card } from '@prisma/client';
 import { DeckAnalysisResult, DeckArchetype } from './types';
 import { calculateMulliganProbability, calculateDeadDrawProbability, calculatePrizeAtLeastOne } from './probability-calculator';
+import { getCardQualityScore, analyzeTrainerQuality, categorizeCard, getUpgradeRecommendation } from './card-quality-database';
 
 /**
  * SafeAnalyzer - A bulletproof deck analyzer that ALWAYS returns valid data
@@ -215,13 +216,7 @@ export class SafeAnalyzer {
         matchups: [],
         
         // Recommendations
-        recommendations: cardCount !== 60 ? [{
-          type: 'add' as const,
-          priority: 'high' as const,
-          reason: `Deck has ${cardCount} cards, needs exactly 60`,
-          impact: 'Legal deck for tournament play',
-          suggestion: cardCount < 60 ? 'Add more cards' : 'Remove extra cards'
-        }] : [],
+        recommendations: this.generateRecommendations(deck, cardCount),
         
         // Warnings
         warnings: this.generateWarnings(deck, cardCount, pokemonCount, energyCount, trainerCount)
@@ -341,14 +336,54 @@ export class SafeAnalyzer {
       
       const { pokemonCount, trainerCount, energyCount } = this.getCardTypes(deck);
       
-      let score = 50; // Base score
+      // Start with base score
+      let score = 0;
       
-      // Check ratios
-      if (pokemonCount >= 10 && pokemonCount <= 20) score += 15;
-      if (trainerCount >= 25 && trainerCount <= 35) score += 15;
-      if (energyCount >= 10 && energyCount <= 15) score += 20;
+      // 1. Mulligan probability factor (0-25 points)
+      const mulliganProb = calculateMulliganProbability(this.getBasicPokemonCount(deck));
+      if (mulliganProb < 0.10) score += 25; // Excellent
+      else if (mulliganProb < 0.15) score += 20; // Good
+      else if (mulliganProb < 0.20) score += 15; // Acceptable
+      else if (mulliganProb < 0.25) score += 10; // Poor
+      else score += 5; // Very poor
       
-      return Math.min(100, Math.max(0, score));
+      // 2. Draw power quality (0-25 points)
+      const drawSupporters = deck.cards?.filter(dc => 
+        dc.card.supertype === 'TRAINER' && 
+        categorizeCard(dc.card.name, 'TRAINER') === 'draw'
+      ) || [];
+      
+      const drawQuality = analyzeTrainerQuality(
+        drawSupporters.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
+      );
+      
+      score += Math.min(25, drawQuality.averageScore * 2.5);
+      
+      // 3. Search card quality (0-20 points)
+      const searchCards = deck.cards?.filter(dc => 
+        dc.card.supertype === 'TRAINER' && 
+        categorizeCard(dc.card.name, 'TRAINER') === 'search'
+      ) || [];
+      
+      const searchQuality = analyzeTrainerQuality(
+        searchCards.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
+      );
+      
+      score += Math.min(20, searchQuality.averageScore * 2);
+      
+      // 4. Dead draw probability (0-15 points)
+      const deadDrawProb = this.calculateDeadDrawProbability(deck);
+      if (deadDrawProb < 0.05) score += 15; // Excellent
+      else if (deadDrawProb < 0.10) score += 12; // Good
+      else if (deadDrawProb < 0.15) score += 8; // Acceptable
+      else if (deadDrawProb < 0.20) score += 4; // Poor
+      
+      // 5. Card count ratios (0-15 points)
+      if (pokemonCount >= 12 && pokemonCount <= 20) score += 5;
+      if (trainerCount >= 28 && trainerCount <= 35) score += 5;
+      if (energyCount >= 10 && energyCount <= 15) score += 5;
+      
+      return Math.min(100, Math.max(0, Math.round(score)));
     } catch {
       return 50; // Default middle score
     }
@@ -457,12 +492,24 @@ export class SafeAnalyzer {
     }
 
     // Basic Pokemon check
-    if (pokemonCount === 0) {
+    const basicCount = this.getBasicPokemonCount(deck);
+    if (basicCount === 0) {
       warnings.push({
         severity: 'error',
         category: 'Pokemon',
         message: 'Deck must contain at least one Basic Pokemon',
         suggestion: 'Add Basic Pokemon cards'
+      });
+    }
+
+    // Mulligan probability check
+    const mulliganProb = calculateMulliganProbability(basicCount);
+    if (mulliganProb > 0.20) {
+      warnings.push({
+        severity: 'warning',
+        category: 'Consistency',
+        message: `High mulligan probability: ${(mulliganProb * 100).toFixed(1)}%`,
+        suggestion: `Add more Basic Pokemon (currently ${basicCount}, recommend 12-14)`
       });
     }
 
@@ -476,17 +523,147 @@ export class SafeAnalyzer {
       });
     }
 
-    // Trainer check
-    if (trainerCount < 20) {
+    // Trainer quality check
+    const trainers = deck.cards?.filter(dc => dc.card.supertype === 'TRAINER') || [];
+    const trainerAnalysis = analyzeTrainerQuality(
+      trainers.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
+    );
+    
+    // Check for weak cards
+    if (trainerAnalysis.weakCards.length > 0) {
       warnings.push({
         severity: 'warning',
-        category: 'Trainers',
-        message: 'Low trainer count may limit options',
-        suggestion: 'Add more trainer cards for consistency'
+        category: 'Card Quality',
+        message: `Deck contains weak trainer cards: ${trainerAnalysis.weakCards.slice(0, 3).join(', ')}`,
+        suggestion: trainerAnalysis.recommendations[0] || 'Consider upgrading to more competitive trainer cards'
+      });
+    }
+    
+    // Check draw power
+    const drawSupporterCount = this.getDrawSupporterCount(deck);
+    if (drawSupporterCount < 6) {
+      warnings.push({
+        severity: 'warning',
+        category: 'Draw Power',
+        message: `Low draw supporter count (${drawSupporterCount})`,
+        suggestion: "Add more draw supporters like Professor's Research or Marnie"
+      });
+    }
+    
+    // Check search cards
+    const searchCards = trainers.filter(dc => 
+      categorizeCard(dc.card.name, 'TRAINER') === 'search'
+    );
+    if (searchCards.length === 0) {
+      warnings.push({
+        severity: 'warning',
+        category: 'Search',
+        message: 'No Pokemon search cards found',
+        suggestion: 'Add Quick Ball, Ultra Ball, or Pokemon Communication'
       });
     }
 
     return warnings;
+  }
+
+  private generateRecommendations(
+    deck: Deck & { cards: (DeckCard & { card: Card })[] },
+    cardCount: number
+  ): Array<{ type: 'add' | 'remove' | 'replace', priority: 'high' | 'medium' | 'low', reason: string, impact: string, suggestion?: string, card?: string }> {
+    const recommendations: Array<{ 
+      type: 'add' | 'remove' | 'replace', 
+      priority: 'high' | 'medium' | 'low', 
+      reason: string, 
+      impact: string, 
+      suggestion?: string,
+      card?: string 
+    }> = [];
+
+    // Deck size recommendation
+    if (cardCount !== 60) {
+      recommendations.push({
+        type: cardCount < 60 ? 'add' : 'remove',
+        priority: 'high',
+        reason: `Deck has ${cardCount} cards, needs exactly 60`,
+        impact: 'Legal deck for tournament play',
+        suggestion: cardCount < 60 ? 'Add more cards' : 'Remove extra cards'
+      });
+    }
+
+    // Analyze trainer quality and make specific recommendations
+    const trainers = deck.cards?.filter(dc => dc.card.supertype === 'TRAINER') || [];
+    const trainerAnalysis = analyzeTrainerQuality(
+      trainers.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
+    );
+
+    // Add upgrade recommendations for weak cards
+    trainerAnalysis.weakCards.forEach((weakCard, index) => {
+      if (index < 3) { // Top 3 weak cards
+        const category = categorizeCard(weakCard, 'TRAINER');
+        const upgrade = getUpgradeRecommendation(weakCard, category);
+        
+        if (upgrade) {
+          recommendations.push({
+            type: 'replace',
+            priority: 'medium',
+            reason: `${weakCard} is a weak card (score: ${getCardQualityScore(weakCard)}/10)`,
+            impact: 'Improved consistency and power',
+            suggestion: `Replace with ${upgrade} (score: ${getCardQualityScore(upgrade)}/10)`,
+            card: weakCard
+          });
+        }
+      }
+    });
+
+    // Check for missing essential cards
+    const hasQuickBall = trainers.some(dc => dc.card.name.toLowerCase().includes('quick ball'));
+    const hasProfessorResearch = trainers.some(dc => 
+      dc.card.name.toLowerCase().includes("professor's research") || 
+      dc.card.name.toLowerCase().includes("professor juniper") ||
+      dc.card.name.toLowerCase().includes("professor sycamore")
+    );
+
+    if (!hasQuickBall) {
+      recommendations.push({
+        type: 'add',
+        priority: 'high',
+        reason: 'No Quick Ball found',
+        impact: 'Significantly improved Pokemon search',
+        suggestion: 'Add 3-4 Quick Ball',
+        card: 'Quick Ball'
+      });
+    }
+
+    if (!hasProfessorResearch) {
+      recommendations.push({
+        type: 'add',
+        priority: 'high',
+        reason: 'No high-quality draw supporter found',
+        impact: 'Much better draw consistency',
+        suggestion: "Add 3-4 Professor's Research",
+        card: "Professor's Research"
+      });
+    }
+
+    // Check for Pokemon balance
+    const basicCount = this.getBasicPokemonCount(deck);
+    if (basicCount < 10) {
+      recommendations.push({
+        type: 'add',
+        priority: 'medium',
+        reason: `Low Basic Pokemon count (${basicCount})`,
+        impact: 'Reduced mulligan rate',
+        suggestion: 'Add 2-3 more Basic Pokemon'
+      });
+    }
+
+    // Sort by priority
+    recommendations.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+
+    return recommendations.slice(0, 10); // Return top 10 recommendations
   }
 
   /**
