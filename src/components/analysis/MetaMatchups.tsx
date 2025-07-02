@@ -18,7 +18,7 @@ interface MetaMatchupsProps {
 }
 
 export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
-  if (!meta || !matchups) {
+  if (!meta) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
         <p>No meta matchup data available</p>
@@ -163,7 +163,7 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             );
           })}
