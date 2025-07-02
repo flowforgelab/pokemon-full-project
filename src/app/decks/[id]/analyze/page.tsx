@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
 import { 
@@ -56,7 +57,7 @@ export default function DeckAnalyzePage() {
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Decks', href: '/decks' },
     { label: deck?.name || 'Loading...', href: `/decks/${deckId}` },
-    { label: 'Analysis', href: `/decks/${deckId}/analyze` },
+    { label: 'Advanced Analysis', href: `/decks/${deckId}/analyze` },
   ];
 
   const tabs = [
@@ -118,13 +119,19 @@ export default function DeckAnalyzePage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {deck?.name || 'Loading...'} - Analysis
+                {deck?.name || 'Loading...'} - Advanced Analysis
               </h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Comprehensive deck evaluation and optimization recommendations
+                Comprehensive tournament-level deck evaluation and optimization
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                href={`/decks/${deckId}/analyze/basic`}
+                className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400"
+              >
+                Try Basic Analysis →
+              </Link>
               <button
                 onClick={() => refetch()}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"

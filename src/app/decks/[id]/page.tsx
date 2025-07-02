@@ -216,7 +216,7 @@ export default function DeckDetailPage({ params }: Props) {
                 Edit
               </Link>
               <Link
-                href={`/decks/${deck.id}/analyze`}
+                href={`/decks/${deck.id}/analyze/select`}
                 className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 <ChartBarIcon className="h-5 w-5 mr-2" />
