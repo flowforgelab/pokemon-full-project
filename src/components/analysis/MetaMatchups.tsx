@@ -7,9 +7,9 @@ import {
   ChevronDownIcon,
   MinusIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline';
-import { XCircleIcon } from '@heroicons/react/24/outline';
 import type { MetaGameAnalysis, MatchupAnalysis } from '@/lib/analysis/types';
 
 interface MetaMatchupsProps {
