@@ -23,6 +23,7 @@ import SpeedGauge from '@/components/analysis/SpeedGauge';
 import MetaMatchups from '@/components/analysis/MetaMatchups';
 import RecommendationPanel from '@/components/analysis/RecommendationPanel';
 import AnalysisOverview from '@/components/analysis/AnalysisOverview';
+import { SafeAnalysisWrapper } from '@/components/analysis/SafeAnalysisWrapper';
 
 export default function DeckAnalyzePage() {
   const params = useParams();
@@ -162,29 +163,31 @@ export default function DeckAnalyzePage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             ) : analysis ? (
-              <>
-                {activeTab === 'overview' && (
-                  <AnalysisOverview analysis={analysis} deck={deck} />
-                )}
-                {activeTab === 'consistency' && (
-                  <ConsistencyMetrics consistency={analysis.consistency} />
-                )}
-                {activeTab === 'synergy' && (
-                  <SynergyNetwork synergy={analysis.synergy} cards={deck?.cards || []} />
-                )}
-                {activeTab === 'speed' && (
-                  <SpeedGauge speed={analysis.speed} archetype={analysis.archetype} />
-                )}
-                {activeTab === 'meta' && (
-                  <MetaMatchups meta={analysis.meta} matchups={analysis.matchups} />
-                )}
-                {activeTab === 'recommendations' && (
-                  <RecommendationPanel 
-                    recommendations={analysis.recommendations} 
-                    warnings={analysis.warnings}
-                  />
-                )}
-              </>
+              <SafeAnalysisWrapper>
+                <>
+                  {activeTab === 'overview' && (
+                    <AnalysisOverview analysis={analysis} deck={deck} />
+                  )}
+                  {activeTab === 'consistency' && (
+                    <ConsistencyMetrics consistency={analysis.consistency} />
+                  )}
+                  {activeTab === 'synergy' && (
+                    <SynergyNetwork synergy={analysis.synergy} cards={deck?.cards || []} />
+                  )}
+                  {activeTab === 'speed' && (
+                    <SpeedGauge speed={analysis.speed} archetype={analysis.archetype} />
+                  )}
+                  {activeTab === 'meta' && (
+                    <MetaMatchups meta={analysis.meta} matchups={analysis.matchups} />
+                  )}
+                  {activeTab === 'recommendations' && (
+                    <RecommendationPanel 
+                      recommendations={analysis.recommendations} 
+                      warnings={analysis.warnings}
+                    />
+                  )}
+                </>
+              </SafeAnalysisWrapper>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                 <ExclamationTriangleIcon className="h-12 w-12 mb-4" />

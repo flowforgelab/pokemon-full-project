@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from '@/server/trpc';
 import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
+import { SafeAnalyzer } from '@/lib/analysis/safe-analyzer';
 import { getAnalysisCache, redis } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 import { 
@@ -105,12 +106,19 @@ export const analysisRouter = createTRPCRouter({
         }
       }
       
-      // Create analyzer instance
-      const analyzer = new DeckAnalyzer();
+      // Create analyzer instance - use SafeAnalyzer for production stability
+      const analyzer = new SafeAnalyzer();
       
-      // Perform analysis (DeckAnalyzer only has one method: analyzeDeck)
-      // Mode parameter can be used in future if different analysis methods are added
-      const analysis = await analyzer.analyzeDeck(deck);
+      // Perform analysis with guaranteed valid results
+      let analysis;
+      try {
+        analysis = await analyzer.analyzeDeck(deck);
+      } catch (error) {
+        console.error('Analysis failed, using SafeAnalyzer fallback:', error);
+        // SafeAnalyzer should never throw, but just in case...
+        const safeAnalyzer = new SafeAnalyzer();
+        analysis = await safeAnalyzer.analyzeDeck(deck);
+      }
       
       // Add recommendations if requested (premium feature)
       if (options.includeRecommendations) {
@@ -258,12 +266,24 @@ export const analysisRouter = createTRPCRouter({
         });
       }
       
-      // Create analyzer
-      const analyzer = new DeckAnalyzer();
+      // Create analyzer - use SafeAnalyzer for stability
+      const analyzer = new SafeAnalyzer();
       
-      // Analyze both decks separately
-      const analysis1 = await analyzer.analyzeDeck(deck1);
-      const analysis2 = await analyzer.analyzeDeck(deck2);
+      // Analyze both decks separately with error handling
+      let analysis1, analysis2;
+      try {
+        analysis1 = await analyzer.analyzeDeck(deck1);
+      } catch (error) {
+        console.error('Analysis 1 failed:', error);
+        analysis1 = await new SafeAnalyzer().analyzeDeck(deck1);
+      }
+      
+      try {
+        analysis2 = await analyzer.analyzeDeck(deck2);
+      } catch (error) {
+        console.error('Analysis 2 failed:', error);
+        analysis2 = await new SafeAnalyzer().analyzeDeck(deck2);
+      }
       
       // Create comparison based on individual analyses
       const comparison = {
@@ -549,8 +569,14 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Always perform new analysis since we don't store lastAnalysis in the database
-      const analyzer = new DeckAnalyzer();
-      const analysis = await analyzer.analyzeDeck(deck);
+      const analyzer = new SafeAnalyzer();
+      let analysis;
+      try {
+        analysis = await analyzer.analyzeDeck(deck);
+      } catch (error) {
+        console.error('Analysis failed in recommendations:', error);
+        analysis = await new SafeAnalyzer().analyzeDeck(deck);
+      }
       
       // Generate recommendations based on type
       const recommendations = {
@@ -720,8 +746,14 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Get or generate analysis
-      const analyzer = new DeckAnalyzer();
-      const analysis = await analyzer.analyzeDeck(deck);
+      const analyzer = new SafeAnalyzer();
+      let analysis;
+      try {
+        analysis = await analyzer.analyzeDeck(deck);
+      } catch (error) {
+        console.error('Analysis failed in export:', error);
+        analysis = await new SafeAnalyzer().analyzeDeck(deck);
+      }
       
       // Generate export based on format
       let exportData;

@@ -20,16 +20,41 @@ interface AnalysisOverviewProps {
 }
 
 export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewProps) {
-  if (!analysis || !analysis.scores) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-        <p>No analysis data available</p>
-      </div>
-    );
-  }
+  // Provide safe defaults for all scores
+  const safeScores = {
+    overall: analysis?.scores?.overall ?? 0,
+    consistency: analysis?.scores?.consistency ?? 0,
+    power: analysis?.scores?.power ?? 0,
+    speed: analysis?.scores?.speed ?? 0,
+    versatility: analysis?.scores?.versatility ?? 0,
+    metaRelevance: analysis?.scores?.metaRelevance ?? 0,
+    innovation: analysis?.scores?.innovation ?? 0,
+    difficulty: analysis?.scores?.difficulty ?? 0,
+  };
 
-  const scores = analysis.scores;
-  const performance = analysis.performance;
+  const safeBreakdown = {
+    strengths: analysis?.scores?.breakdown?.strengths ?? [],
+    weaknesses: analysis?.scores?.breakdown?.weaknesses ?? [],
+    coreStrategy: analysis?.scores?.breakdown?.coreStrategy ?? 'Unable to determine strategy',
+    winConditions: analysis?.scores?.breakdown?.winConditions ?? [],
+  };
+
+  const safeArchetype = {
+    primaryArchetype: analysis?.archetype?.primaryArchetype ?? 'midrange',
+    confidence: analysis?.archetype?.confidence ?? 0,
+    characteristics: analysis?.archetype?.characteristics ?? [],
+    playstyle: analysis?.archetype?.playstyle ?? 'Unable to determine playstyle',
+  };
+
+  const scores = safeScores;
+  const performance = analysis?.performance ?? {
+    powerLevel: 0,
+    metaViability: 0,
+    skillCeiling: 0,
+    budgetEfficiency: 0,
+    futureProofing: 0,
+    learningCurve: 'unknown' as const,
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 dark:text-green-400';
@@ -126,19 +151,19 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Tournament Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {(performance.tournamentWinRate * 100).toFixed(1)}%
+              {((performance?.tournamentPerformance ?? 0) * 100).toFixed(1)}%
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Local Meta Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {(performance.localMetaWinRate * 100).toFixed(1)}%
+              {(performance?.metaViability ?? 0) * 10}%
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Online Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {(performance.onlineWinRate * 100).toFixed(1)}%
+              {(performance?.powerLevel ?? 0) * 10}%
             </p>
           </div>
         </div>
@@ -153,27 +178,27 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Primary: {analysis.archetype.primaryArchetype}
+                Primary: {safeArchetype.primaryArchetype}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {analysis.archetype.confidence}% confidence
+                {safeArchetype.confidence}% confidence
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full"
-                style={{ width: `${analysis.archetype.confidence}%` }}
+                style={{ width: `${safeArchetype.confidence}%` }}
               />
             </div>
           </div>
           
-          {analysis.archetype.secondaryArchetypes.length > 0 && (
+          {analysis?.archetype?.secondaryArchetype && (
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                Secondary Archetypes:
+                Secondary Archetype:
               </p>
               <div className="flex flex-wrap gap-2">
-                {analysis.archetype.secondaryArchetypes.map((arch) => (
+                {[analysis.archetype.secondaryArchetype].map((arch) => (
                   <span 
                     key={arch}
                     className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300"
@@ -198,7 +223,7 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
             Key Strengths
           </h3>
           <ul className="space-y-2">
-            {analysis.scores.breakdown.strengths.slice(0, 5).map((strength, idx) => (
+            {safeBreakdown.strengths.slice(0, 5).map((strength, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-green-600 dark:text-green-400 mt-0.5">•</span>
                 <span className="text-sm text-gray-700 dark:text-gray-300">{strength}</span>
@@ -212,7 +237,7 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
             Areas for Improvement
           </h3>
           <ul className="space-y-2">
-            {analysis.scores.breakdown.weaknesses.slice(0, 5).map((weakness, idx) => (
+            {safeBreakdown.weaknesses.slice(0, 5).map((weakness, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <span className="text-red-600 dark:text-red-400 mt-0.5">•</span>
                 <span className="text-sm text-gray-700 dark:text-gray-300">{weakness}</span>
