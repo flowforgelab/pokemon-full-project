@@ -1,5 +1,6 @@
 import { Deck, DeckCard, Card } from '@prisma/client';
 import { DeckAnalysisResult, DeckArchetype } from './types';
+import { calculateMulliganProbability, calculateDeadDrawProbability, calculatePrizeAtLeastOne } from './probability-calculator';
 
 /**
  * SafeAnalyzer - A bulletproof deck analyzer that ALWAYS returns valid data
@@ -89,13 +90,13 @@ export class SafeAnalyzer {
             accelerationNeeded: false,
             curve: 'medium' as const
           },
-          mulliganProbability: pokemonCount > 0 ? Math.max(0.05, Math.min(0.3, 1 - (pokemonCount / 60))) : 0.99,
+          mulliganProbability: calculateMulliganProbability(this.getBasicPokemonCount(deck)),
           setupProbabilities: [
             { turn: 1, probability: 0.6, keyCards: ['Basic Pokemon'], scenario: 'Basic setup' },
             { turn: 2, probability: 0.7, keyCards: ['Evolution'], scenario: 'Evolution setup' },
             { turn: 3, probability: 0.8, keyCards: ['Main attacker'], scenario: 'Full setup' }
           ],
-          deadDrawProbability: trainerCount > 0 ? Math.max(0.05, Math.min(0.3, 1 - (trainerCount / 60))) : 0.5,
+          deadDrawProbability: this.calculateDeadDrawProbability(deck),
           prizeCardImpact: {
             keyCardVulnerability: 20,
             averageImpact: 15,
@@ -272,6 +273,64 @@ export class SafeAnalyzer {
     }
 
     return { pokemonCount, trainerCount, energyCount };
+  }
+
+  private getBasicPokemonCount(deck: Deck & { cards: (DeckCard & { card: Card })[] }): number {
+    try {
+      return deck.cards?.reduce((sum, dc) => {
+        if (dc.card?.supertype === 'POKEMON') {
+          // Check if it's a basic Pokemon (no evolvesFrom)
+          if (!dc.card.evolvesFrom) {
+            return sum + (dc.quantity || 0);
+          }
+        }
+        return sum;
+      }, 0) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private getDrawSupporterCount(deck: Deck & { cards: (DeckCard & { card: Card })[] }): number {
+    try {
+      const drawSupporters = [
+        'professor', 'research', 'sonia', 'marnie', 'cynthia', 
+        'lillie', 'hop', 'bianca', 'cheren', 'n', 'colress',
+        'juniper', 'sycamore', 'kukui', 'hau', 'erika', 'oak',
+        'tate & liza', 'tate', 'liza' // Tate & Liza is also a draw supporter
+      ];
+      
+      return deck.cards?.reduce((sum, dc) => {
+        if (dc.card?.supertype === 'TRAINER') {
+          const name = dc.card.name?.toLowerCase() || '';
+          if (drawSupporters.some(supporter => name.includes(supporter))) {
+            return sum + (dc.quantity || 0);
+          }
+        }
+        return sum;
+      }, 0) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private calculateDeadDrawProbability(deck: Deck & { cards: (DeckCard & { card: Card })[] }): number {
+    try {
+      const drawSupporters = this.getDrawSupporterCount(deck);
+      if (drawSupporters === 0) return 1.0; // No draw supporters = always dead draw
+      
+      // Calculate probability of having NO draw supporters after drawing opening hand + 1 for turn
+      // This uses hypergeometric distribution: what's the chance of drawing 0 supporters in 8 cards?
+      const deckSize = 60;
+      const cardsSeenByTurn1 = 8; // Opening hand (7) + draw for turn (1)
+      
+      // Probability of drawing exactly 0 draw supporters
+      const probNoDrawSupporter = calculateMulliganProbability(drawSupporters, deckSize, cardsSeenByTurn1);
+      
+      return probNoDrawSupporter;
+    } catch {
+      return 0.3; // Default reasonable value
+    }
   }
 
   private calculateConsistencyScore(deck: Deck & { cards: (DeckCard & { card: Card })[] }): number {
