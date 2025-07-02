@@ -1263,7 +1263,7 @@ To deploy successfully on Vercel, configure these environment variables:
 3. **Phase 1: Fix Core Calculations** (Week 1)
    - [x] Fix mulligan probability calculation (currently shows 30% instead of actual 19%)
    - [x] Implement proper hypergeometric distribution
-   - [ ] Add card quality scoring database (Professor's Research = 10, Lillie = 5, etc.)
+   - [x] Add card quality scoring database (Professor's Research = 10, Lillie = 5, etc.)
    - [ ] Create evolution line validation (detect 3-2-3 bottlenecks)
    - [ ] Fix basic energy unlimited validation in scoring
 

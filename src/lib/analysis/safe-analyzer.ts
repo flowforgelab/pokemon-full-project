@@ -2,6 +2,7 @@ import { Deck, DeckCard, Card } from '@prisma/client';
 import { DeckAnalysisResult, DeckArchetype } from './types';
 import { calculateMulliganProbability, calculateDeadDrawProbability, calculatePrizeAtLeastOne } from './probability-calculator';
 import { getCardQualityScore, analyzeTrainerQuality, categorizeCard, getUpgradeRecommendation } from './card-quality-database';
+import { analyzeEvolutionLines, getEvolutionLineWarnings } from './evolution-line-analyzer';
 
 /**
  * SafeAnalyzer - A bulletproof deck analyzer that ALWAYS returns valid data
@@ -562,6 +563,19 @@ export class SafeAnalyzer {
         suggestion: 'Add Quick Ball, Ultra Ball, or Pokemon Communication'
       });
     }
+    
+    // Evolution line analysis
+    const evolutionAnalysis = analyzeEvolutionLines(deck.cards);
+    const evolutionWarnings = getEvolutionLineWarnings(evolutionAnalysis);
+    
+    evolutionWarnings.forEach(ew => {
+      warnings.push({
+        severity: ew.severity,
+        category: 'Evolution Lines',
+        message: ew.message,
+        suggestion: ew.suggestion
+      });
+    });
 
     return warnings;
   }
@@ -656,6 +670,27 @@ export class SafeAnalyzer {
         suggestion: 'Add 2-3 more Basic Pokemon'
       });
     }
+    
+    // Add evolution line recommendations
+    const evolutionAnalysis = analyzeEvolutionLines(deck.cards);
+    evolutionAnalysis.lines.forEach(line => {
+      if (line.issues.length > 0) {
+        // Take the most important recommendation for each problematic line
+        const mainIssue = line.issues[0];
+        const mainRec = line.recommendations[0];
+        
+        if (mainRec) {
+          recommendations.push({
+            type: 'replace',
+            priority: line.bottleneck !== 'none' ? 'high' : 'medium',
+            reason: mainIssue,
+            impact: `Improved evolution consistency for ${line.name} line`,
+            suggestion: mainRec,
+            card: line.name
+          });
+        }
+      }
+    });
 
     // Sort by priority
     recommendations.sort((a, b) => {
