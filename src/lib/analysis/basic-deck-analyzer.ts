@@ -71,6 +71,9 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
   // 5. Check for evolution problems
   checkEvolutions(cards, advice, swapSuggestions);
   
+  // 6. Check for deck balance issues
+  checkDeckBalance(cards, counts, advice);
+  
   // Calculate score
   const score = calculateKidScore(advice);
   
@@ -150,29 +153,37 @@ function checkPokemonBalance(
     // Track what we've already suggested to remove
     const alreadySuggested = new Set<string>();
     
-    // Prioritize removing 4th copies
+    // Group Pokemon by name to suggest specific replacements
+    const pokemonByName = new Map<string, typeof pokemonCards[0]>();
+    pokemonCards.forEach(dc => pokemonByName.set(dc.card.name, dc));
+    
+    // Prioritize removing 4th copies with specific replacement suggestions
     pokemonCards.forEach(dc => {
       if (dc.quantity >= 4 && toRemove.length < 3 && !alreadySuggested.has(dc.card.name)) {
         toRemove.push({
           name: dc.card.name,
           quantity: 1,
-          reason: `You have ${dc.quantity}, but 3 is usually enough!`
+          reason: `You have ${dc.quantity}, but 3 is usually enough! Replace with a Trainer card.`
         });
         alreadySuggested.add(dc.card.name);
       }
     });
     
-    // Remove weak Pokemon (but don't duplicate suggestions)
+    // Remove weak Pokemon with specific suggestions
     const weakPokemon = pokemonCards.filter(dc => 
       dc.card.hp && parseInt(dc.card.hp) < 60 && !dc.card.evolvesFrom
     );
+    
+    // Sort weak Pokemon by quantity (remove extras first)
+    weakPokemon.sort((a, b) => b.quantity - a.quantity);
+    
     weakPokemon.forEach(dc => {
       if (toRemove.length < 5 && !alreadySuggested.has(dc.card.name)) {
-        const removeQty = Math.min(2, dc.quantity);
+        const removeQty = dc.quantity > 2 ? Math.min(2, dc.quantity - 1) : 1;
         toRemove.push({
           name: dc.card.name,
           quantity: removeQty,
-          reason: 'This Pokemon has low HP and might get knocked out easily'
+          reason: `Low HP (${dc.card.hp}). Replace ${removeQty} with stronger Basic Pokemon or Trainers.`
         });
         alreadySuggested.add(dc.card.name);
       }
@@ -346,16 +357,20 @@ function checkTrainerCards(
       const toRemove: Array<{name: string, quantity: number, reason: string}> = [];
       
       if (counts.pokemon > 20) {
+        // Be specific about which Pokemon to remove
+        const excessPokemon = Math.min(5, counts.pokemon - 18);
         toRemove.push({
-          name: "Some Pokemon cards",
-          quantity: 5,
-          reason: "You have too many Pokemon"
+          name: "Excess Pokemon (choose weakest ones)",
+          quantity: excessPokemon,
+          reason: `You have ${counts.pokemon} Pokemon. Remove ${excessPokemon} to make room for Trainers.`
         });
       } else if (counts.energy > 15) {
+        // Be specific about energy removal
+        const excessEnergy = Math.min(3, counts.energy - 13);
         toRemove.push({
-          name: "Some Energy cards", 
-          quantity: 3,
-          reason: "You have plenty of Energy"
+          name: "Basic Energy cards", 
+          quantity: excessEnergy,
+          reason: `You have ${counts.energy} Energy. ${13}-15 is usually enough.`
         });
       }
       
@@ -376,11 +391,16 @@ function checkTrainerCards(
   }
   
   // Check for important trainers
-  const hasDrawCards = cards.some(dc => 
-    dc.card.name.toLowerCase().includes('professor') ||
-    dc.card.name.toLowerCase().includes('research') ||
-    dc.card.name.toLowerCase().includes('hop')
-  );
+  const drawSupporters = ['professor', 'research', 'hop', 'cynthia', 'lillie', 'marnie', 
+                          'erika', 'bianca', 'shauna', 'tierno', 'sonia', 'bruno'];
+  const hasDrawCards = cards.some(dc => {
+    const cardName = dc.card.name.toLowerCase();
+    return drawSupporters.some(supporter => cardName.includes(supporter)) ||
+           (dc.card.rules && dc.card.rules.some(rule => 
+             rule.toLowerCase().includes('draw') && 
+             (rule.toLowerCase().includes('card') || rule.toLowerCase().includes('hand'))
+           ));
+  });
   
   if (!hasDrawCards) {
     advice.push({
@@ -408,8 +428,47 @@ function checkEvolutions(
 ) {
   const evolutionProblems: string[] = [];
   const missingBasics: Array<{evolved: string, basic: string, quantity: number}> = [];
+  const evolutionLineIssues: Array<{stage2: string, stage1: string, stage2Qty: number, stage1Qty: number}> = [];
   
-  // Check each evolution Pokemon
+  // Build evolution chains
+  const evolutionChains = new Map<string, {basic?: any, stage1?: any, stage2?: any}>();
+  
+  cards.forEach(dc => {
+    if (dc.card.subtypes?.includes('Stage 2')) {
+      const chainKey = dc.card.evolvesFrom || '';
+      if (!evolutionChains.has(chainKey)) evolutionChains.set(chainKey, {});
+      evolutionChains.get(chainKey)!.stage2 = dc;
+    } else if (dc.card.subtypes?.includes('Stage 1')) {
+      const chainKey = dc.card.name;
+      if (!evolutionChains.has(chainKey)) evolutionChains.set(chainKey, {});
+      evolutionChains.get(chainKey)!.stage1 = dc;
+      
+      // Also check for basic
+      const basicName = dc.card.evolvesFrom;
+      if (basicName) {
+        const basic = cards.find(c => c.card.name.toLowerCase() === basicName.toLowerCase());
+        if (basic) {
+          evolutionChains.get(chainKey)!.basic = basic;
+        }
+      }
+    }
+  });
+  
+  // Check evolution ratios
+  evolutionChains.forEach((chain, key) => {
+    if (chain.stage2 && chain.stage1) {
+      if (chain.stage2.quantity > chain.stage1.quantity) {
+        evolutionLineIssues.push({
+          stage2: chain.stage2.card.name,
+          stage1: chain.stage1.card.name,
+          stage2Qty: chain.stage2.quantity,
+          stage1Qty: chain.stage1.quantity
+        });
+      }
+    }
+  });
+  
+  // Check each evolution Pokemon for missing basics
   cards.forEach(dc => {
     if (dc.card.evolvesFrom) {
       const hasBasic = cards.some(other => 
@@ -429,6 +488,27 @@ function checkEvolutions(
     }
   });
   
+  // Report evolution ratio problems first
+  if (evolutionLineIssues.length > 0) {
+    const issue = evolutionLineIssues[0];
+    advice.push({
+      category: 'oops',
+      icon: '❌',
+      title: 'Evolution Line Imbalanced!',
+      message: `You have ${issue.stage2Qty} ${issue.stage2} but only ${issue.stage1Qty} ${issue.stage1}!`,
+      tip: 'You need enough Stage 1 Pokemon to evolve into your Stage 2s!',
+      fixIt: `Add more ${issue.stage1} or remove some ${issue.stage2}.`
+    });
+    
+    swapSuggestions!.push({
+      title: 'Fix Evolution Ratio',
+      priority: 'high',
+      remove: [{name: issue.stage2, quantity: 1, reason: `You have ${issue.stage2Qty} but only ${issue.stage1Qty} ${issue.stage1}`}],
+      add: [{name: issue.stage1, quantity: 1, why: 'Balance your evolution line'}]
+    });
+  }
+  
+  // Then report missing basics
   if (evolutionProblems.length > 0) {
     advice.push({
       category: 'oops',
@@ -462,22 +542,41 @@ function checkEvolutions(
 function calculateKidScore(advice: KidFriendlyAdvice[]): number {
   let score = 100;
   
+  // Count issues by category
+  let oopsCount = 0;
+  let needsHelpCount = 0;
+  let goodCount = 0;
+  
   advice.forEach(item => {
     switch (item.category) {
       case 'oops':
-        score -= 20;
+        oopsCount++;
+        score -= 15; // Reduced from 20
         break;
       case 'needs-help':
-        score -= 10;
+        needsHelpCount++;
+        score -= 8; // Reduced from 10
         break;
       case 'good':
-        score += 5;
+        goodCount++;
+        score += 3; // Reduced from 5
         break;
       case 'great':
-        score += 10;
+        score += 5; // Reduced from 10
         break;
     }
   });
+  
+  // Additional penalties for multiple issues
+  if (oopsCount >= 2) score -= 10;
+  if (needsHelpCount >= 3) score -= 10;
+  
+  // Cap bonuses from 'good' categories
+  const maxGoodBonus = 15;
+  const currentGoodBonus = goodCount * 3;
+  if (currentGoodBonus > maxGoodBonus) {
+    score = score - currentGoodBonus + maxGoodBonus;
+  }
   
   return Math.max(0, Math.min(100, score));
 }
@@ -609,6 +708,118 @@ export function getDetailedSwapRecommendations(
 }
 
 /**
+ * Check deck balance and common issues
+ */
+function checkDeckBalance(
+  cards: Array<DeckCard & { card: Card }>,
+  counts: ReturnType<typeof countCardTypes>,
+  advice: KidFriendlyAdvice[]
+) {
+  // Check for switch cards
+  const hasSwitchCards = cards.some(dc => {
+    const cardName = dc.card.name.toLowerCase();
+    return cardName.includes('switch') || cardName.includes('guzma') || 
+           cardName.includes('tate') || cardName.includes('escape rope');
+  });
+  
+  if (!hasSwitchCards) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Missing Switch Cards!',
+      message: 'You need ways to switch your Pokemon when they get stuck!',
+      tip: 'If your Active Pokemon gets hurt or can\'t retreat, you\'re stuck!',
+      fixIt: 'Add Switch or similar cards to help Pokemon escape.',
+      cardsToAdd: [
+        { name: 'Switch', why: 'Free retreat for any Pokemon!' },
+        { name: 'Escape Rope', why: 'Both players switch - tactical play!' }
+      ]
+    });
+  }
+  
+  // Check for search cards
+  const hasSearchCards = cards.some(dc => {
+    const cardName = dc.card.name.toLowerCase();
+    return cardName.includes('ball') || cardName.includes('treasure') || 
+           cardName.includes('communication') || cardName.includes('fan club');
+  });
+  
+  if (!hasSearchCards) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Need Pokemon Search Cards!',
+      message: 'You need ways to find the Pokemon you want!',
+      tip: 'Without search cards, you might not draw the Pokemon you need.',
+      fixIt: 'Add Poke Ball, Quick Ball, or similar cards.',
+      cardsToAdd: [
+        { name: 'Quick Ball', why: 'Find any Basic Pokemon fast!' },
+        { name: 'Poke Ball', why: 'Search for any Pokemon!' }
+      ]
+    });
+  }
+  
+  // Check for excessive legendary/rare Pokemon
+  const specialPokemon = cards.filter(dc => 
+    dc.card.supertype === 'POKEMON' && 
+    (dc.card.subtypes?.includes('GX') || dc.card.subtypes?.includes('EX') || 
+     dc.card.subtypes?.includes('V') || dc.card.subtypes?.includes('VMAX') ||
+     dc.card.subtypes?.includes('Prism Star'))
+  );
+  const rareCount = specialPokemon.reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  if (rareCount > 6) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Too Many Special Pokemon!',
+      message: `You have ${rareCount} GX/EX/V/Prism Star Pokemon. That\'s a lot!`,
+      tip: 'When these get knocked out, your opponent takes 2 or 3 prizes instead of 1!',
+      fixIt: 'Mix in some regular Pokemon that only give up 1 prize.',
+      cardsToRemove: specialPokemon.slice(0, 2).map(dc => ({
+        name: dc.card.name,
+        reason: 'Gives up multiple prizes'
+      })),
+      cardsToAdd: [
+        { name: 'Regular Pokemon (1 prize)', why: 'Harder for opponent to win!' }
+      ]
+    });
+  }
+  
+  // Check for energy acceleration
+  const hasEnergyAccel = cards.some(dc => {
+    const cardName = dc.card.name.toLowerCase();
+    return cardName.includes('patch') || cardName.includes('welder') || 
+           cardName.includes('melony') || cardName.includes('elesa') ||
+           (dc.card.abilities && dc.card.abilities.some(a => 
+             a.text?.toLowerCase().includes('attach') && 
+             a.text?.toLowerCase().includes('energy')
+           ));
+  });
+  
+  const maxAttackCost = Math.max(...cards
+    .filter(dc => dc.card.attacks)
+    .map(dc => dc.card.attacks?.reduce((max, attack) => 
+      Math.max(max, attack.cost?.length || 0), 0) || 0
+    ));
+  
+  if (maxAttackCost >= 3 && !hasEnergyAccel) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Slow Energy Setup!',
+      message: 'Your Pokemon need 3+ Energy to attack but you can only attach 1 per turn!',
+      tip: 'Energy acceleration helps power up big attacks faster.',
+      fixIt: 'Add cards that attach extra Energy or search for Energy.',
+      cardsToAdd: [
+        { name: 'Twin Energy (counts as 2!)', why: 'Powers up attacks faster!' },
+        { name: 'Energy Search', why: 'Find the Energy you need!' }
+      ]
+    });
+  }
+}
+
+/**
  * Generate trade suggestions for duplicate cards
  */
 function generateTradeSuggestions(
@@ -617,7 +828,11 @@ function generateTradeSuggestions(
   const suggestions: Array<{card: string, quantity: number, reason: string}> = [];
   
   cards.forEach(dc => {
-    if (dc.quantity > 4) {
+    // Basic energy can have unlimited copies
+    const isBasicEnergy = dc.card.supertype === 'ENERGY' && 
+                         dc.card.subtypes?.includes('Basic');
+    
+    if (!isBasicEnergy && dc.quantity > 4) {
       suggestions.push({
         card: dc.card.name,
         quantity: dc.quantity - 4,
