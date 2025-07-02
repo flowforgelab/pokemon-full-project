@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { api } from '@/utils/api';
-import { analyzeBasicDeck, getKidFriendlyRecommendations } from '@/lib/analysis/basic-deck-analyzer';
+import { 
+  analyzeBasicDeck, 
+  getKidFriendlyRecommendations,
+  getDetailedSwapRecommendations,
+  getKidFriendlyTradeSuggestions
+} from '@/lib/analysis/basic-deck-analyzer';
 import type { BasicDeckAnalysis, KidFriendlyAdvice } from '@/lib/analysis/basic-deck-analyzer';
 import { 
   SparklesIcon,
@@ -21,6 +26,8 @@ export default function BasicDeckAnalyzePage() {
   const router = useRouter();
   const deckId = params?.id as string;
   const [analysis, setAnalysis] = useState<BasicDeckAnalysis | null>(null);
+  const [stepByStepMode, setStepByStepMode] = useState(false);
+  const [showSwapDetails, setShowSwapDetails] = useState(false);
 
   // Fetch deck data
   const { data: deck, isLoading: deckLoading } = api.deck.getById.useQuery(deckId, {
@@ -167,6 +174,107 @@ export default function BasicDeckAnalyzePage() {
                 </div>
               ))}
             </div>
+
+            {/* Swap Suggestions Toggle */}
+            {analysis && analysis.swapSuggestions && analysis.swapSuggestions.length > 0 && (
+              <div className="flex justify-center space-x-4 mb-6">
+                <button
+                  onClick={() => setShowSwapDetails(!showSwapDetails)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                >
+                  <SparklesIcon className="h-5 w-5 mr-2" />
+                  {showSwapDetails ? 'Hide' : 'Show'} Card Swaps
+                </button>
+                <button
+                  onClick={() => setStepByStepMode(!stepByStepMode)}
+                  className={`px-4 py-2 rounded-lg flex items-center ${
+                    stepByStepMode 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  🎯 {stepByStepMode ? 'One Fix at a Time' : 'Show All Fixes'}
+                </button>
+              </div>
+            )}
+
+            {/* Detailed Swap Suggestions */}
+            {showSwapDetails && analysis && analysis.swapSuggestions && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-6 mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  📋 Specific Card Changes:
+                </h2>
+                <div className="space-y-4">
+                  {getDetailedSwapRecommendations(analysis, stepByStepMode).map((line, index) => {
+                    if (line.includes('**')) {
+                      // Title lines
+                      const titleMatch = line.match(/\*\*(.+?)\*\*/);
+                      if (titleMatch) {
+                        return (
+                          <h3 key={index} className="text-lg font-semibold text-gray-900 dark:text-white mt-4">
+                            {line.replace(/\*\*/g, '')}
+                          </h3>
+                        );
+                      }
+                    } else if (line.includes('Take out these cards:')) {
+                      return (
+                        <p key={index} className="text-red-600 dark:text-red-400 font-medium mt-2">
+                          {line}
+                        </p>
+                      );
+                    } else if (line.includes('Add these cards instead:')) {
+                      return (
+                        <p key={index} className="text-green-600 dark:text-green-400 font-medium mt-2">
+                          {line}
+                        </p>
+                      );
+                    } else if (line.includes('•')) {
+                      // Card items
+                      const rarityMatch = line.match(/\[(.+?)\]/);
+                      const isCommon = rarityMatch && rarityMatch[1].includes('Easy to find');
+                      return (
+                        <div key={index} className="ml-4 flex items-start">
+                          <span className="text-gray-600 dark:text-gray-400">{line}</span>
+                          {isCommon && (
+                            <span className="ml-2 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                              Easy to find!
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }
+                    return <p key={index} className="text-gray-700 dark:text-gray-300">{line}</p>;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Trade Suggestions */}
+            {analysis && analysis.tradeSuggestions && analysis.tradeSuggestions.length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6 mb-6">
+                <div className="space-y-2">
+                  {getKidFriendlyTradeSuggestions(analysis).map((line, index) => {
+                    if (line.includes('**')) {
+                      const titleMatch = line.match(/\*\*(.+?)\*\*/);
+                      if (titleMatch) {
+                        return (
+                          <h2 key={index} className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                            {line.replace(/\*\*/g, '')}
+                          </h2>
+                        );
+                      }
+                    } else if (line.includes('Trading tip:')) {
+                      return (
+                        <p key={index} className="text-sm text-yellow-700 dark:text-yellow-300 italic mt-4">
+                          {line}
+                        </p>
+                      );
+                    }
+                    return <p key={index} className="text-gray-700 dark:text-gray-300 ml-4">{line}</p>;
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Recommendations */}
             {analysis && (

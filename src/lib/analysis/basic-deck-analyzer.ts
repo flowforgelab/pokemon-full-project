@@ -1,8 +1,9 @@
 /**
- * Basic Deck Analyzer for Kids (Ages 6-8)
+ * Basic Deck Analyzer for Kids (Ages 6-8) - Version 2
  * 
  * Provides simple, friendly advice about Pokemon TCG decks
  * using language and concepts that young players can understand
+ * Now includes specific card replacement recommendations!
  */
 
 import { Card, DeckCard } from '@prisma/client';
@@ -14,6 +15,8 @@ export interface KidFriendlyAdvice {
   message: string;
   tip?: string;
   fixIt?: string;
+  cardsToRemove?: Array<{name: string, reason: string}>;
+  cardsToAdd?: Array<{name: string, why: string}>;
 }
 
 export interface BasicDeckAnalysis {
@@ -22,6 +25,14 @@ export interface BasicDeckAnalysis {
   overallMessage: string;
   advice: KidFriendlyAdvice[];
   funFact?: string;
+  swapSuggestions?: Array<{
+    title: string;
+    priority: 'high' | 'medium' | 'low';
+    remove: Array<{name: string, quantity: number, reason: string}>;
+    add: Array<{name: string, quantity: number, why: string, rarity?: string}>;
+  }>;
+  stepByStepMode?: boolean;
+  tradeSuggestions?: Array<{card: string, quantity: number, reason: string}>;
 }
 
 /**
@@ -29,6 +40,7 @@ export interface BasicDeckAnalysis {
  */
 export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): BasicDeckAnalysis {
   const advice: KidFriendlyAdvice[] = [];
+  const swapSuggestions: BasicDeckAnalysis['swapSuggestions'] = [];
   
   // Count different types of cards
   const counts = countCardTypes(cards);
@@ -48,19 +60,22 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
   }
   
   // 2. Check Pokemon balance
-  checkPokemonBalance(counts, advice);
+  checkPokemonBalance(counts, advice, cards, swapSuggestions);
   
   // 3. Check energy cards
-  checkEnergyBalance(cards, counts, advice);
+  checkEnergyBalance(cards, counts, advice, swapSuggestions);
   
   // 4. Check trainer cards
-  checkTrainerCards(cards, counts, advice);
+  checkTrainerCards(cards, counts, advice, swapSuggestions);
   
   // 5. Check for evolution problems
-  checkEvolutions(cards, advice);
+  checkEvolutions(cards, advice, swapSuggestions);
   
   // Calculate score
   const score = calculateKidScore(advice);
+  
+  // Generate trade suggestions for duplicates
+  const tradeSuggestions = generateTradeSuggestions(cards);
   
   return {
     deckScore: score,
@@ -70,7 +85,9 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
       const order = { 'oops': 0, 'needs-help': 1, 'good': 2, 'great': 3 };
       return order[a.category] - order[b.category];
     }),
-    funFact: getRandomFunFact()
+    funFact: getRandomFunFact(),
+    swapSuggestions: swapSuggestions.length > 0 ? swapSuggestions : undefined,
+    tradeSuggestions: tradeSuggestions.length > 0 ? tradeSuggestions : undefined
   };
 }
 
@@ -105,8 +122,12 @@ function countCardTypes(cards: Array<DeckCard & { card: Card }>) {
  */
 function checkPokemonBalance(
   counts: ReturnType<typeof countCardTypes>,
-  advice: KidFriendlyAdvice[]
+  advice: KidFriendlyAdvice[],
+  cards: Array<DeckCard & { card: Card }>,
+  swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
+  const pokemonCards = cards.filter(dc => dc.card.supertype === 'POKEMON');
+  
   // Check total Pokemon count
   if (counts.pokemon < 12) {
     advice.push({
@@ -115,9 +136,55 @@ function checkPokemonBalance(
       title: 'Need More Pokemon Friends!',
       message: `You only have ${counts.pokemon} Pokemon. Most decks work better with 15-20 Pokemon!`,
       tip: 'Pokemon are your main fighters. Without enough Pokemon, you might not have anyone to battle with!',
-      fixIt: 'Add more Pokemon to your deck, especially Basic Pokemon that don\'t evolve from anything.'
+      fixIt: 'Add more Pokemon to your deck, especially Basic Pokemon that don\'t evolve from anything.',
+      cardsToAdd: [
+        { name: 'Basic Pokemon like Pikachu or Charmander', why: 'You need them to start the game!' },
+        { name: 'Pokemon that match your Energy types', why: 'So they can use their attacks!' }
+      ]
     });
   } else if (counts.pokemon > 25) {
+    // Find specific Pokemon to remove
+    const toRemove: Array<{name: string, quantity: number, reason: string}> = [];
+    const toAdd: Array<{name: string, quantity: number, why: string}> = [];
+    
+    // Track what we've already suggested to remove
+    const alreadySuggested = new Set<string>();
+    
+    // Prioritize removing 4th copies
+    pokemonCards.forEach(dc => {
+      if (dc.quantity >= 4 && toRemove.length < 3 && !alreadySuggested.has(dc.card.name)) {
+        toRemove.push({
+          name: dc.card.name,
+          quantity: 1,
+          reason: `You have ${dc.quantity}, but 3 is usually enough!`
+        });
+        alreadySuggested.add(dc.card.name);
+      }
+    });
+    
+    // Remove weak Pokemon (but don't duplicate suggestions)
+    const weakPokemon = pokemonCards.filter(dc => 
+      dc.card.hp && parseInt(dc.card.hp) < 60 && !dc.card.evolvesFrom
+    );
+    weakPokemon.forEach(dc => {
+      if (toRemove.length < 5 && !alreadySuggested.has(dc.card.name)) {
+        const removeQty = Math.min(2, dc.quantity);
+        toRemove.push({
+          name: dc.card.name,
+          quantity: removeQty,
+          reason: 'This Pokemon has low HP and might get knocked out easily'
+        });
+        alreadySuggested.add(dc.card.name);
+      }
+    });
+    
+    // Add useful trainer cards with rarity info
+    toAdd.push(
+      { name: "Professor's Research", quantity: 4, why: "Draw 7 new cards!", rarity: "Common - Easy to find!" },
+      { name: "Quick Ball", quantity: 4, why: "Find Basic Pokemon fast!", rarity: "Uncommon" },
+      { name: "Switch", quantity: 3, why: "Help Pokemon escape from battle!", rarity: "Common - Easy to find!" }
+    );
+    
     advice.push({
       category: 'needs-help',
       icon: '🤔',
@@ -126,6 +193,15 @@ function checkPokemonBalance(
       tip: 'Too many Pokemon means not enough Trainer cards to help them battle!',
       fixIt: 'Take out some Pokemon and add Trainer cards that help you find Pokemon and draw cards.'
     });
+    
+    if (toRemove.length > 0) {
+      swapSuggestions!.push({
+        title: 'Pokemon Balance Fix',
+        priority: 'high',
+        remove: toRemove,
+        add: toAdd
+      });
+    }
   } else {
     advice.push({
       category: 'good',
@@ -143,7 +219,10 @@ function checkPokemonBalance(
       title: 'Need More Basic Pokemon!',
       message: 'You need at least 8-10 Basic Pokemon to start the game!',
       tip: 'Basic Pokemon are the ones that don\'t say "Evolves from" on them.',
-      fixIt: 'Add more Basic Pokemon. Look for ones without "Stage 1" or "Stage 2" on the card!'
+      fixIt: 'Add more Basic Pokemon. Look for ones without "Stage 1" or "Stage 2" on the card!',
+      cardsToAdd: [
+        { name: 'Any Basic Pokemon (no "Evolves from" text)', why: 'You need them to start playing!' }
+      ]
     });
   }
 }
@@ -154,7 +233,8 @@ function checkPokemonBalance(
 function checkEnergyBalance(
   cards: Array<DeckCard & { card: Card }>,
   counts: ReturnType<typeof countCardTypes>,
-  advice: KidFriendlyAdvice[]
+  advice: KidFriendlyAdvice[],
+  swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
   // Check total energy
   if (counts.energy < 10) {
@@ -185,28 +265,50 @@ function checkEnergyBalance(
   }
   
   // Check energy types
-  const energyTypes = new Set<string>();
+  const energyTypeCount = new Map<string, number>();
   const pokemonTypes = new Set<string>();
   
   cards.forEach(dc => {
     if (dc.card.supertype === 'ENERGY' && dc.card.subtypes?.includes('Basic')) {
-      const name = dc.card.name.toLowerCase();
-      ['fire', 'water', 'grass', 'lightning', 'psychic', 'fighting', 'darkness', 'metal'].forEach(type => {
-        if (name.includes(type)) energyTypes.add(type);
-      });
+      const energyType = dc.card.name.replace(' Energy', '');
+      energyTypeCount.set(energyType, (energyTypeCount.get(energyType) || 0) + dc.quantity);
     } else if (dc.card.supertype === 'POKEMON' && dc.card.types) {
-      dc.card.types.forEach(type => pokemonTypes.add(type.toLowerCase()));
+      dc.card.types.forEach(type => pokemonTypes.add(type));
     }
   });
   
-  if (energyTypes.size > 2) {
+  if (energyTypeCount.size > 2) {
+    // Sort energy types by count
+    const sortedTypes = Array.from(energyTypeCount.entries()).sort((a, b) => b[1] - a[1]);
+    const keepTypes = sortedTypes.slice(0, 2);
+    const removeTypes = sortedTypes.slice(2);
+    
+    const toRemove = removeTypes.map(([type, count]) => ({
+      name: `${type} Energy`,
+      quantity: count,
+      reason: 'Too many different Energy types makes it hard to attack'
+    }));
+    
+    const toAdd = keepTypes.map(([type]) => ({
+      name: `${type} Energy`,
+      quantity: 3,
+      why: `Focus on ${type} type Pokemon!`
+    }));
+    
     advice.push({
       category: 'needs-help',
       icon: '🤔',
       title: 'Too Many Energy Types!',
-      message: `You\'re using ${energyTypes.size} different types of Energy. That makes it hard to attack!`,
+      message: `You\'re using ${energyTypeCount.size} different types of Energy. That makes it hard to attack!`,
       tip: 'Try to use only 1 or 2 types of Energy so your Pokemon can attack more easily.',
       fixIt: 'Pick your favorite Pokemon type and use mostly that Energy!'
+    });
+    
+    swapSuggestions!.push({
+      title: 'Energy Type Fix',
+      priority: 'high',
+      remove: toRemove,
+      add: toAdd
     });
   }
 }
@@ -217,10 +319,19 @@ function checkEnergyBalance(
 function checkTrainerCards(
   cards: Array<DeckCard & { card: Card }>,
   counts: ReturnType<typeof countCardTypes>,
-  advice: KidFriendlyAdvice[]
+  advice: KidFriendlyAdvice[],
+  swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
   // Check total trainers
   if (counts.trainers < 20) {
+    const toAdd: Array<{name: string, quantity: number, why: string, rarity?: string}> = [
+      { name: "Professor's Research", quantity: 4, why: "Draw 7 cards - super powerful!", rarity: "Common - Easy to find!" },
+      { name: "Poke Ball", quantity: 4, why: "Search your deck for Pokemon", rarity: "Common - Easy to find!" },
+      { name: "Switch", quantity: 4, why: "Retreat Pokemon for free", rarity: "Common - Easy to find!" },
+      { name: "Quick Ball", quantity: 4, why: "Find Basic Pokemon quickly", rarity: "Uncommon" },
+      { name: "Ordinary Rod", quantity: 2, why: "Get Pokemon back from discard", rarity: "Uncommon" }
+    ];
+    
     advice.push({
       category: 'needs-help',
       icon: '🤔',
@@ -229,6 +340,32 @@ function checkTrainerCards(
       tip: 'Good Trainer cards to add: Professor\'s Research, Poke Ball, and Switch!',
       fixIt: 'Add more Trainer cards to help your Pokemon battle better.'
     });
+    
+    // Only suggest swaps if we have too many Pokemon or Energy
+    if (counts.pokemon > 20 || counts.energy > 15) {
+      const toRemove: Array<{name: string, quantity: number, reason: string}> = [];
+      
+      if (counts.pokemon > 20) {
+        toRemove.push({
+          name: "Some Pokemon cards",
+          quantity: 5,
+          reason: "You have too many Pokemon"
+        });
+      } else if (counts.energy > 15) {
+        toRemove.push({
+          name: "Some Energy cards", 
+          quantity: 3,
+          reason: "You have plenty of Energy"
+        });
+      }
+      
+      swapSuggestions!.push({
+        title: 'Add Trainer Cards',
+        priority: 'medium',
+        remove: toRemove,
+        add: toAdd.slice(0, 3)
+      });
+    }
   } else if (counts.trainers > 30) {
     advice.push({
       category: 'good',
@@ -249,26 +386,14 @@ function checkTrainerCards(
     advice.push({
       category: 'oops',
       icon: '❌',
-      title: 'Need Cards That Let You Draw!',
-      message: 'You need Trainer cards that say "Draw cards" on them!',
-      tip: 'Professor\'s Research lets you draw 7 new cards!',
-      fixIt: 'Add Professor\'s Research or other cards that let you draw.'
-    });
-  }
-  
-  const hasPokeBalls = cards.some(dc => 
-    dc.card.name.toLowerCase().includes('ball') ||
-    dc.card.name.toLowerCase().includes('nest') ||
-    dc.card.name.toLowerCase().includes('net')
-  );
-  
-  if (!hasPokeBalls) {
-    advice.push({
-      category: 'needs-help',
-      icon: '🤔',
-      title: 'Need Poke Balls!',
-      message: 'Poke Ball cards help you find Pokemon in your deck!',
-      fixIt: 'Add Poke Ball, Great Ball, or Quick Ball to find Pokemon easier.'
+      title: 'Missing Draw Power!',
+      message: 'You don\'t have any cards that let you draw more cards!',
+      tip: 'Drawing cards is super important to find what you need!',
+      fixIt: 'Add Professor\'s Research or other cards that say "Draw"!',
+      cardsToAdd: [
+        { name: "Professor's Research", why: "Draw 7 cards every turn!" },
+        { name: "Hop", why: "Draw 3 cards - good for beginners!" }
+      ]
     });
   }
 }
@@ -278,21 +403,28 @@ function checkTrainerCards(
  */
 function checkEvolutions(
   cards: Array<DeckCard & { card: Card }>,
-  advice: KidFriendlyAdvice[]
+  advice: KidFriendlyAdvice[],
+  swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
-  // Group Pokemon by evolution lines
   const evolutionProblems: string[] = [];
+  const missingBasics: Array<{evolved: string, basic: string, quantity: number}> = [];
   
+  // Check each evolution Pokemon
   cards.forEach(dc => {
-    if (dc.card.supertype === 'POKEMON' && dc.card.evolvesFrom) {
-      // This Pokemon evolves from something
-      const evolvesFrom = dc.card.evolvesFrom;
+    if (dc.card.evolvesFrom) {
       const hasBasic = cards.some(other => 
-        other.card.name.toLowerCase().includes(evolvesFrom.toLowerCase())
+        other.card.name.toLowerCase() === dc.card.evolvesFrom!.toLowerCase()
       );
       
       if (!hasBasic) {
-        evolutionProblems.push(`${dc.card.name} needs ${evolvesFrom} to evolve!`);
+        evolutionProblems.push(
+          `You have ${dc.card.name} but no ${dc.card.evolvesFrom} to evolve from!`
+        );
+        missingBasics.push({
+          evolved: dc.card.name,
+          basic: dc.card.evolvesFrom,
+          quantity: Math.min(dc.quantity + 1, 4)
+        });
       }
     }
   });
@@ -306,6 +438,21 @@ function checkEvolutions(
       tip: evolutionProblems[0],
       fixIt: 'Add the Basic Pokemon that your evolved Pokemon need!'
     });
+    
+    if (missingBasics.length > 0) {
+      const toAdd = missingBasics.map(missing => ({
+        name: missing.basic,
+        quantity: missing.quantity,
+        why: `Needed to evolve into ${missing.evolved}`
+      }));
+      
+      swapSuggestions!.push({
+        title: 'Fix Evolution Lines',
+        priority: 'high',
+        remove: [],
+        add: toAdd
+      });
+    }
   }
 }
 
@@ -407,4 +554,103 @@ export function getKidFriendlyRecommendations(
   }
   
   return recommendations.slice(0, 5); // Max 5 recommendations
+}
+
+/**
+ * Get detailed swap recommendations in kid-friendly format
+ */
+export function getDetailedSwapRecommendations(
+  analysis: BasicDeckAnalysis,
+  stepByStep: boolean = false
+): string[] {
+  const swaps: string[] = [];
+  
+  if (analysis.swapSuggestions) {
+    // Sort by priority
+    const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+    const sortedSuggestions = [...analysis.swapSuggestions].sort(
+      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+    
+    // In step-by-step mode, only show the highest priority
+    const suggestionsToShow = stepByStep ? sortedSuggestions.slice(0, 1) : sortedSuggestions;
+    
+    if (stepByStep && sortedSuggestions.length > 1) {
+      swaps.push('\n🎯 **Let\'s fix one thing at a time!**');
+      swaps.push(`(${sortedSuggestions.length - 1} more fixes available after this one)\n`);
+    }
+    
+    suggestionsToShow.forEach(suggestion => {
+      const priorityEmoji = suggestion.priority === 'high' ? '🔴' : 
+                           suggestion.priority === 'medium' ? '🟡' : '🟢';
+      swaps.push(`\n📋 ${priorityEmoji} **${suggestion.title}**`);
+      
+      if (suggestion.remove.length > 0) {
+        swaps.push('\n❌ Take out these cards:');
+        suggestion.remove.forEach(card => {
+          swaps.push(`   • ${card.quantity}x ${card.name} - ${card.reason}`);
+        });
+      }
+      
+      if (suggestion.add.length > 0) {
+        swaps.push('\n✅ Add these cards instead:');
+        suggestion.add.forEach(card => {
+          let line = `   • ${card.quantity}x ${card.name} - ${card.why}`;
+          if (card.rarity) {
+            line += ` [${card.rarity}]`;
+          }
+          swaps.push(line);
+        });
+      }
+    });
+  }
+  
+  return swaps;
+}
+
+/**
+ * Generate trade suggestions for duplicate cards
+ */
+function generateTradeSuggestions(
+  cards: Array<DeckCard & { card: Card }>
+): Array<{card: string, quantity: number, reason: string}> {
+  const suggestions: Array<{card: string, quantity: number, reason: string}> = [];
+  
+  cards.forEach(dc => {
+    if (dc.quantity > 4) {
+      suggestions.push({
+        card: dc.card.name,
+        quantity: dc.quantity - 4,
+        reason: 'You can only use 4 of the same card in a deck!'
+      });
+    } else if (dc.quantity === 4 && dc.card.supertype === 'POKEMON' && 
+               dc.card.hp && parseInt(dc.card.hp) < 70) {
+      suggestions.push({
+        card: dc.card.name,
+        quantity: 1,
+        reason: 'Trade 1 for a stronger Pokemon!'
+      });
+    }
+  });
+  
+  return suggestions;
+}
+
+/**
+ * Get trade suggestions in kid-friendly format
+ */
+export function getKidFriendlyTradeSuggestions(
+  analysis: BasicDeckAnalysis
+): string[] {
+  const trades: string[] = [];
+  
+  if (analysis.tradeSuggestions && analysis.tradeSuggestions.length > 0) {
+    trades.push('\n🤝 **Cards You Could Trade With Friends:**');
+    analysis.tradeSuggestions.forEach(suggestion => {
+      trades.push(`   • ${suggestion.quantity}x ${suggestion.card} - ${suggestion.reason}`);
+    });
+    trades.push('\n💡 Trading tip: Look for cards that match your deck\'s type!');
+  }
+  
+  return trades;
 }
