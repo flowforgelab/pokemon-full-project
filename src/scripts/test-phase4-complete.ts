@@ -46,6 +46,16 @@ function testPhase4Complete() {
   console.log(`Total Issues: ${summary.total} (Win Rate Impact: ${summary.estimatedWinRateImpact}%)`);
   console.log(`Critical: ${summary.critical}, High: ${summary.high}, Medium: ${summary.medium}\n`);
   
+  // Show critical warnings
+  const criticalWarnings = warnings.filter(w => w.severity === 'critical');
+  if (criticalWarnings.length > 0) {
+    console.log('CRITICAL ISSUES:');
+    criticalWarnings.forEach(w => {
+      console.log(`- [${w.category.toUpperCase()}] ${w.title}: ${w.description}`);
+    });
+    console.log('');
+  }
+  
   // 2. Generate comprehensive recommendations
   console.log('2. BUDGET-AWARE RECOMMENDATIONS ($100 budget)');
   console.log('--------------------------------------------');

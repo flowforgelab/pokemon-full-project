@@ -12,13 +12,14 @@ import { analyzeMetaPosition } from './meta-context';
 import { buildSynergyGraph } from './synergy-graph';
 import { calculateDynamicSpeedRating } from './dynamic-speed-rating';
 import { analyzePrizeTradeEconomy } from './prize-trade-analysis';
+import { analyzeDeckCoherence } from './deck-coherence';
 
 export type WarningSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
 export interface DeckWarning {
   id: string;
   severity: WarningSeverity;
-  category: 'legality' | 'consistency' | 'power' | 'speed' | 'matchup' | 'economy';
+  category: 'coherence' | 'legality' | 'consistency' | 'power' | 'speed' | 'matchup' | 'economy';
   title: string;
   description: string;
   impact: string;
@@ -40,7 +41,11 @@ export function generateSmartWarnings(
 ): DeckWarning[] {
   const warnings: DeckWarning[] = [];
   
-  // 1. Check deck legality first
+  // 0. Check deck coherence first (most fundamental issues)
+  const coherenceWarnings = checkCoherenceWarnings(cards);
+  warnings.push(...coherenceWarnings);
+  
+  // 1. Check deck legality
   const legalityWarnings = checkLegalityWarnings(cards);
   warnings.push(...legalityWarnings);
   
@@ -72,6 +77,62 @@ export function generateSmartWarnings(
     }
     return b.priority - a.priority;
   });
+}
+
+/**
+ * Check for deck coherence issues
+ */
+function checkCoherenceWarnings(cards: Array<DeckCard & { card: Card }>): DeckWarning[] {
+  const warnings: DeckWarning[] = [];
+  const coherenceAnalysis = analyzeDeckCoherence(cards);
+  
+  coherenceAnalysis.issues.forEach((issue, index) => {
+    warnings.push({
+      id: `coherence-${issue.category}-${index}`,
+      severity: issue.severity === 'critical' ? 'critical' : 
+               issue.severity === 'major' ? 'high' : 'medium',
+      category: 'coherence',
+      title: issue.title,
+      description: issue.description,
+      impact: issue.impact,
+      suggestions: issue.suggestions,
+      priority: issue.severity === 'critical' ? 10 : 
+               issue.severity === 'major' ? 8 : 5,
+      autoFixable: false,
+      estimatedImpact: {
+        winRate: issue.severity === 'critical' ? -50 : 
+                issue.severity === 'major' ? -25 : -10,
+        consistency: issue.category === 'energy' || issue.category === 'synergy' ? -30 : -15,
+        speed: issue.category === 'strategy' ? 1 : 0
+      }
+    });
+  });
+  
+  // Add overall coherence warning if score is too low
+  if (coherenceAnalysis.coherenceScore < 50 && coherenceAnalysis.issues.length === 0) {
+    warnings.push({
+      id: 'coherence-overall',
+      severity: 'high',
+      category: 'coherence',
+      title: 'Deck Lacks Clear Strategy',
+      description: `Coherence score: ${coherenceAnalysis.coherenceScore}/100. No clear win condition identified.`,
+      impact: 'Deck will struggle against focused strategies',
+      suggestions: [
+        'Choose a primary win condition',
+        'Build around 1-2 key Pokemon',
+        'Ensure all cards support your strategy'
+      ],
+      priority: 7,
+      autoFixable: false,
+      estimatedImpact: {
+        winRate: -20,
+        consistency: -20,
+        speed: 0
+      }
+    });
+  }
+  
+  return warnings;
 }
 
 /**
@@ -150,23 +211,33 @@ function checkConsistencyWarnings(cards: Array<DeckCard & { card: Card }>): Deck
     const name = dc.card.name.toLowerCase();
     return dc.card.supertype === 'TRAINER' && 
            dc.card.subtypes?.includes('Supporter') &&
-           (name.includes('research') || name.includes('marnie') || 
-            name.includes('cynthia') || name.includes('n'));
+           (name.includes('research') || name.includes('iono') || 
+            name.includes('judge') || name.includes('professor') ||
+            name.includes('sycamore') || name.includes('juniper'));
   });
   const drawSupportCount = drawSupporters.reduce((sum, dc) => sum + dc.quantity, 0);
   
-  if (drawSupportCount < 6) {
+  // Check for draw engines too
+  const hasDrawEngine = cards.some(dc => {
+    const name = dc.card.name.toLowerCase();
+    return name.includes('bibarel') || name.includes('radiant greninja') || 
+           name.includes('crobat v') || name.includes('lumineon v');
+  });
+  
+  const minDrawSupport = hasDrawEngine ? 4 : 6;
+  
+  if (drawSupportCount < minDrawSupport) {
     warnings.push({
       id: 'consistency-draw',
-      severity: drawSupportCount < 4 ? 'critical' : 'high',
+      severity: drawSupportCount < 3 ? 'critical' : 'high',
       category: 'consistency',
       title: 'Insufficient Draw Support',
-      description: `Only ${drawSupportCount} draw Supporters (minimum: 6, ideal: 8-10)`,
+      description: `Only ${drawSupportCount} draw Supporters (minimum: ${minDrawSupport}, ideal: 6-8)`,
       impact: 'Will frequently dead draw and fail to set up',
       suggestions: [
         'Add 4 Professor\'s Research',
-        'Add 2-3 Marnie or similar shuffle-draw',
-        'Consider draw engines like Bibarel or Crobat V'
+        'Add 2-3 Iono for draw and disruption',
+        hasDrawEngine ? 'Good - you have a draw engine' : 'Consider Bibarel line or Radiant Greninja'
       ],
       priority: 8,
       autoFixable: false,
@@ -264,18 +335,18 @@ function checkPowerWarnings(cards: Array<DeckCard & { card: Card }>): DeckWarnin
     dc.card.attacks?.map(a => parseInt(a.damage) || 0) || [0]
   ));
   
-  if (maxDamage < 200) {
+  if (maxDamage < 280) {
     warnings.push({
       id: 'power-damage',
-      severity: maxDamage < 150 ? 'high' : 'medium',
+      severity: maxDamage < 200 ? 'high' : 'medium',
       category: 'power',
       title: 'Low Damage Output',
-      description: `Maximum damage is only ${maxDamage} (modern decks hit 250-300+)`,
-      impact: 'Cannot efficiently KO modern Pokemon VSTAR/VMAX',
+      description: `Maximum damage is only ${maxDamage} (modern ex Pokemon have 280-330 HP)`,
+      impact: 'Cannot OHKO modern ex Pokemon, losing prize trades',
       suggestions: [
-        'Add modern attackers that hit 250+ damage',
-        'Include damage modifiers like Choice Belt',
-        'Consider Pokemon with damage scaling abilities'
+        'Add attackers that hit 280+ (Charizard ex, Lugia VSTAR)',
+        'Include damage modifiers (Defiance Band, Choice Belt)',
+        'Consider Pokemon with scaling damage (Gardevoir ex, Chien-Pao ex)'
       ],
       priority: 7,
       autoFixable: false,
@@ -349,8 +420,10 @@ function checkSpeedWarnings(cards: Array<DeckCard & { card: Card }>): DeckWarnin
   // Check for energy acceleration
   const hasAccel = cards.some(dc => {
     const name = dc.card.name.toLowerCase();
-    return name.includes('elesa') || name.includes('welder') || 
-           name.includes('dark patch') || name.includes('metal saucer');
+    return name.includes('elesa') || name.includes('generator') || 
+           name.includes('dark patch') || name.includes('mirage gate') ||
+           name.includes('baxcalibur') || name.includes('gardevoir') ||
+           name.includes('archeops');
   });
   
   if (!hasAccel && speedRating.firstAttackTurn > 2) {
@@ -360,11 +433,11 @@ function checkSpeedWarnings(cards: Array<DeckCard & { card: Card }>): DeckWarnin
       category: 'speed',
       title: 'No Energy Acceleration',
       description: 'Deck relies on manual attachments only',
-      impact: 'Setup is slower than necessary',
+      impact: 'Setup is 1-2 turns slower than meta decks',
       suggestions: [
-        'Add type-specific acceleration (Elesa\'s Sparkle, Dark Patch, etc.)',
-        'Include Twin Energy or Double Turbo Energy',
-        'Consider Pokemon with energy acceleration abilities'
+        'Add type-specific acceleration (Electric Generator, Dark Patch)',
+        'Include Double Turbo Energy or Jet Energy',
+        'Consider Pokemon with acceleration (Baxcalibur, Gardevoir ex)'
       ],
       priority: 6,
       autoFixable: false,

@@ -32,103 +32,141 @@ export interface MetaContext {
   keyPokemon: string[]; // Most played Pokemon
 }
 
-// Current Standard Format Meta (as of 2024-2025 season)
+// Current Standard Format Meta (as of H-on Regulation Mark, 2024-2025)
 export const CURRENT_STANDARD_META: MetaContext = {
   format: 'standard',
-  lastUpdated: new Date('2024-12-01'),
-  formatSpeed: 'fast',
-  avgGameLength: 6.5,
-  powerCreepIndex: 8, // High power creep with VSTARs and ex Pokemon
+  lastUpdated: new Date('2025-01-02'),
+  formatSpeed: 'medium', // Slower than previous with more setup decks
+  avgGameLength: 7.5,
+  powerCreepIndex: 9, // ex Pokemon with 280-330 HP dominate
   dominantStrategies: [
-    'Single Prize attackers with high damage',
-    'VSTAR Pokemon with powerful abilities',
-    'Energy acceleration strategies',
-    'Lost Box toolbox decks',
-    'Path to the Peak stadium control'
+    'ex Pokemon with high HP and damage',
+    'Energy acceleration engines',
+    'Lost Zone engines for consistency',
+    'Hand disruption with Iono',
+    'Stadium wars with multiple options'
   ],
   keyTrainers: [
     "Professor's Research",
+    "Iono",
     "Boss's Orders",
-    "Quick Ball",
+    "Arven",
     "Ultra Ball",
-    "Path to the Peak",
+    "Nest Ball",
+    "Super Rod",
+    "Lost Vacuum",
+    "Switch Cart",
+    "Temple of Sinnoh",
     "Lost City",
-    "Colress's Experiment",
-    "Cross Switcher",
-    "Battle VIP Pass",
-    "Irida"
+    "Collapsed Stadium"
   ],
   keyPokemon: [
-    "Lugia VSTAR",
-    "Lost Box attackers",
-    "Giratina VSTAR", 
-    "Mew VMAX",
-    "Arceus VSTAR",
-    "Palkia VSTAR",
     "Charizard ex",
+    "Gardevoir ex",
+    "Lugia VSTAR",
+    "Lost Box (Sableye, Comfey, Cramorant)",
     "Miraidon ex",
-    "Gardevoir ex"
+    "Chien-Pao ex",
+    "Giratina VSTAR",
+    "Roaring Moon ex",
+    "Iron Hands ex"
   ],
   topDecks: [
     {
-      name: "Lugia VSTAR",
-      archetype: 'turbo',
+      name: "Charizard ex",
+      archetype: 'midrange',
       tierRating: 1,
-      avgSetupTurn: 2,
-      keyCards: ["Lugia VSTAR", "Archeops", "Lumineon V", "Professor's Research"],
-      winCondition: "Accelerate energy with Archeops, take OHKOs with Lugia",
+      avgSetupTurn: 3,
+      keyCards: ["Charizard ex", "Pidgeot ex", "Rare Candy", "Arven"],
+      winCondition: "Set up multiple Charizard ex for consistent 330 damage",
+      popularity: 20,
+      avgPrizesTakenPerTurn: 2,
+      weaknesses: ["Water weakness", "Setup disruption", "Iono to 2"],
+      strengths: ["Highest damage output", "Prize trade", "Pidgeot consistency"]
+    },
+    {
+      name: "Gardevoir ex",
+      archetype: 'control',
+      tierRating: 1,
+      avgSetupTurn: 3,
+      keyCards: ["Gardevoir ex", "Kirlia", "Refinement", "Psychic Embrace"],
+      winCondition: "Accelerate energy with ability, sweep with high damage",
       popularity: 15,
       avgPrizesTakenPerTurn: 2,
-      weaknesses: ["Path to the Peak", "Lightning weakness"],
-      strengths: ["Consistent setup", "High damage output", "Single prize attackers"]
+      weaknesses: ["Metal weakness", "Ability lock", "Slow setup"],
+      strengths: ["Energy acceleration", "Consistency", "Recovery options"]
     },
     {
       name: "Lost Box",
       archetype: 'control',
       tierRating: 1,
       avgSetupTurn: 2,
-      keyCards: ["Comfey", "Colress's Experiment", "Mirage Gate", "Sableye"],
-      winCondition: "Control board with Lost Box toolbox, take efficient KOs",
+      keyCards: ["Comfey", "Sableye", "Cramorant", "Mirage Gate"],
+      winCondition: "Control board with toolbox attackers, efficient KOs",
       popularity: 18,
       avgPrizesTakenPerTurn: 1.5,
-      weaknesses: ["Slow starts", "Lost Zone requirements"],
-      strengths: ["Versatility", "Comeback potential", "Efficient attackers"]
+      weaknesses: ["Iron Hands ex", "Spiritomb", "Slow Lost Zone"],
+      strengths: ["Versatility", "Prize denial", "Comeback potential"]
+    },
+    {
+      name: "Lugia VSTAR",
+      archetype: 'turbo',
+      tierRating: 2,
+      avgSetupTurn: 2,
+      keyCards: ["Lugia VSTAR", "Archeops", "Lost Vacuum", "Professor's Research"],
+      winCondition: "Accelerate with Archeops, OHKO with Lugia",
+      popularity: 12,
+      avgPrizesTakenPerTurn: 2,
+      weaknesses: ["Lightning weakness", "Collapsed Stadium", "Temple of Sinnoh"],
+      strengths: ["Explosive turns", "Colorless typing", "High damage"]
+    },
+    {
+      name: "Miraidon ex",
+      archetype: 'aggro',
+      tierRating: 2,
+      avgSetupTurn: 1,
+      keyCards: ["Miraidon ex", "Flaaffy", "Electric Generator", "Raikou V"],
+      winCondition: "Turbo setup with Tandem Unit, sweep with attackers",
+      popularity: 10,
+      avgPrizesTakenPerTurn: 2,
+      weaknesses: ["Fighting weakness", "Spiritomb", "Path disruption"],
+      strengths: ["Fastest setup", "Energy acceleration", "Bench filling"]
+    },
+    {
+      name: "Chien-Pao ex",
+      archetype: 'aggro',
+      tierRating: 2,
+      avgSetupTurn: 2,
+      keyCards: ["Chien-Pao ex", "Baxcalibur", "Irida", "Superior Energy Retrieval"],
+      winCondition: "Accelerate with Baxcalibur, OHKO everything",
+      popularity: 8,
+      avgPrizesTakenPerTurn: 2,
+      weaknesses: ["Metal weakness", "Ability lock", "Prize race"],
+      strengths: ["Unlimited damage", "Energy acceleration", "Irida consistency"]
     },
     {
       name: "Giratina VSTAR", 
       archetype: 'combo',
-      tierRating: 1,
+      tierRating: 3,
       avgSetupTurn: 3,
-      keyCards: ["Giratina VSTAR", "Comfey", "Mirage Gate", "Star Requiem"],
-      winCondition: "Set up Lost Zone for Star Requiem instant KO",
-      popularity: 12,
+      keyCards: ["Giratina VSTAR", "Comfey", "Colress's Experiment", "Star Requiem"],
+      winCondition: "Set up 10 Lost Zone for Star Requiem KO",
+      popularity: 5,
       avgPrizesTakenPerTurn: 2,
-      weaknesses: ["Dark weakness", "Reliance on Lost Zone"],
-      strengths: ["OHKO any Pokemon", "Tanky with high HP"]
+      weaknesses: ["Darkness weakness", "Lost Vacuum", "Speed"],
+      strengths: ["OHKO any Pokemon", "280 HP bulk", "Lost Impact damage"]
     },
     {
-      name: "Mew VMAX",
-      archetype: 'aggro',
-      tierRating: 2,
-      avgSetupTurn: 2,
-      keyCards: ["Mew VMAX", "Genesect V", "Fusion Strike Energy", "Cross Fusion Strike"],
-      winCondition: "Copy powerful attacks with Mew, draw through deck with Genesect",
-      popularity: 8,
-      avgPrizesTakenPerTurn: 2,
-      weaknesses: ["Dark weakness", "Path to the Peak"],
-      strengths: ["Consistency", "Flexibility", "Draw power"]
-    },
-    {
-      name: "Charizard ex",
+      name: "Roaring Moon ex",
       archetype: 'midrange',
-      tierRating: 2,
-      avgSetupTurn: 3,
-      keyCards: ["Charizard ex", "Pidgeot ex", "Rare Candy", "Burning Darkness"],
-      winCondition: "Set up Charizard ex for consistent 330 damage attacks",
-      popularity: 10,
+      tierRating: 3,
+      avgSetupTurn: 2,
+      keyCards: ["Roaring Moon ex", "Dark Patch", "Professor Sada's Vitality", "Frenzied Gouging"],
+      winCondition: "Set up Roaring Moon, take OHKOs with Calamity Storm",
+      popularity: 6,
       avgPrizesTakenPerTurn: 2,
-      weaknesses: ["Water weakness", "Stage 2 consistency"],
-      strengths: ["High damage", "Prize trade", "Search with Pidgeot"]
+      weaknesses: ["Grass weakness", "Special Energy reliance", "Setup"],
+      strengths: ["High damage", "Dark Patch acceleration", "Bulk"]
     }
   ]
 };

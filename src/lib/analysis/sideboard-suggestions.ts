@@ -125,24 +125,24 @@ function getMatchupCounters(
   weaknesses.forEach(weakness => {
     // Lost Box matchup
     if (weakness.matchup.includes('Lost Box')) {
-      if (!addedCards.has('klefki')) {
+      if (!addedCards.has('iron-hands')) {
         counters.push({
-          card: { name: 'Klefki', quantity: 1, category: 'pokemon' },
-          purpose: ['Blocks Comfey ability', 'Disrupts Lost Box engine'],
+          card: { name: 'Iron Hands ex', quantity: 1, category: 'pokemon' },
+          purpose: ['Amp You Very Much OHKOs Comfey/Sableye', '70 bench damage'],
           targetsMatchups: ['Lost Box'],
           priority: 'high',
-          swapsWith: ['1 basic energy']
+          swapsWith: ['1 tech attacker']
         });
-        addedCards.add('klefki');
+        addedCards.add('iron-hands');
       }
       
       if (!addedCards.has('lost-vacuum')) {
         counters.push({
           card: { name: 'Lost Vacuum', quantity: 2, category: 'item' },
-          purpose: ['Removes Colress\'s Experiment', 'Lost Zone synergy'],
-          targetsMatchups: ['Lost Box', 'Any Stadium deck'],
+          purpose: ['Removes PokéStop', 'Tool removal'],
+          targetsMatchups: ['Lost Box', 'Stadium decks'],
           priority: 'medium',
-          swapsWith: ['2 Switch/Escape Rope']
+          swapsWith: ['2 switching cards']
         });
         addedCards.add('lost-vacuum');
       }
@@ -162,31 +162,31 @@ function getMatchupCounters(
       }
     }
     
-    // Mew VMAX matchup  
-    if (weakness.matchup.includes('Mew')) {
-      if (!addedCards.has('drapion-v')) {
+    // Charizard ex matchup  
+    if (weakness.matchup.includes('Charizard')) {
+      if (!addedCards.has('baxcalibur')) {
         counters.push({
-          card: { name: 'Drapion V', quantity: 1, category: 'pokemon' },
-          purpose: ['Dark type hits Mew for weakness', 'Single prize attacker option'],
-          targetsMatchups: ['Mew VMAX', 'Psychic decks'],
+          card: { name: 'Baxcalibur', quantity: 1, category: 'pokemon' },
+          purpose: ['Buster Tail for 120 to bench', 'Snipe Pidgeot ex'],
+          targetsMatchups: ['Charizard ex'],
           priority: 'high',
-          swapsWith: ['1 utility Pokemon']
+          swapsWith: ['1 support Pokemon']
         });
-        addedCards.add('drapion-v');
+        addedCards.add('baxcalibur');
       }
     }
     
-    // Regidrago matchup
-    if (weakness.matchup.includes('Regidrago')) {
-      if (!addedCards.has('lord-charizard')) {
+    // Gardevoir ex matchup
+    if (weakness.matchup.includes('Gardevoir')) {
+      if (!addedCards.has('iron-valiant')) {
         counters.push({
-          card: { name: 'Radiant Charizard', quantity: 1, category: 'pokemon' },
-          purpose: ['Prize denial', 'Non-V attacker'],
-          targetsMatchups: ['Regidrago VSTAR'],
+          card: { name: 'Iron Valiant ex', quantity: 1, category: 'pokemon' },
+          purpose: ['Fighting type weakness', 'Fast attacker'],
+          targetsMatchups: ['Gardevoir ex'],
           priority: 'medium',
           swapsWith: ['1 other attacker']
         });
-        addedCards.add('lord-charizard');
+        addedCards.add('iron-valiant');
       }
     }
   });
@@ -237,20 +237,20 @@ function getDisruptionOptions(
 ): SideboardCard[] {
   const options: SideboardCard[] = [];
   
-  // Check if we have Judge/Marnie
+  // Check if we have hand disruption
   const hasHandDisruption = mainDeck.some(dc => 
     dc.card.name.toLowerCase().includes('judge') ||
-    dc.card.name.toLowerCase().includes('marnie') ||
-    dc.card.name.toLowerCase().includes('iono')
+    dc.card.name.toLowerCase().includes('iono') ||
+    dc.card.name.toLowerCase().includes('roxanne')
   );
   
   if (!hasHandDisruption) {
     options.push({
-      card: { name: 'Judge', quantity: 2, category: 'supporter' },
-      purpose: ['Reset both hands', 'Disrupt combo decks'],
-      targetsMatchups: ['Combo decks', 'Setup decks'],
+      card: { name: 'Iono', quantity: 2, category: 'supporter' },
+      purpose: ['Disrupt large hands', 'Late game comeback'],
+      targetsMatchups: ['Setup decks', 'Gardevoir ex'],
       priority: 'high',
-      swapsWith: ['2 draw supporters']
+      swapsWith: ['2 Professor\'s Research']
     });
   }
   
@@ -263,13 +263,13 @@ function getDisruptionOptions(
     swapsWith: ['1 other stadium']
   });
   
-  // Tool removal
+  // Lost Vacuum for flexibility
   options.push({
-    card: { name: 'Tool Scrapper', quantity: 1, category: 'item' },
-    purpose: ['Remove tools', 'Counter Choice Belt'],
-    targetsMatchups: ['Tool-heavy decks'],
-    priority: 'flex',
-    swapsWith: ['1 utility item']
+    card: { name: 'Lost Vacuum', quantity: 2, category: 'item' },
+    purpose: ['Remove stadiums/tools', 'Lost Zone synergy'],
+    targetsMatchups: ['Stadium decks', 'Tool decks'],
+    priority: 'high',
+    swapsWith: ['2 switching cards']
   });
   
   return options;
@@ -302,18 +302,18 @@ function getTechOptions(
   // Spiritomb for ability lock
   options.push({
     card: { name: 'Spiritomb', quantity: 1, category: 'pokemon' },
-    purpose: ['Block V abilities', 'Slow down setup'],
-    targetsMatchups: ['Ability-heavy decks'],
-    priority: 'medium',
+    purpose: ['Block V/ex abilities', 'Counter Miraidon/Gardevoir'],
+    targetsMatchups: ['Miraidon ex', 'Gardevoir ex', 'Chien-Pao ex'],
+    priority: 'high',
     swapsWith: ['1 consistency card']
   });
   
-  // Canceling Cologne for evolution denial
+  // Technical Machine for versatility
   options.push({
-    card: { name: 'Canceling Cologne', quantity: 1, category: 'item' },
-    purpose: ['Devolve Pokemon', 'Disrupt evolution decks'],
-    targetsMatchups: ['Evolution decks'],
-    priority: 'flex',
+    card: { name: 'Technical Machine: Devolution', quantity: 1, category: 'item' },
+    purpose: ['Devolve all opponent\'s Pokemon', 'Reset board state'],
+    targetsMatchups: ['Stage 2 decks', 'Gardevoir ex'],
+    priority: 'medium',
     swapsWith: ['1 utility item']
   });
   
@@ -337,13 +337,13 @@ function getEnergyHateOptions(
     swapsWith: ['2 consistency cards']
   });
   
-  // Enhanced Hammer for special energy
+  // Giacomo for hand + energy disruption
   options.push({
-    card: { name: 'Enhanced Hammer', quantity: 1, category: 'item' },
-    purpose: ['Remove special energy', 'Counter Twin/Double Turbo'],
-    targetsMatchups: ['Special energy decks'],
+    card: { name: 'Giacomo', quantity: 1, category: 'supporter' },
+    purpose: ['Discard special energy + draw', 'Unique disruption angle'],
+    targetsMatchups: ['Double Turbo decks', 'Jet Energy decks'],
     priority: 'flex',
-    swapsWith: ['1 utility item']
+    swapsWith: ['1 draw supporter']
   });
   
   return options;

@@ -269,16 +269,16 @@ function getRecommendationsForWarning(
         });
         
         recommendations.push({
-          card: { name: "Marnie", quantity: 3, category: "draw" },
+          card: { name: "Iono", quantity: 3, category: "draw" },
           reasoning: [
-            "Shuffle-draw that disrupts opponent",
-            "Great for comebacks",
-            "Doesn't discard resources"
+            "Draw cards equal to remaining prizes",
+            "Disrupts opponent's hand",
+            "Best shuffle-draw in format"
           ],
           priority: 'high',
           impact: { consistency: 15 },
-          synergiesWith: ["Path to the Peak", "Reset Stamp"],
-          estimatedImprovement: 10
+          synergiesWith: ["N's hand disruption strategy"],
+          estimatedImprovement: 12
         });
       }
       break;
@@ -315,43 +315,56 @@ function getRecommendationsForWarning(
       const types = getMainTypes(cards);
       if (types.includes('Lightning')) {
         recommendations.push({
-          card: { name: "Elesa's Sparkle", quantity: 3, category: "acceleration" },
+          card: { name: "Electric Generator", quantity: 4, category: "acceleration" },
           reasoning: [
-            "Attach 2 Lightning energy from hand",
-            "Accelerates Lightning Pokemon significantly",
-            "Key for Lightning-type decks"
+            "Flip 2 coins, attach Lightning energy for each heads",
+            "Free energy acceleration",
+            "Essential for Lightning decks"
           ],
           priority: 'high',
           impact: { speed: 20 },
-          synergiesWith: ["All Lightning Pokemon"],
+          synergiesWith: ["Miraidon ex", "Raikou V"],
           estimatedImprovement: 15
         });
-      } else if (types.includes('Fire')) {
+      } else if (types.includes('Water')) {
         recommendations.push({
-          card: { name: "Magma Basin", quantity: 2, category: "acceleration" },
+          card: { name: "Baxcalibur", quantity: 2, category: "acceleration" },
           reasoning: [
-            "Attach Fire energy from discard",
-            "Stadium that provides consistent acceleration",
-            "Works well with Professor's Research"
+            "Super Cold ability attaches Water energy from hand",
+            "Unlimited energy acceleration",
+            "Key for Water-type strategies"
           ],
           priority: 'high',
-          impact: { speed: 15 },
-          synergiesWith: ["Fire Pokemon", "Professor's Research"],
-          estimatedImprovement: 12
+          impact: { speed: 25 },
+          synergiesWith: ["Chien-Pao ex", "Origin Forme Palkia VSTAR"],
+          estimatedImprovement: 18
+        });
+      } else if (types.includes('Psychic')) {
+        recommendations.push({
+          card: { name: "Gardevoir ex", quantity: 3, category: "acceleration" },
+          reasoning: [
+            "Psychic Embrace accelerates from discard",
+            "Also a powerful attacker",
+            "Defines Psychic archetypes"
+          ],
+          priority: 'high',
+          impact: { speed: 20, power: 15 },
+          synergiesWith: ["Kirlia", "Zacian V"],
+          estimatedImprovement: 20
         });
       }
       
       // Universal acceleration
       recommendations.push({
-        card: { name: "Twin Energy", quantity: 2, category: "acceleration" },
+        card: { name: "Double Turbo Energy", quantity: 2, category: "acceleration" },
         reasoning: [
-          "Provides 2 Colorless energy",
-          "Perfect for non-V/GX attackers",
-          "Immediate acceleration"
+          "Provides 2 Colorless energy instantly",
+          "Small damage reduction is worth the speed",
+          "Works with all Pokemon"
         ],
         priority: 'medium',
         impact: { speed: 10 },
-        synergiesWith: ["Single-prize attackers"],
+        synergiesWith: ["Any attacker"],
         estimatedImprovement: 8
       });
       break;
@@ -379,12 +392,12 @@ function getSynergyBasedRecommendations(
           card: { name: "Bibarel", quantity: 2, category: "pokemon" },
           reasoning: [
             "Industrious Incisors draws up to 5 cards",
-            "Consistent draw engine",
-            "Single-prize support Pokemon"
+            "Single-prize consistency engine",
+            "Budget-friendly draw support"
           ],
           priority: 'medium',
           impact: { consistency: 20 },
-          synergiesWith: ["Bidoof", "Level Ball"],
+          synergiesWith: ["Bidoof", "Ultra Ball", "Irida"],
           estimatedImprovement: 12
         });
       }
