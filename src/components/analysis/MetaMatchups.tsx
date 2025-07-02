@@ -9,6 +9,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { XCircleIcon } from '@heroicons/react/24/outline';
 import type { MetaGameAnalysis, MatchupAnalysis } from '@/lib/analysis/types';
 
 interface MetaMatchupsProps {
@@ -45,7 +46,7 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
     return ChevronDownIcon;
   };
 
-  const sortedMatchups = [...matchups].sort((a, b) => b.winRate - a.winRate);
+  const sortedMatchups = meta.popularMatchups ? [...meta.popularMatchups].sort((a, b) => b.winRate - a.winRate) : [];
 
   return (
     <div className="space-y-6">
@@ -63,10 +64,10 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
           <div className="text-center">
             <TrophyIcon className="h-12 w-12 text-yellow-500 mx-auto mb-2" />
             <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-              Tier {meta.metaTier}
+              {meta.metaPosition.charAt(0).toUpperCase() + meta.metaPosition.slice(1)}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {meta.metaPosition}
+              {meta.archetypeMatch || 'Unknown Archetype'}
             </p>
           </div>
         </div>
@@ -76,26 +77,26 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Average Win Rate</p>
-          <p className={`text-2xl font-bold mt-1 ${getWinRateColor(meta.overallMetaScore * 100)}`}>
-            {(meta.overallMetaScore * 100).toFixed(1)}%
+          <p className={`text-2xl font-bold mt-1 ${getWinRateColor(meta.popularMatchups?.reduce((acc, m) => acc + m.winRate, 0) / (meta.popularMatchups?.length || 1) || 50)}`}>
+            {((meta.popularMatchups?.reduce((acc, m) => acc + m.winRate, 0) / (meta.popularMatchups?.length || 1)) || 50).toFixed(1)}%
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Favorable Matchups</p>
           <p className="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">
-            {matchups.filter(m => m.winRate >= 60).length}
+            {(meta.popularMatchups || []).filter(m => m.winRate >= 60).length}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Even Matchups</p>
           <p className="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400">
-            {matchups.filter(m => m.winRate >= 40 && m.winRate < 60).length}
+            {(meta.popularMatchups || []).filter(m => m.winRate >= 40 && m.winRate < 60).length}
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">Unfavorable</p>
           <p className="text-2xl font-bold mt-1 text-red-600 dark:text-red-400">
-            {matchups.filter(m => m.winRate < 40).length}
+            {(meta.popularMatchups || []).filter(m => m.winRate < 40).length}
           </p>
         </div>
       </div>
@@ -110,7 +111,7 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
             const Icon = getMatchupIcon(matchup.winRate);
             return (
               <div 
-                key={matchup.opponentDeck}
+                key={matchup.opponentArchetype}
                 className={`rounded-lg p-4 ${getWinRateBg(matchup.winRate)}`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -118,10 +119,10 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
                     <Icon className={`h-5 w-5 ${getWinRateColor(matchup.winRate)}`} />
                     <div>
                       <h5 className="font-medium text-gray-900 dark:text-white">
-                        vs {matchup.opponentDeck}
+                        vs {matchup.opponentArchetype}
                       </h5>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {matchup.opponentArchetype}
+                        {matchup.strategy}
                       </p>
                     </div>
                   </div>
@@ -145,8 +146,8 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
                   ))}
                 </div>
 
-                {/* Tech Cards */}
-                {matchup.techCards && matchup.techCards.length > 0 && (
+                {/* Tech Cards - removed as not in data structure
+                {false && matchup.techCards && matchup.techCards.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Recommended Tech Cards:
@@ -180,14 +181,14 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
             {meta.counterStrategies.map((strategy, idx) => (
               <div key={idx} className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
                 <p className="font-medium text-yellow-900 dark:text-yellow-100">
-                  {strategy.strategy}
+                  Against {strategy.targetArchetype}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {strategy.description}
+                  Effectiveness: {strategy.effectiveness}%
                 </p>
-                {strategy.counterCards && (
+                {strategy.cards && strategy.cards.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {strategy.counterCards.map((card, cardIdx) => (
+                    {strategy.cards.map((card, cardIdx) => (
                       <span 
                         key={cardIdx}
                         className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-800 rounded text-yellow-800 dark:text-yellow-200"
@@ -209,25 +210,25 @@ export default function MetaMatchups({ meta, matchups }: MetaMatchupsProps) {
           Format Information
         </h4>
         <div className="grid grid-cols-2 gap-4">
-          <div className={`rounded-lg p-4 ${meta.formatLegality.standard ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700'}`}>
+          <div className={`rounded-lg p-4 ${meta.formatEvaluation?.format === 'standard' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700'}`}>
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-900 dark:text-white">Standard</span>
-              {meta.formatLegality.standard ? (
+              {meta.formatEvaluation?.format === 'standard' ? (
                 <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
               ) : (
                 <XCircleIcon className="h-5 w-5 text-gray-400" />
               )}
             </div>
-            {meta.formatLegality.rotatingCards && meta.formatLegality.rotatingCards.length > 0 && (
+            {meta.rotationImpact?.cardsRotating && meta.rotationImpact.cardsRotating.length > 0 && (
               <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                {meta.formatLegality.rotatingCards.length} cards rotating soon
+                {meta.rotationImpact.cardsRotating.length} cards rotating soon
               </p>
             )}
           </div>
-          <div className={`rounded-lg p-4 ${meta.formatLegality.expanded ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700'}`}>
+          <div className={`rounded-lg p-4 ${meta.formatEvaluation?.format === 'expanded' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700'}`}>
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-900 dark:text-white">Expanded</span>
-              {meta.formatLegality.expanded ? (
+              {meta.formatEvaluation?.format === 'expanded' ? (
                 <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
               ) : (
                 <XCircleIcon className="h-5 w-5 text-gray-400" />

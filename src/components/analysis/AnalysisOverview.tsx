@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import type { DeckAnalysisResult } from '@/lib/analysis/types';
 import type { Deck, DeckCard, Card } from '@prisma/client';
+import { Supertype } from '@prisma/client';
 
 interface AnalysisOverviewProps {
   analysis: DeckAnalysisResult;
@@ -151,19 +152,19 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Tournament Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {((performance?.tournamentPerformance ?? 0) * 100).toFixed(1)}%
+              {Math.min(100, (performance?.tournamentPerformance ?? 0)).toFixed(1)}%
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Local Meta Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {(performance?.metaViability ?? 0) * 10}%
+              {Math.min(100, (performance?.metaViability ?? 0) * 10).toFixed(1)}%
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Online Win Rate</p>
             <p className="text-3xl font-bold mt-1 text-gray-900 dark:text-white">
-              {(performance?.powerLevel ?? 0) * 10}%
+              {Math.min(100, (performance?.powerLevel ?? 0) * 10).toFixed(1)}%
             </p>
           </div>
         </div>
@@ -257,19 +258,19 @@ export default function AnalysisOverview({ analysis, deck }: AnalysisOverviewPro
             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Pokémon</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {deck.cards.filter(c => c.card.supertype === 'POKEMON').reduce((sum, c) => sum + c.quantity, 0)}
+                {deck.cards.filter(c => c.card.supertype === Supertype.POKEMON).reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Trainers</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {deck.cards.filter(c => c.card.supertype === 'TRAINER').reduce((sum, c) => sum + c.quantity, 0)}
+                {deck.cards.filter(c => c.card.supertype === Supertype.TRAINER).reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
             <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">Energy</p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {deck.cards.filter(c => c.card.supertype === 'ENERGY').reduce((sum, c) => sum + c.quantity, 0)}
+                {deck.cards.filter(c => c.card.supertype === Supertype.ENERGY).reduce((sum, c) => sum + c.quantity, 0)}
               </p>
             </div>
           </div>

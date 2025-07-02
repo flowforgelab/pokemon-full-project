@@ -20,7 +20,7 @@ interface RecommendationPanelProps {
 }
 
 export default function RecommendationPanel({ recommendations, warnings }: RecommendationPanelProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['HIGH']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['high']));
 
   if (!recommendations && !warnings) {
     return (
@@ -32,14 +32,14 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
 
   // Group recommendations by priority
   const groupedRecommendations = recommendations.reduce((groups, rec) => {
-    const priority = rec.priority || 'MEDIUM';
+    const priority = rec.priority || 'medium';
     if (!groups[priority]) groups[priority] = [];
     groups[priority].push(rec);
     return groups;
   }, {} as Record<string, Recommendation[]>);
 
   const priorityConfig = {
-    HIGH: {
+    high: {
       label: 'High Priority',
       color: 'red',
       bgColor: 'bg-red-50 dark:bg-red-900/20',
@@ -47,7 +47,7 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
       textColor: 'text-red-800 dark:text-red-200',
       icon: ExclamationTriangleIcon,
     },
-    MEDIUM: {
+    medium: {
       label: 'Medium Priority',
       color: 'yellow',
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
@@ -55,7 +55,7 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
       textColor: 'text-yellow-800 dark:text-yellow-200',
       icon: LightBulbIcon,
     },
-    LOW: {
+    low: {
       label: 'Low Priority',
       color: 'blue',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
@@ -73,11 +73,14 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
     META: InformationCircleIcon,
   };
 
-  const getActionIcon = (action: string) => {
-    if (action.toLowerCase().includes('add')) return PlusCircleIcon;
-    if (action.toLowerCase().includes('remove')) return MinusCircleIcon;
-    if (action.toLowerCase().includes('replace') || action.toLowerCase().includes('swap')) return ArrowsRightLeftIcon;
-    return LightBulbIcon;
+  const getActionIcon = (type: string) => {
+    switch (type) {
+      case 'add': return PlusCircleIcon;
+      case 'remove': return MinusCircleIcon;
+      case 'replace': return ArrowsRightLeftIcon;
+      case 'adjust': return LightBulbIcon;
+      default: return LightBulbIcon;
+    }
   };
 
   const toggleCategory = (priority: string) => {
@@ -108,7 +111,7 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
                     {warning.message}
                   </p>
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    Severity: {warning.severity} | Type: {warning.type}
+                    Severity: {warning.severity} | Category: {warning.category}
                   </p>
                 </div>
               </div>
@@ -118,7 +121,7 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
       )}
 
       {/* Recommendations by Priority */}
-      {['HIGH', 'MEDIUM', 'LOW'].map((priority) => {
+      {['high', 'medium', 'low'].map((priority) => {
         const recs = groupedRecommendations[priority];
         if (!recs || recs.length === 0) return null;
 
@@ -150,8 +153,7 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
             {isExpanded && (
               <div className="px-6 pb-6 space-y-4">
                 {recs.map((rec, idx) => {
-                  const ActionIcon = getActionIcon(rec.action);
-                  const CategoryIcon = categoryIcons[rec.category as keyof typeof categoryIcons] || LightBulbIcon;
+                  const ActionIcon = getActionIcon(rec.type);
 
                   return (
                     <div 
@@ -161,14 +163,11 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
                       <div className="flex items-start gap-3">
                         <ActionIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CategoryIcon className="h-4 w-4 text-gray-500" />
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                              {rec.category}
-                            </span>
-                          </div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {rec.action}
+                            {rec.type === 'add' && `Add ${rec.quantity || 1}x ${rec.card}`}
+                            {rec.type === 'remove' && `Remove ${rec.quantity || 1}x ${rec.card}`}
+                            {rec.type === 'replace' && `Replace ${rec.targetCard} with ${rec.card}`}
+                            {rec.type === 'adjust' && `Adjust ${rec.card} quantity to ${rec.quantity}`}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             {rec.reason}
@@ -178,13 +177,13 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
                               Impact: {rec.impact}
                             </p>
                           )}
-                          {rec.suggestedCards && rec.suggestedCards.length > 0 && (
+                          {rec.alternativeOptions && rec.alternativeOptions.length > 0 && (
                             <div className="mt-3">
                               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Suggested Cards:
+                                Alternative Options:
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {rec.suggestedCards.map((card, cardIdx) => (
+                                {rec.alternativeOptions.map((card, cardIdx) => (
                                   <span 
                                     key={cardIdx}
                                     className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-300"
@@ -214,19 +213,19 @@ export default function RecommendationPanel({ recommendations, warnings }: Recom
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {groupedRecommendations.HIGH?.length || 0}
+              {groupedRecommendations.high?.length || 0}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">High Priority</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {groupedRecommendations.MEDIUM?.length || 0}
+              {groupedRecommendations.medium?.length || 0}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Medium Priority</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {groupedRecommendations.LOW?.length || 0}
+              {groupedRecommendations.low?.length || 0}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Low Priority</p>
           </div>

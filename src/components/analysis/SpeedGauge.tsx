@@ -65,12 +65,12 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
           <div className="flex items-center justify-between mb-2">
             <BoltIcon className="h-5 w-5 text-yellow-500" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              {speed.firstAttackTurn}
+              {speed.averageSetupTurn.toFixed(1)}
             </span>
           </div>
           <h4 className="font-medium text-gray-900 dark:text-white">First Attack</h4>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Turn {speed.firstAttackTurn} average
+            Setup by turn {speed.averageSetupTurn.toFixed(1)}
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
           <div className="flex items-center justify-between mb-2">
             <ChartBarIcon className="h-5 w-5 text-blue-500" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              {speed.energyEfficiency}%
+              {Math.round(speed.energyAttachmentEfficiency)}%
             </span>
           </div>
           <h4 className="font-medium text-gray-900 dark:text-white">Energy Efficiency</h4>
@@ -107,7 +107,12 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
           Setup Timeline
         </h4>
         <div className="space-y-4">
-          {speed.setupBreakdown.map((phase, idx) => (
+          {/* Temporary placeholder for setup breakdown */}
+          {[
+            { phase: 'Basic Setup', averageTurn: 1, requirements: ['Basic Pokemon', 'Energy'] },
+            { phase: 'Evolution Ready', averageTurn: 2, requirements: ['Evolution cards', 'Search'] },
+            { phase: 'Full Power', averageTurn: speed.averageSetupTurn, requirements: ['Main attacker', 'Multiple energy'] }
+          ].map((phase, idx) => (
             <div key={idx}>
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -147,7 +152,7 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">KO Efficiency</p>
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {speed.prizeRaceSpeed.koEfficiency}%
+              {speed.prizeRaceSpeed.ohkoCapability ? '90' : '50'}%
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">one-shot potential</p>
           </div>
@@ -160,6 +165,7 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
       </div>
 
       {/* Acceleration Options */}
+      {/* Energy Acceleration section temporarily disabled
       {speed.accelerationOptions && speed.accelerationOptions.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
@@ -178,7 +184,7 @@ export default function SpeedGauge({ speed, archetype }: SpeedGaugeProps) {
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

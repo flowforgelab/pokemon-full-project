@@ -72,16 +72,16 @@ export default function ConsistencyMetrics({ consistency }: ConsistencyMetricsPr
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
             <HandRaisedIcon className="h-5 w-5 text-gray-400" />
-            {getStatusIcon(consistency.mulliganProbability <= 15)}
+            {getStatusIcon(consistency.mulliganProbability * 100 <= 15)}
           </div>
           <h4 className="font-medium text-gray-900 dark:text-white">Mulligan Rate</h4>
-          <p className={`text-2xl font-bold mt-1 ${getPercentageColor(consistency.mulliganProbability, 15, true)}`}>
-            {consistency.mulliganProbability.toFixed(1)}%
+          <p className={`text-2xl font-bold mt-1 ${getPercentageColor(consistency.mulliganProbability * 100, 15, true)}`}>
+            {(consistency.mulliganProbability * 100).toFixed(1)}%
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {consistency.mulliganProbability <= 10 ? 'Excellent' : 
-             consistency.mulliganProbability <= 15 ? 'Good' : 
-             consistency.mulliganProbability <= 20 ? 'Average' : 'High'}
+            {consistency.mulliganProbability * 100 <= 10 ? 'Excellent' : 
+             consistency.mulliganProbability * 100 <= 15 ? 'Good' : 
+             consistency.mulliganProbability * 100 <= 20 ? 'Average' : 'High'}
           </p>
         </div>
 
@@ -89,11 +89,11 @@ export default function ConsistencyMetrics({ consistency }: ConsistencyMetricsPr
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
             <ExclamationTriangleIcon className="h-5 w-5 text-gray-400" />
-            {getStatusIcon(consistency.deadDrawProbability <= 20)}
+            {getStatusIcon(consistency.deadDrawProbability * 100 <= 20)}
           </div>
           <h4 className="font-medium text-gray-900 dark:text-white">Dead Draw Rate</h4>
-          <p className={`text-2xl font-bold mt-1 ${getPercentageColor(consistency.deadDrawProbability, 20, true)}`}>
-            {consistency.deadDrawProbability.toFixed(1)}%
+          <p className={`text-2xl font-bold mt-1 ${getPercentageColor(consistency.deadDrawProbability * 100, 20, true)}`}>
+            {(consistency.deadDrawProbability * 100).toFixed(1)}%
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Chance of unplayable opening hand
@@ -108,7 +108,7 @@ export default function ConsistencyMetrics({ consistency }: ConsistencyMetricsPr
           </div>
           <h4 className="font-medium text-gray-900 dark:text-white">Prize Resilience</h4>
           <p className={`text-2xl font-bold mt-1 ${getPercentageColor(consistency.prizeCardImpact.resilience, 70)}`}>
-            {consistency.prizeCardImpact.resilience}%
+            {consistency.prizeCardImpact.resilience.toFixed(1)}%
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Strategy survives prized cards
@@ -174,17 +174,17 @@ export default function ConsistencyMetrics({ consistency }: ConsistencyMetricsPr
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Turn {setup.turn}: {setup.scenario}
                 </span>
-                <span className={`text-sm font-bold ${getPercentageColor(setup.probability, 70)}`}>
-                  {setup.probability}%
+                <span className={`text-sm font-bold ${getPercentageColor(setup.probability * 100, 70)}`}>
+                  {(setup.probability * 100).toFixed(1)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${
-                    setup.probability >= 80 ? 'bg-green-500' : 
-                    setup.probability >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    setup.probability * 100 >= 80 ? 'bg-green-500' : 
+                    setup.probability * 100 >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                   }`}
-                  style={{ width: `${setup.probability}%` }}
+                  style={{ width: `${setup.probability * 100}%` }}
                 />
               </div>
               {setup.keyCards.length > 0 && (
