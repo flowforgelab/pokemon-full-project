@@ -317,6 +317,11 @@ export const deckRouter = createTRPCRouter({
             _count: {
               select: { cards: true },
             },
+            cards: {
+              select: {
+                quantity: true,
+              },
+            },
           },
         }),
         ctx.prisma.deck.count({ where }),
@@ -376,6 +381,11 @@ export const deckRouter = createTRPCRouter({
             format: true,
             _count: {
               select: { cards: true },
+            },
+            cards: {
+              select: {
+                quantity: true,
+              },
             },
           },
         }),

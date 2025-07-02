@@ -283,6 +283,8 @@ export default function DecksPage() {
 }
 
 function DeckCard({ deck, showActions, showCreator }: { deck: any; showActions?: boolean; showCreator?: boolean }) {
+  const totalCards = deck.cards?.reduce((sum: number, card: any) => sum + card.quantity, 0) || 0;
+  
   return (
     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -291,7 +293,10 @@ function DeckCard({ deck, showActions, showCreator }: { deck: any; showActions?:
             {deck.name}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {deck.format?.name || 'Standard'} • {deck._count?.cards || 0} cards
+            {deck.format?.name || 'Standard'} • 
+            <span className={totalCards === 60 ? 'text-green-600 dark:text-green-400' : totalCards > 60 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}>
+              {totalCards}/60 cards
+            </span>
           </p>
         </div>
         {deck.isPublic && (
