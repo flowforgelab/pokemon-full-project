@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure
 import { TRPCError } from '@trpc/server';
 import { DeckAnalyzer } from '@/lib/analysis/deck-analyzer';
 import { SafeAnalyzer } from '@/lib/analysis/safe-analyzer';
+import { EnhancedDeckAnalyzer } from '@/lib/analysis/enhanced-deck-analyzer';
 import { getAnalysisCache, redis } from '@/server/db/redis';
 import { pokemonTCGQueue } from '@/lib/jobs/queue-wrapper';
 import { 
@@ -106,16 +107,19 @@ export const analysisRouter = createTRPCRouter({
         }
       }
       
-      // Create analyzer instance - use SafeAnalyzer for production stability
-      const analyzer = new SafeAnalyzer();
+      // Create analyzer instance - use EnhancedDeckAnalyzer for real Pokemon TCG analysis
+      const analyzer = new EnhancedDeckAnalyzer({
+        format: deck.format?.name.toLowerCase() as 'standard' | 'expanded' || 'standard',
+        includeRotation: true
+      });
       
-      // Perform analysis with guaranteed valid results
+      // Perform analysis with real Pokemon knowledge
       let analysis;
       try {
         analysis = await analyzer.analyzeDeck(deck);
       } catch (error) {
-        console.error('Analysis failed, using SafeAnalyzer fallback:', error);
-        // SafeAnalyzer should never throw, but just in case...
+        console.error('Enhanced analysis failed, using SafeAnalyzer fallback:', error);
+        // Fallback to SafeAnalyzer if something goes wrong
         const safeAnalyzer = new SafeAnalyzer();
         analysis = await safeAnalyzer.analyzeDeck(deck);
       }
@@ -266,20 +270,27 @@ export const analysisRouter = createTRPCRouter({
         });
       }
       
-      // Create analyzer - use SafeAnalyzer for stability
-      const analyzer = new SafeAnalyzer();
+      // Create analyzer - use EnhancedDeckAnalyzer for better analysis
+      const analyzer1 = new EnhancedDeckAnalyzer({
+        format: deck1.format?.name.toLowerCase() as 'standard' | 'expanded' || 'standard',
+        includeRotation: true
+      });
+      const analyzer2 = new EnhancedDeckAnalyzer({
+        format: deck2.format?.name.toLowerCase() as 'standard' | 'expanded' || 'standard',
+        includeRotation: true
+      });
       
       // Analyze both decks separately with error handling
       let analysis1, analysis2;
       try {
-        analysis1 = await analyzer.analyzeDeck(deck1);
+        analysis1 = await analyzer1.analyzeDeck(deck1);
       } catch (error) {
         console.error('Analysis 1 failed:', error);
         analysis1 = await new SafeAnalyzer().analyzeDeck(deck1);
       }
       
       try {
-        analysis2 = await analyzer.analyzeDeck(deck2);
+        analysis2 = await analyzer2.analyzeDeck(deck2);
       } catch (error) {
         console.error('Analysis 2 failed:', error);
         analysis2 = await new SafeAnalyzer().analyzeDeck(deck2);
@@ -569,7 +580,10 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Always perform new analysis since we don't store lastAnalysis in the database
-      const analyzer = new SafeAnalyzer();
+      const analyzer = new EnhancedDeckAnalyzer({
+        format: deck.format?.name.toLowerCase() as 'standard' | 'expanded' || 'standard',
+        includeRotation: true
+      });
       let analysis;
       try {
         analysis = await analyzer.analyzeDeck(deck);
@@ -746,7 +760,10 @@ export const analysisRouter = createTRPCRouter({
       }
       
       // Get or generate analysis
-      const analyzer = new SafeAnalyzer();
+      const analyzer = new EnhancedDeckAnalyzer({
+        format: deck.format?.name.toLowerCase() as 'standard' | 'expanded' || 'standard',
+        includeRotation: true
+      });
       let analysis;
       try {
         analysis = await analyzer.analyzeDeck(deck);
