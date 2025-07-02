@@ -899,8 +899,23 @@ To deploy successfully on Vercel, configure these environment variables:
 
 ## 🔄 Last Updated
 - Date: 2025-07-03
-- Version: 1.0.33-MVP
+- Version: 1.0.34-MVP
 - Latest Updates:
+  - Major Deck Analyzer Improvements & Kid-Friendly Version (2025-07-03 Night):
+    - ✅ Fixed critical analyzer flaws based on brutally honest review
+    - ✅ Updated pricing to realistic 2024 values (basic energy $0.10, not $0.50!)
+    - ✅ Fixed budget tiers: $75/$150/$400/$800 (was fantasy $50/$100/$250/$500)
+    - ✅ Updated meta context with current H-on format decks (Charizard ex, Gardevoir ex)
+    - ✅ Replaced outdated recommendations (Iono instead of Marnie, modern energy acceleration)
+    - ✅ Added deck coherence validation that catches fundamental deck flaws
+    - ✅ Fixed format legality checking - now identifies Expanded-only cards
+    - ✅ Updated damage thresholds for modern 280-330 HP ex Pokemon
+    - ✅ Created kid-friendly basic deck analyzer for ages 6-12
+    - ✅ Basic analyzer uses simple language, emojis, and clear fix-it instructions
+    - ✅ Added analysis selector to choose between basic and advanced analysis
+    - ✅ Renamed existing analyzer to "Advanced Deck Analyzer"
+    - ✅ Basic analyzer checks: card count, Pokemon balance, energy types, trainers, evolutions
+    - ✅ Analyzer now correctly identifies incoherent decks like test Rayquaza/Magnezone/Heracross
   - Deck Analyzer Phase 4 Progress - 4/5 Complete! (2025-07-03 Evening):
     - ✅ Built smart warning system with 5 severity levels (critical → info)
     - ✅ Created specific card recommendations with reasoning and synergies
