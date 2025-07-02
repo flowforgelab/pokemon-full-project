@@ -5,6 +5,9 @@
  * Scores range from 1-10, with 10 being the best cards in the format.
  */
 
+import { Card } from '@prisma/client';
+import { isBasicEnergy, getBasicEnergyScore } from './deck-validator';
+
 export interface CardQualityEntry {
   name: string;
   score: number;
@@ -235,9 +238,24 @@ export const specialEnergyScores: Record<string, number> = {
 
 /**
  * Get the quality score for a card
+ * Can be called with either a card name or a full Card object
  */
-export function getCardQualityScore(cardName: string): number {
-  const name = cardName.toLowerCase();
+export function getCardQualityScore(cardNameOrCard: string | Card): number {
+  // Handle Card object
+  if (typeof cardNameOrCard === 'object' && 'name' in cardNameOrCard) {
+    const card = cardNameOrCard as Card;
+    
+    // Special handling for basic energy
+    if (card.supertype === 'ENERGY' && isBasicEnergy(card)) {
+      return getBasicEnergyScore(card);
+    }
+    
+    // Continue with normal scoring using the card name
+    return getCardQualityScore(card.name);
+  }
+  
+  // Handle string (card name)
+  const name = cardNameOrCard.toLowerCase();
   
   // Check all databases
   const databases = [
@@ -267,9 +285,11 @@ export function getCardQualityScore(cardName: string): number {
   
   // Default scores based on card type patterns
   if (name.includes('professor')) return 7; // Most professors are decent
-  if (name.includes('energy')) return 5; // Basic energy cards
   if (name.includes('ball')) return 6; // Most ball cards are decent
   if (name.includes('potion')) return 2; // Healing items are weak
+  
+  // Note: We don't give a default score for "energy" here anymore
+  // because basic energy should be handled by the Card object path
   
   return 5; // Default middle score
 }

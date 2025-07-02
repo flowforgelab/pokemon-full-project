@@ -3,6 +3,15 @@ import { DeckAnalysisResult, DeckArchetype } from './types';
 import { calculateMulliganProbability, calculateDeadDrawProbability, calculatePrizeAtLeastOne } from './probability-calculator';
 import { getCardQualityScore, analyzeTrainerQuality, categorizeCard, getUpgradeRecommendation } from './card-quality-database';
 import { analyzeEvolutionLines, getEvolutionLineWarnings } from './evolution-line-analyzer';
+import { validateDeckLegality, getDeckCompositionWarnings } from './deck-validator';
+import { analyzeMetaPosition, CURRENT_STANDARD_META } from './meta-context';
+import { getMatchupTable } from './matchup-predictor';
+import { buildSynergyGraph, getSynergyRecommendations } from './synergy-graph';
+import { calculateMultiFactorScore } from './multi-factor-scoring';
+import { calculateDynamicSpeedRating } from './dynamic-speed-rating';
+import { analyzePrizeTradeEconomy } from './prize-trade-analysis';
+import { generateSmartWarnings, getWarningSummary } from './smart-warnings';
+import { generateCardRecommendations } from './card-recommendations';
 
 /**
  * SafeAnalyzer - A bulletproof deck analyzer that ALWAYS returns valid data
@@ -24,22 +33,38 @@ export class SafeAnalyzer {
       const timestamp = new Date();
       const deckId = deck.id || 'unknown';
       
-      // Calculate basic scores (always return valid numbers)
-      const consistencyScore = this.calculateConsistencyScore(deck);
-      const powerScore = this.calculatePowerScore(deck);
-      const speedScore = this.calculateSpeedScore(deck);
-      const versatilityScore = this.calculateVersatilityScore(deck);
-      const metaRelevanceScore = 50; // Default middle value
-      const innovationScore = 70; // Default decent value
-      const difficultyScore = 50; // Default middle value
+      // Use Phase 3 multi-factor scoring
+      const multiFactorAnalysis = calculateMultiFactorScore(deck.cards);
       
-      // Calculate overall score (weighted average)
-      const overallScore = Math.round(
-        (consistencyScore * 0.3 + 
-         powerScore * 0.25 + 
-         speedScore * 0.25 + 
-         versatilityScore * 0.2) 
+      // Extract scores from multi-factor analysis
+      const consistencyScore = multiFactorAnalysis.scoreBreakdown.consistency;
+      const powerScore = multiFactorAnalysis.scoreBreakdown.power;
+      const speedScore = multiFactorAnalysis.scoreBreakdown.speed;
+      const versatilityScore = multiFactorAnalysis.scoreBreakdown.versatility;
+      const metaRelevanceScore = multiFactorAnalysis.scoreBreakdown.metaRelevance;
+      
+      // Use dynamic speed rating
+      const dynamicSpeed = calculateDynamicSpeedRating(deck.cards);
+      
+      // Analyze prize trade economy
+      const prizeTradeAnalysis = analyzePrizeTradeEconomy(deck.cards);
+      
+      // Build synergy graph
+      const synergyGraph = buildSynergyGraph(deck.cards);
+      const innovationScore = synergyGraph.synergyScore;
+      
+      // Get meta analysis (needed for meta field)
+      const metaAnalysis = analyzeMetaPosition(deck.cards);
+      
+      // Calculate difficulty based on complexity
+      const difficultyScore = this.calculateDifficultyScore(
+        deck.cards,
+        synergyGraph,
+        dynamicSpeed
       );
+      
+      // Use multi-factor overall score
+      const overallScore = multiFactorAnalysis.overallScore;
 
       // Build the complete result object with ALL required fields
       const result: DeckAnalysisResult = {
@@ -116,62 +141,74 @@ export class SafeAnalyzer {
             typeBalance: true,
             vulnerabilities: []
           },
-          abilityCombos: [],
-          trainerSynergy: [],
+          abilityCombos: this.getAbilityCombos(deck.cards),
+          trainerSynergy: this.getTrainerSynergies(synergyGraph),
           energySynergy: {
-            accelerationMethods: [],
+            accelerationMethods: this.getEnergyAcceleration(deck.cards),
             energyRecycling: [],
             efficiency: 70,
             consistency: 70
           },
           evolutionSynergy: {
-            supportCards: [],
+            supportCards: this.getEvolutionSupport(deck.cards),
             evolutionSpeed: 60,
             reliability: 70
           },
           attackCombos: [],
-          overallSynergy: 70,
-          synergyGraph: []
+          overallSynergy: synergyGraph.synergyScore,
+          synergyGraph: synergyGraph.edges.slice(0, 10).map(edge => ({
+            source: edge.source,
+            target: edge.target,
+            strength: edge.strength,
+            type: edge.type
+          }))
         },
         
         // Speed analysis
         speed: {
-          averageSetupTurn: 2.5,
-          energyAttachmentEfficiency: 70,
+          averageSetupTurn: dynamicSpeed.fullSetupTurn,
+          energyAttachmentEfficiency: dynamicSpeed.absoluteSpeed,
           drawPowerRating: Math.min(100, trainerCount * 5),
           searchEffectiveness: Math.min(100, trainerCount * 4),
-          firstTurnAdvantage: 50,
+          firstTurnAdvantage: dynamicSpeed.firstAttackTurn === 1 ? 80 : 50,
           prizeRaceSpeed: {
-            averagePrizesPerTurn: 1,
-            damageOutput: 80,
-            ohkoCapability: false,
+            averagePrizesPerTurn: prizeTradeAnalysis.averagePrizeValue,
+            damageOutput: this.getAverageDamageOutput(deck.cards),
+            ohkoCapability: this.hasOHKOPotential(deck.cards),
             twoHitKoReliability: 75,
-            comebackPotential: 60
+            comebackPotential: prizeTradeAnalysis.strategy.primaryApproach === 'single-prize' ? 80 : 60
           },
           recoverySpeed: 60,
-          lateGameSustainability: 70,
-          overallSpeed: 'medium' as const
+          lateGameSustainability: prizeTradeAnalysis.overallEfficiency,
+          overallSpeed: dynamicSpeed.classification as 'slow' | 'medium' | 'fast'
         },
         
         // Meta analysis
         meta: {
-          archetypeMatch: 'Custom Deck',
-          metaPosition: 'tier3' as const,
-          popularMatchups: [],
-          counterStrategies: [],
-          weaknesses: [],
+          archetypeMatch: this.determineArchetype(deck),
+          metaPosition: this.determineMetaTier(metaRelevanceScore),
+          popularMatchups: getMatchupTable(deck.cards, this.determineArchetype(deck))
+            .slice(0, 5)
+            .map(m => ({
+              deckName: m.opponentDeck,
+              winRate: m.winRate,
+              favorability: m.favorability,
+              keyFactors: m.keyFactors
+            })),
+          counterStrategies: metaAnalysis.recommendations,
+          weaknesses: this.getMetaWeaknesses(deck.cards),
           formatEvaluation: {
             format: 'standard',
-            viability: 70,
+            viability: metaRelevanceScore,
             legalityIssues: [],
-            formatSpecificStrengths: ['Balanced deck composition']
+            formatSpecificStrengths: this.getFormatStrengths(deck.cards, metaAnalysis)
           },
           rotationImpact: {
             cardsRotating: [],
             impactScore: 10,
             replacementSuggestions: {}
           },
-          techRecommendations: []
+          techRecommendations: this.getTechRecommendations(deck.cards, metaAnalysis)
         },
         
         // Archetype classification
@@ -206,10 +243,10 @@ export class SafeAnalyzer {
           innovation: innovationScore,
           difficulty: difficultyScore,
           breakdown: {
-            strengths: this.getStrengths(overallScore, consistencyScore, powerScore, speedScore),
-            weaknesses: this.getWeaknesses(overallScore, consistencyScore, powerScore, speedScore),
-            coreStrategy: 'Build a consistent board state and adapt to your opponent',
-            winConditions: ['Take 6 prizes through consistent attacks', 'Outlast your opponent']
+            strengths: multiFactorAnalysis.strengths,
+            weaknesses: multiFactorAnalysis.weaknesses,
+            coreStrategy: this.determineCoreStrategy(prizeTradeAnalysis, dynamicSpeed),
+            winConditions: this.determineWinConditions(deck.cards, prizeTradeAnalysis)
           }
         },
         
@@ -480,102 +517,37 @@ export class SafeAnalyzer {
     energyCount: number,
     trainerCount: number
   ): Array<{ severity: 'error' | 'warning' | 'info', category: string, message: string, suggestion?: string }> {
+    // Use the new smart warning system
+    const smartWarnings = generateSmartWarnings(deck.cards);
+    const warningSummary = getWarningSummary(smartWarnings);
+    
+    // Convert smart warnings to the expected format
     const warnings: Array<{ severity: 'error' | 'warning' | 'info', category: string, message: string, suggestion?: string }> = [];
-
-    // Deck size check
-    if (cardCount !== 60) {
-      warnings.push({
-        severity: 'error',
-        category: 'Deck Size',
-        message: `Deck has ${cardCount} cards, must have exactly 60`,
-        suggestion: cardCount < 60 ? 'Add more cards to reach 60' : 'Remove cards to reach 60'
-      });
-    }
-
-    // Basic Pokemon check
-    const basicCount = this.getBasicPokemonCount(deck);
-    if (basicCount === 0) {
-      warnings.push({
-        severity: 'error',
-        category: 'Pokemon',
-        message: 'Deck must contain at least one Basic Pokemon',
-        suggestion: 'Add Basic Pokemon cards'
-      });
-    }
-
-    // Mulligan probability check
-    const mulliganProb = calculateMulliganProbability(basicCount);
-    if (mulliganProb > 0.20) {
-      warnings.push({
-        severity: 'warning',
-        category: 'Consistency',
-        message: `High mulligan probability: ${(mulliganProb * 100).toFixed(1)}%`,
-        suggestion: `Add more Basic Pokemon (currently ${basicCount}, recommend 12-14)`
-      });
-    }
-
-    // Energy check
-    if (energyCount < 8) {
-      warnings.push({
-        severity: 'warning',
-        category: 'Energy',
-        message: 'Low energy count may cause consistency issues',
-        suggestion: 'Consider adding more energy cards (10-15 recommended)'
-      });
-    }
-
-    // Trainer quality check
-    const trainers = deck.cards?.filter(dc => dc.card.supertype === 'TRAINER') || [];
-    const trainerAnalysis = analyzeTrainerQuality(
-      trainers.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
-    );
     
-    // Check for weak cards
-    if (trainerAnalysis.weakCards.length > 0) {
+    smartWarnings.forEach(warning => {
+      // Map severity levels
+      let severity: 'error' | 'warning' | 'info';
+      if (warning.severity === 'critical') severity = 'error';
+      else if (warning.severity === 'high' || warning.severity === 'medium') severity = 'warning';
+      else severity = 'info';
+      
       warnings.push({
-        severity: 'warning',
-        category: 'Card Quality',
-        message: `Deck contains weak trainer cards: ${trainerAnalysis.weakCards.slice(0, 3).join(', ')}`,
-        suggestion: trainerAnalysis.recommendations[0] || 'Consider upgrading to more competitive trainer cards'
-      });
-    }
-    
-    // Check draw power
-    const drawSupporterCount = this.getDrawSupporterCount(deck);
-    if (drawSupporterCount < 6) {
-      warnings.push({
-        severity: 'warning',
-        category: 'Draw Power',
-        message: `Low draw supporter count (${drawSupporterCount})`,
-        suggestion: "Add more draw supporters like Professor's Research or Marnie"
-      });
-    }
-    
-    // Check search cards
-    const searchCards = trainers.filter(dc => 
-      categorizeCard(dc.card.name, 'TRAINER') === 'search'
-    );
-    if (searchCards.length === 0) {
-      warnings.push({
-        severity: 'warning',
-        category: 'Search',
-        message: 'No Pokemon search cards found',
-        suggestion: 'Add Quick Ball, Ultra Ball, or Pokemon Communication'
-      });
-    }
-    
-    // Evolution line analysis
-    const evolutionAnalysis = analyzeEvolutionLines(deck.cards);
-    const evolutionWarnings = getEvolutionLineWarnings(evolutionAnalysis);
-    
-    evolutionWarnings.forEach(ew => {
-      warnings.push({
-        severity: ew.severity,
-        category: 'Evolution Lines',
-        message: ew.message,
-        suggestion: ew.suggestion
+        severity,
+        category: warning.category.charAt(0).toUpperCase() + warning.category.slice(1),
+        message: `${warning.title}: ${warning.description}`,
+        suggestion: warning.suggestions[0] // Use first suggestion
       });
     });
+    
+    // Add summary warning if there are many issues
+    if (warningSummary.total > 5) {
+      warnings.unshift({
+        severity: 'warning',
+        category: 'Overall',
+        message: `Deck has ${warningSummary.critical} critical, ${warningSummary.high} high, and ${warningSummary.medium} medium issues`,
+        suggestion: `Estimated win rate impact: ${warningSummary.estimatedWinRateImpact.toFixed(0)}%. Focus on critical issues first.`
+      });
+    }
 
     return warnings;
   }
@@ -584,6 +556,10 @@ export class SafeAnalyzer {
     deck: Deck & { cards: (DeckCard & { card: Card })[] },
     cardCount: number
   ): Array<{ type: 'add' | 'remove' | 'replace', priority: 'high' | 'medium' | 'low', reason: string, impact: string, suggestion?: string, card?: string }> {
+    // Use the new card recommendations system
+    const warnings = generateSmartWarnings(deck.cards);
+    const cardRecs = generateCardRecommendations(deck.cards, warnings);
+    
     const recommendations: Array<{ 
       type: 'add' | 'remove' | 'replace', 
       priority: 'high' | 'medium' | 'low', 
@@ -592,10 +568,46 @@ export class SafeAnalyzer {
       suggestion?: string,
       card?: string 
     }> = [];
-
-    // Deck size recommendation
-    if (cardCount !== 60) {
+    
+    // Convert immediate recommendations
+    cardRecs.immediate.forEach(rec => {
       recommendations.push({
+        type: rec.replaces ? 'replace' : 'add',
+        priority: 'high',
+        reason: rec.reasoning[0],
+        impact: `${rec.estimatedImprovement}% improvement expected`,
+        suggestion: `Add ${rec.card.quantity} ${rec.card.name}`,
+        card: rec.card.name
+      });
+    });
+    
+    // Convert short-term recommendations
+    cardRecs.shortTerm.slice(0, 3).forEach(rec => {
+      recommendations.push({
+        type: rec.replaces ? 'replace' : 'add',
+        priority: 'medium',
+        reason: rec.reasoning[0],
+        impact: rec.reasoning[1] || 'Improved deck performance',
+        suggestion: `Consider ${rec.card.quantity} ${rec.card.name}`,
+        card: rec.card.name
+      });
+    });
+    
+    // Convert cuts
+    cardRecs.cuts.slice(0, 3).forEach(cut => {
+      recommendations.push({
+        type: 'remove',
+        priority: 'medium',
+        reason: cut.reason,
+        impact: cut.impact,
+        suggestion: `Remove ${cut.quantity} ${cut.card}`,
+        card: cut.card
+      });
+    });
+    
+    // Add deck size recommendation if needed
+    if (cardCount !== 60) {
+      recommendations.unshift({
         type: cardCount < 60 ? 'add' : 'remove',
         priority: 'high',
         reason: `Deck has ${cardCount} cards, needs exactly 60`,
@@ -604,101 +616,7 @@ export class SafeAnalyzer {
       });
     }
 
-    // Analyze trainer quality and make specific recommendations
-    const trainers = deck.cards?.filter(dc => dc.card.supertype === 'TRAINER') || [];
-    const trainerAnalysis = analyzeTrainerQuality(
-      trainers.map(dc => ({ name: dc.card.name, quantity: dc.quantity }))
-    );
-
-    // Add upgrade recommendations for weak cards
-    trainerAnalysis.weakCards.forEach((weakCard, index) => {
-      if (index < 3) { // Top 3 weak cards
-        const category = categorizeCard(weakCard, 'TRAINER');
-        const upgrade = getUpgradeRecommendation(weakCard, category);
-        
-        if (upgrade) {
-          recommendations.push({
-            type: 'replace',
-            priority: 'medium',
-            reason: `${weakCard} is a weak card (score: ${getCardQualityScore(weakCard)}/10)`,
-            impact: 'Improved consistency and power',
-            suggestion: `Replace with ${upgrade} (score: ${getCardQualityScore(upgrade)}/10)`,
-            card: weakCard
-          });
-        }
-      }
-    });
-
-    // Check for missing essential cards
-    const hasQuickBall = trainers.some(dc => dc.card.name.toLowerCase().includes('quick ball'));
-    const hasProfessorResearch = trainers.some(dc => 
-      dc.card.name.toLowerCase().includes("professor's research") || 
-      dc.card.name.toLowerCase().includes("professor juniper") ||
-      dc.card.name.toLowerCase().includes("professor sycamore")
-    );
-
-    if (!hasQuickBall) {
-      recommendations.push({
-        type: 'add',
-        priority: 'high',
-        reason: 'No Quick Ball found',
-        impact: 'Significantly improved Pokemon search',
-        suggestion: 'Add 3-4 Quick Ball',
-        card: 'Quick Ball'
-      });
-    }
-
-    if (!hasProfessorResearch) {
-      recommendations.push({
-        type: 'add',
-        priority: 'high',
-        reason: 'No high-quality draw supporter found',
-        impact: 'Much better draw consistency',
-        suggestion: "Add 3-4 Professor's Research",
-        card: "Professor's Research"
-      });
-    }
-
-    // Check for Pokemon balance
-    const basicCount = this.getBasicPokemonCount(deck);
-    if (basicCount < 10) {
-      recommendations.push({
-        type: 'add',
-        priority: 'medium',
-        reason: `Low Basic Pokemon count (${basicCount})`,
-        impact: 'Reduced mulligan rate',
-        suggestion: 'Add 2-3 more Basic Pokemon'
-      });
-    }
-    
-    // Add evolution line recommendations
-    const evolutionAnalysis = analyzeEvolutionLines(deck.cards);
-    evolutionAnalysis.lines.forEach(line => {
-      if (line.issues.length > 0) {
-        // Take the most important recommendation for each problematic line
-        const mainIssue = line.issues[0];
-        const mainRec = line.recommendations[0];
-        
-        if (mainRec) {
-          recommendations.push({
-            type: 'replace',
-            priority: line.bottleneck !== 'none' ? 'high' : 'medium',
-            reason: mainIssue,
-            impact: `Improved evolution consistency for ${line.name} line`,
-            suggestion: mainRec,
-            card: line.name
-          });
-        }
-      }
-    });
-
-    // Sort by priority
-    recommendations.sort((a, b) => {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
-
-    return recommendations.slice(0, 10); // Return top 10 recommendations
+    return recommendations;
   }
 
   /**
@@ -873,5 +791,317 @@ export class SafeAnalyzer {
         message: 'Unable to analyze deck - using fallback values'
       }]
     };
+  }
+
+  /**
+   * Determine meta tier based on relevance score
+   */
+  private determineMetaTier(metaRelevance: number): 'tier1' | 'tier2' | 'tier3' | 'rogue' {
+    if (metaRelevance >= 80) return 'tier1';
+    if (metaRelevance >= 65) return 'tier2';
+    if (metaRelevance >= 50) return 'tier3';
+    return 'rogue';
+  }
+
+  /**
+   * Get meta weaknesses for the deck
+   */
+  private getMetaWeaknesses(cards: Array<DeckCard & { card: Card }>): string[] {
+    const weaknesses: string[] = [];
+    
+    // Check for Path to the Peak vulnerability
+    const hasVPokemon = cards.some(dc => 
+      dc.card.supertype === 'POKEMON' && 
+      dc.card.subtypes.some(st => ['V', 'VMAX', 'VSTAR'].includes(st))
+    );
+    
+    if (hasVPokemon) {
+      weaknesses.push('Vulnerable to Path to the Peak');
+    }
+    
+    // Check for type weaknesses
+    const types = new Set<string>();
+    cards.forEach(dc => {
+      if (dc.card.supertype === 'POKEMON' && dc.card.types) {
+        dc.card.types.forEach(t => types.add(t));
+      }
+    });
+    
+    if (types.has('Lightning')) {
+      weaknesses.push('Weak to Fighting types');
+    }
+    if (types.has('Water')) {
+      weaknesses.push('Weak to Lightning types');
+    }
+    
+    return weaknesses;
+  }
+
+  /**
+   * Get format strengths
+   */
+  private getFormatStrengths(
+    cards: Array<DeckCard & { card: Card }>,
+    metaAnalysis: ReturnType<typeof analyzeMetaPosition>
+  ): string[] {
+    const strengths: string[] = [];
+    
+    if (metaAnalysis.speedRating === 'fast') {
+      strengths.push('Fast setup speed');
+    }
+    
+    const hasMetaCards = cards.some(dc => 
+      CURRENT_STANDARD_META.keyPokemon.some(pokemon => 
+        dc.card.name.toLowerCase().includes(pokemon.toLowerCase())
+      )
+    );
+    
+    if (hasMetaCards) {
+      strengths.push('Uses meta-relevant Pokemon');
+    }
+    
+    if (strengths.length === 0) {
+      strengths.push('Flexible strategy');
+    }
+    
+    return strengths;
+  }
+
+  /**
+   * Get tech recommendations based on meta
+   */
+  private getTechRecommendations(
+    cards: Array<DeckCard & { card: Card }>,
+    metaAnalysis: ReturnType<typeof analyzeMetaPosition>
+  ): Array<{ card: string; reason: string; impact: string }> {
+    const recommendations: Array<{ card: string; reason: string; impact: string }> = [];
+    
+    // Check if needs Path to the Peak
+    const hasPath = cards.some(dc => 
+      dc.card.name.toLowerCase().includes('path to the peak')
+    );
+    
+    if (!hasPath && metaAnalysis.metaRating < 70) {
+      recommendations.push({
+        card: 'Path to the Peak',
+        reason: 'Counter V Pokemon abilities',
+        impact: 'Improves matchups against Lugia VSTAR and Mew VMAX'
+      });
+    }
+    
+    // Check for Lost City
+    const hasLostCity = cards.some(dc => 
+      dc.card.name.toLowerCase().includes('lost city')
+    );
+    
+    if (!hasLostCity) {
+      recommendations.push({
+        card: 'Lost City',
+        reason: 'Counter single-prize attackers',
+        impact: 'Prevents recycling of key Pokemon'
+      });
+    }
+    
+    return recommendations.slice(0, 3);
+  }
+
+  /**
+   * Get ability combos from the deck
+   */
+  private getAbilityCombos(cards: Array<DeckCard & { card: Card }>): Array<{
+    cards: string[];
+    description: string;
+    impact: string;
+  }> {
+    const combos: Array<{ cards: string[]; description: string; impact: string }> = [];
+    
+    // Check for Pokemon with abilities
+    const abilityPokemon = cards.filter(dc => 
+      dc.card.supertype === 'POKEMON' && 
+      dc.card.abilities && 
+      dc.card.abilities.length > 0
+    );
+    
+    if (abilityPokemon.length >= 2) {
+      combos.push({
+        cards: abilityPokemon.slice(0, 2).map(dc => dc.card.name),
+        description: 'Multiple ability Pokemon',
+        impact: 'Consistent ability usage'
+      });
+    }
+    
+    return combos;
+  }
+
+  /**
+   * Get trainer synergies from synergy graph
+   */
+  private getTrainerSynergies(graph: ReturnType<typeof buildSynergyGraph>): Array<{
+    cards: string[];
+    type: string;
+    effect: string;
+  }> {
+    const synergies: Array<{ cards: string[]; type: string; effect: string }> = [];
+    
+    // Find trainer-related edges
+    const trainerEdges = graph.edges.filter(edge => 
+      edge.strength >= 60 && 
+      (edge.type === 'searches' || edge.type === 'accelerates')
+    );
+    
+    trainerEdges.slice(0, 3).forEach(edge => {
+      synergies.push({
+        cards: [edge.source, edge.target],
+        type: edge.type,
+        effect: edge.description
+      });
+    });
+    
+    return synergies;
+  }
+
+  /**
+   * Get energy acceleration methods
+   */
+  private getEnergyAcceleration(cards: Array<DeckCard & { card: Card }>): string[] {
+    const methods: string[] = [];
+    
+    const accelCards = [
+      'elesa', 'melony', 'dark patch', 'mirage gate', 
+      'metal saucer', 'welder', 'frosmoth', 'flaaffy'
+    ];
+    
+    cards.forEach(dc => {
+      const name = dc.card.name.toLowerCase();
+      if (accelCards.some(accel => name.includes(accel))) {
+        methods.push(dc.card.name);
+      }
+    });
+    
+    return methods;
+  }
+
+  /**
+   * Get evolution support cards
+   */
+  private getEvolutionSupport(cards: Array<DeckCard & { card: Card }>): string[] {
+    const support: string[] = [];
+    
+    const evolutionHelpers = ['rare candy', 'evolution incense', 'evosoda', 'wally'];
+    
+    cards.forEach(dc => {
+      const name = dc.card.name.toLowerCase();
+      if (evolutionHelpers.some(helper => name.includes(helper))) {
+        support.push(dc.card.name);
+      }
+    });
+    
+    return support;
+  }
+
+  /**
+   * Calculate difficulty score based on deck complexity
+   */
+  private calculateDifficultyScore(
+    cards: Array<DeckCard & { card: Card }>,
+    synergyGraph: ReturnType<typeof buildSynergyGraph>,
+    speedRating: ReturnType<typeof calculateDynamicSpeedRating>
+  ): number {
+    let difficulty = 50; // Base difficulty
+    
+    // More synergies = more complex
+    if (synergyGraph.edges.length > 20) difficulty += 10;
+    if (synergyGraph.edges.length > 30) difficulty += 10;
+    
+    // Evolution lines add complexity
+    const evolutionCount = cards.filter(dc => 
+      dc.card.supertype === 'POKEMON' && dc.card.evolvesFrom
+    ).length;
+    difficulty += Math.min(20, evolutionCount * 2);
+    
+    // Slow decks are harder to pilot
+    if (speedRating.classification === 'slow') difficulty += 10;
+    
+    return Math.min(100, difficulty);
+  }
+
+  /**
+   * Get average damage output
+   */
+  private getAverageDamageOutput(cards: Array<DeckCard & { card: Card }>): number {
+    const damages = cards
+      .filter(dc => dc.card.supertype === 'POKEMON' && dc.card.attacks)
+      .flatMap(dc => dc.card.attacks?.map(a => parseInt(a.damage) || 0) || []);
+    
+    if (damages.length === 0) return 50;
+    
+    return Math.round(damages.reduce((sum, d) => sum + d, 0) / damages.length);
+  }
+
+  /**
+   * Check if deck has OHKO potential
+   */
+  private hasOHKOPotential(cards: Array<DeckCard & { card: Card }>): boolean {
+    return cards.some(dc => 
+      dc.card.attacks?.some(a => (parseInt(a.damage) || 0) >= 280)
+    );
+  }
+
+  /**
+   * Determine core strategy based on analysis
+   */
+  private determineCoreStrategy(
+    prizeTradeAnalysis: ReturnType<typeof analyzePrizeTradeEconomy>,
+    speedRating: ReturnType<typeof calculateDynamicSpeedRating>
+  ): string {
+    if (prizeTradeAnalysis.strategy.primaryApproach === 'single-prize') {
+      return 'Force favorable prize trades with single-prize attackers';
+    }
+    
+    if (speedRating.classification === 'turbo' || speedRating.classification === 'fast') {
+      return 'Race to victory with aggressive early attacks';
+    }
+    
+    if (prizeTradeAnalysis.averagePrizeValue >= 2) {
+      return 'Overpower opponents with high-impact multi-prize Pokemon';
+    }
+    
+    return 'Build consistent board state and adapt to matchup';
+  }
+
+  /**
+   * Determine win conditions
+   */
+  private determineWinConditions(
+    cards: Array<DeckCard & { card: Card }>,
+    prizeTradeAnalysis: ReturnType<typeof analyzePrizeTradeEconomy>
+  ): string[] {
+    const conditions: string[] = [];
+    
+    // Check for specific win conditions
+    const hasStarRequiem = cards.some(dc => 
+      dc.card.attacks?.some(a => a.name?.includes('Star Requiem'))
+    );
+    if (hasStarRequiem) {
+      conditions.push('Star Requiem instant KO (Lost Zone requirement)');
+    }
+    
+    // Prize trade based conditions
+    if (prizeTradeAnalysis.strategy.primaryApproach === 'single-prize') {
+      conditions.push('Win 2-for-1 prize trades throughout the game');
+    } else {
+      conditions.push('Take 6 prizes quickly with powerful attackers');
+    }
+    
+    // Check for mill/deck out
+    const hasMillCards = cards.some(dc => {
+      const name = dc.card.name.toLowerCase();
+      return name.includes('team rocket') || name.includes('durant');
+    });
+    if (hasMillCards) {
+      conditions.push('Deck out opponent with mill strategy');
+    }
+    
+    return conditions.length > 0 ? conditions : ['Take 6 prizes through consistent attacks'];
   }
 }
