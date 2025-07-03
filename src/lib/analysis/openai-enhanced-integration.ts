@@ -294,49 +294,260 @@ export async function reviewAnalysisWithAssistant(
   analysis: DeckAnalysisResult | BasicDeckAnalysis,
   config: EnhancedOpenAIConfig
 ): Promise<EnhancedReviewResponse> {
-  // Prepare payload
+  // Prepare comprehensive payload
   const analysisType = 'advice' in analysis ? 'basic' : 'advanced';
-  const payload: DeckAnalysisPayload = {
-    deckName: 'Test Deck',
-    deckCards: deck.map(dc => ({
-      name: dc.card.name,
-      quantity: dc.quantity,
-      type: dc.card.supertype,
-      subtype: dc.card.subtypes?.join(', '),
-      hp: dc.card.hp || undefined,
-      evolvesFrom: dc.card.evolvesFrom || undefined,
-      abilities: dc.card.abilities?.map(a => ({
-        name: a.name,
-        text: a.text || ''
-      })),
-      attacks: dc.card.attacks?.map(a => ({
-        name: a.name,
-        cost: a.cost || [],
-        damage: a.damage || '0'
-      }))
-    })),
-    analysisOutput: analysisType === 'basic' ? {
-      score: (analysis as BasicDeckAnalysis).deckScore,
-      issues: (analysis as BasicDeckAnalysis).advice.map(advice => ({
-        category: advice.category,
-        title: advice.title,
-        message: advice.message,
-        recommendation: advice.fixIt
-      })),
-      swapSuggestions: (analysis as BasicDeckAnalysis).swapSuggestions
-    } : {
-      score: (analysis as DeckAnalysisResult).scores?.overall || 0,
-      issues: (analysis as DeckAnalysisResult).warnings?.map(w => ({
-        category: w.severity,
-        title: w.title || w.category,
-        message: w.message,
-        recommendation: w.suggestion
-      })) || []
-    },
-    analysisType
-  };
   
-  return callOpenAIAssistant(payload, config);
+  // Create a detailed prompt with all analysis data
+  let detailedPrompt = `Please review this Pokemon TCG deck analysis and provide detailed feedback on its accuracy and completeness.
+
+DECK COMPOSITION:
+${deck.map(dc => `${dc.quantity}x ${dc.card.name}`).join('\n')}
+
+ANALYSIS TYPE: ${analysisType}
+
+`;
+
+  if (analysisType === 'basic') {
+    const basicAnalysis = analysis as BasicDeckAnalysis;
+    detailedPrompt += `BASIC ANALYSIS RESULTS:
+Score: ${basicAnalysis.deckScore}/100
+Overall Message: ${basicAnalysis.overallMessage}
+
+ISSUES FOUND:
+${basicAnalysis.advice.map(a => `
+- ${a.icon} ${a.title} (${a.category})
+  Message: ${a.message}
+  ${a.tip ? `Tip: ${a.tip}` : ''}
+  ${a.fixIt ? `Fix: ${a.fixIt}` : ''}
+`).join('\n')}
+
+${basicAnalysis.swapSuggestions?.length > 0 ? `SWAP SUGGESTIONS:
+${basicAnalysis.swapSuggestions.map(s => `- Remove ${s.removeCard} → Add ${s.addCard} (${s.reason})`).join('\n')}` : ''}
+
+${basicAnalysis.tradeSuggestions?.length > 0 ? `TRADE SUGGESTIONS:
+${basicAnalysis.tradeSuggestions.map(t => `- Trade away ${t.tradeAway} for ${t.tradeFor}`).join('\n')}` : ''}
+`;
+  } else {
+    const advAnalysis = analysis as DeckAnalysisResult;
+    detailedPrompt += `ADVANCED ANALYSIS RESULTS:
+Overall Score: ${advAnalysis.scores?.overall || 0}/100
+Consistency: ${advAnalysis.scores?.consistency || 0}/100
+Power: ${advAnalysis.scores?.power || 0}/100
+Speed: ${advAnalysis.scores?.speed || 0}/100
+Recovery: ${advAnalysis.scores?.recovery || 0}/100
+
+ARCHETYPE: ${advAnalysis.archetype?.primaryArchetype || 'Unknown'} (${advAnalysis.archetype?.confidence || 0}% confidence)
+
+CONSISTENCY METRICS:
+- Mulligan Rate: ${advAnalysis.consistency?.mulliganProbability || 0}%
+- Basic Count: ${advAnalysis.consistency?.basicPokemonCount || 0}
+- Draw/Search Cards: ${advAnalysis.consistency?.drawSupportCount || 0}
+- Energy Consistency: ${advAnalysis.consistency?.energyConsistency || 0}/10
+
+WARNINGS:
+${advAnalysis.warnings?.map(w => `
+- [${w.severity}] ${w.category}: ${w.message}
+  ${w.suggestion ? `Suggestion: ${w.suggestion}` : ''}
+`).join('\n') || 'None'}
+
+RECOMMENDATIONS:
+${advAnalysis.recommendations?.cards?.map(r => `
+- Add ${r.card.name}: ${r.reason} (Priority: ${r.priority})
+`).join('\n') || 'None'}
+`;
+  }
+
+  detailedPrompt += `
+Please provide:
+1. An accuracy score (0-100) for this analysis
+2. What the analyzer correctly identified
+3. Important issues the analyzer missed
+4. Any incorrect recommendations
+5. Specific suggestions to improve the analyzer's accuracy
+
+Be specific and detailed in your feedback.`;
+
+  // Send as a text message to the assistant
+  const response = await fetch('https://api.openai.com/v1/threads', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+      'OpenAI-Beta': 'assistants=v2'
+    }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`Failed to create thread: ${response.statusText} - ${errorData}`);
+  }
+  
+  const thread = await response.json();
+  
+  // Add message with detailed prompt
+  const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({
+      role: 'user',
+      content: detailedPrompt
+    })
+  });
+  
+  if (!messageResponse.ok) {
+    throw new Error(`Failed to add message: ${messageResponse.statusText}`);
+  }
+  
+  // Run the assistant
+  const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+      'OpenAI-Beta': 'assistants=v2'
+    },
+    body: JSON.stringify({
+      assistant_id: config.assistantId
+    })
+  });
+  
+  if (!runResponse.ok) {
+    throw new Error(`Failed to run assistant: ${runResponse.statusText}`);
+  }
+  
+  const run = await runResponse.json();
+  
+  // Poll for completion
+  let runStatus = run.status;
+  while (runStatus === 'queued' || runStatus === 'in_progress') {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const statusResponse = await fetch(
+      `https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      }
+    );
+    
+    const statusData = await statusResponse.json();
+    runStatus = statusData.status;
+    
+    if (runStatus === 'failed' || runStatus === 'cancelled' || runStatus === 'expired') {
+      throw new Error(`Assistant run ${runStatus}: ${statusData.last_error?.message}`);
+    }
+  }
+  
+  // Get messages
+  const messagesResponse = await fetch(
+    `https://api.openai.com/v1/threads/${thread.id}/messages`,
+    {
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    }
+  );
+  
+  const messages = await messagesResponse.json();
+  const assistantMessage = messages.data.find((msg: any) => msg.role === 'assistant');
+  
+  if (!assistantMessage) {
+    throw new Error('No response from assistant');
+  }
+  
+  const content = assistantMessage.content[0]?.text?.value || '';
+  
+  // Parse the response to extract structured feedback
+  const response = parseAssistantResponse(content);
+  
+  return {
+    accuracyScore: response.accuracyScore || 70,
+    missedIssues: response.missedIssues || [],
+    incorrectRecommendations: response.incorrectRecommendations || [],
+    goodPoints: response.goodPoints || [],
+    overallAssessment: response.overallAssessment || content,
+    suggestedImprovements: response.suggestedImprovements || [],
+    codeImprovements: [],
+    testCases: []
+  };
+}
+
+/**
+ * Parse assistant's text response into structured format
+ */
+function parseAssistantResponse(content: string): Partial<EnhancedReviewResponse> {
+  const response: Partial<EnhancedReviewResponse> = {};
+  
+  // Try to extract accuracy score
+  const scoreMatch = content.match(/accuracy\s*[:=]\s*(\d+)/i) || 
+                     content.match(/score\s*[:=]\s*(\d+)/i) ||
+                     content.match(/(\d+)\s*(?:%|\/100)/);
+  if (scoreMatch) {
+    response.accuracyScore = parseInt(scoreMatch[1]);
+  }
+  
+  // Extract sections using common patterns
+  const sections = content.split(/\n(?=[A-Z])/);
+  
+  sections.forEach(section => {
+    const lowerSection = section.toLowerCase();
+    
+    if (lowerSection.includes('correctly identified') || lowerSection.includes('got right')) {
+      response.goodPoints = extractBulletPoints(section);
+    } else if (lowerSection.includes('missed') || lowerSection.includes('overlooked')) {
+      response.missedIssues = extractBulletPoints(section).map(issue => ({
+        issue,
+        severity: determineSeverity(issue)
+      }));
+    } else if (lowerSection.includes('incorrect') || lowerSection.includes('wrong')) {
+      response.incorrectRecommendations = extractBulletPoints(section).map(rec => ({
+        recommendation: rec,
+        correction: ''
+      }));
+    } else if (lowerSection.includes('suggestion') || lowerSection.includes('improve')) {
+      response.suggestedImprovements = extractBulletPoints(section);
+    }
+  });
+  
+  // Use full content as overall assessment if not much was parsed
+  if (!response.goodPoints?.length && !response.missedIssues?.length) {
+    response.overallAssessment = content;
+  }
+  
+  return response;
+}
+
+function extractBulletPoints(text: string): string[] {
+  const lines = text.split('\n');
+  const points: string[] = [];
+  
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed.match(/^[-•*]\s/) || trimmed.match(/^\d+\.\s/)) {
+      points.push(trimmed.replace(/^[-•*]\s/, '').replace(/^\d+\.\s/, ''));
+    }
+  });
+  
+  return points;
+}
+
+function determineSeverity(issue: string): 'critical' | 'high' | 'medium' | 'low' {
+  const lower = issue.toLowerCase();
+  if (lower.includes('critical') || lower.includes('major') || lower.includes('severe')) {
+    return 'critical';
+  } else if (lower.includes('high') || lower.includes('important')) {
+    return 'high';
+  } else if (lower.includes('low') || lower.includes('minor')) {
+    return 'low';
+  }
+  return 'medium';
 }
 
 /**

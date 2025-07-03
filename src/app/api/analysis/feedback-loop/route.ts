@@ -88,8 +88,21 @@ export async function POST(req: NextRequest) {
       
       const improvementSystem = new AnalyzerImprovementSystem(config);
       
-      // @ts-ignore - accessing private method
-      const review = await improvementSystem.getOpenAISuggestions(testDeck, testResult);
+      // Call the assistant directly with the full analysis
+      const { reviewAnalysisWithAssistant, EnhancedOpenAIConfig } = await import('@/lib/analysis/openai-enhanced-integration');
+      
+      const openAIConfig: EnhancedOpenAIConfig = {
+        apiKey: config.openAI.apiKey,
+        assistantId: config.openAI.assistantId,
+        temperature: config.openAI.temperature,
+        topP: config.openAI.topP
+      };
+      
+      const review = await reviewAnalysisWithAssistant(
+        cards,
+        analysis,
+        openAIConfig
+      );
       
       console.log('OpenAI review response:', JSON.stringify(review, null, 2));
       
