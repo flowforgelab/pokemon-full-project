@@ -72,7 +72,7 @@ export interface FeedbackLoopConfig {
  */
 export const defaultConfig: FeedbackLoopConfig = {
   openAI: {
-    apiKey: process.env.OPENAI_API_KEY || '',
+    apiKey: '', // Will be loaded at runtime
     assistantId: 'asst_P2cUMxaYYnH1O6naiuRqAC72',
     temperature: 0.3,
     topP: 0.9,

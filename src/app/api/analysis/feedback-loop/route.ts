@@ -76,10 +76,22 @@ export async function POST(req: NextRequest) {
       
       // Get review from OpenAI
       const config = loadConfig({ ...presetConfig, ...configOverrides });
+      
+      // Ensure API key is loaded
+      if (!config.openAI.apiKey) {
+        console.error('OpenAI API key not found in config');
+        return NextResponse.json(
+          { error: 'Configuration error', message: 'OpenAI API key not configured' },
+          { status: 500 }
+        );
+      }
+      
       const improvementSystem = new AnalyzerImprovementSystem(config);
       
       // @ts-ignore - accessing private method
       const review = await improvementSystem.getOpenAISuggestions(testDeck, testResult);
+      
+      console.log('OpenAI review response:', JSON.stringify(review, null, 2));
       
       return NextResponse.json({
         success: true,
