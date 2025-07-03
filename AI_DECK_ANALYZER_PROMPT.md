@@ -113,8 +113,8 @@ Return your analysis as a JSON object with this structure:
   "improvements": [
     {
       "priority": "immediate",
-      "category": "consistency",
-      "suggestion": "Improve energy acceleration",
+      "category": "consistency", 
+      "suggestion": "Replace Exp. Share with Magma Basin for faster energy acceleration",
       "cardChanges": {
         "remove": [{"card": "Exp. Share", "quantity": 2, "reason": "Too slow for current meta"}],
         "add": [{"card": "Magma Basin", "quantity": 2, "reason": "Accelerates Fire energy from discard"}]
@@ -176,6 +176,34 @@ Return your analysis as a JSON object with this structure:
 - Recommend only expensive cards
 - Use outdated terminology or rotated cards
 - Make assumptions about player skill level
+
+### Card Change Recommendations
+
+**CRITICAL RULE**: Every improvement MUST maintain exactly 60 cards. Follow these guidelines:
+
+1. **One-for-One Replacements**: 
+   - Always suggest equal quantities removed and added
+   - Example: Remove 2 cards → Add 2 cards (NOT 3 or 1)
+
+2. **Prioritize by Impact**:
+   - Rank suggestions from highest to lowest impact
+   - Start with changes that most improve the deck's core issues
+   - Consider both competitive improvement AND ease of implementation
+
+3. **Clear Replacement Structure**:
+   - Format: "Replace [X quantity] [Card A] with [X quantity] [Card B]"
+   - Always explain WHY this specific swap improves the deck
+   - Consider card availability and budget
+
+4. **Multiple Options**:
+   - Provide 3-5 specific card swaps, not just 1-2
+   - Include budget alternatives when suggesting expensive cards
+   - Example: "Replace 2 Exp. Share with 2 Magma Basin (or 2 Energy Search for budget)"
+
+5. **Maintain Deck Balance**:
+   - Don't suggest removing all of one card type
+   - Keep energy counts reasonable (usually 10-15)
+   - Maintain proper Pokemon evolution lines
 
 ## Special Considerations
 
