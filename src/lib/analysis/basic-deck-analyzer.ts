@@ -627,11 +627,11 @@ function checkTrainerCards(
   }
   
   // Check for important trainers
-  const drawSupporters = ['professor', 'research', 'hop', 'cynthia', 'lillie', 'marnie', 
-                          'erika', 'bianca', 'shauna', 'tierno', 'sonia', 'bruno'];
+  const drawSupporterNames = ['professor', 'research', 'hop', 'cynthia', 'lillie', 'marnie', 
+                              'erika', 'bianca', 'shauna', 'tierno', 'sonia', 'bruno'];
   const hasDrawCards = cards.some(dc => {
     const cardName = dc.card.name.toLowerCase();
-    return drawSupporters.some(supporter => cardName.includes(supporter)) ||
+    return drawSupporterNames.some(supporter => cardName.includes(supporter)) ||
            (dc.card.rules && dc.card.rules.some(rule => 
              rule.toLowerCase().includes('draw') && 
              (rule.toLowerCase().includes('card') || rule.toLowerCase().includes('hand'))
