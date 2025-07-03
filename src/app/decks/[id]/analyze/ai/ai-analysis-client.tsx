@@ -39,6 +39,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
   const [analysisStatus, setAnalysisStatus] = useState<string>('');
+  const [userAge, setUserAge] = useState<string>('');
 
   const focusAreaOptions = [
     { id: 'competitive', label: 'Competitive Play', icon: Target },
@@ -67,7 +68,8 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
           options: {
             model: selectedModel,
             temperature: 0.7,
-            focusAreas: selectedFocusAreas
+            focusAreas: selectedFocusAreas,
+            userAge: userAge ? parseInt(userAge) : undefined
           }
         }),
         signal: controller.signal
@@ -141,6 +143,31 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
             <div className="p-6">
               <h2 className="text-xl font-semibold mb-4">Analysis Options</h2>
               
+              {/* Age Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">
+                  Your Age (Optional)
+                  <span className="text-xs text-gray-500 ml-2">For age-appropriate analysis</span>
+                </label>
+                <input
+                  type="number"
+                  min="5"
+                  max="99"
+                  value={userAge}
+                  onChange={(e) => setUserAge(e.target.value)}
+                  placeholder="Enter your age"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600"
+                />
+                {userAge && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    {parseInt(userAge) < 10 && '🌟 Analysis will use very simple language with fun explanations!'}
+                    {parseInt(userAge) >= 10 && parseInt(userAge) < 13 && '✨ Analysis will be kid-friendly and educational!'}
+                    {parseInt(userAge) >= 13 && parseInt(userAge) < 18 && '🎯 Analysis will balance strategy tips with clear explanations!'}
+                    {parseInt(userAge) >= 18 && '🏆 Analysis will include advanced competitive insights!'}
+                  </p>
+                )}
+              </div>
+              
               {/* Model Selection (Ultimate tier only) */}
               {userTier === 'ULTIMATE' && (
                 <div className="mb-6">
@@ -148,7 +175,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                   <select
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600"
                   >
                     <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast)</option>
                     <option value="gpt-4">GPT-4 (Balanced)</option>
@@ -247,6 +274,17 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                     {deck.cards.filter((dc: any) => dc.card.supertype === 'ENERGY').reduce((sum: number, dc: any) => sum + dc.quantity, 0)}
                   </p>
                 </div>
+                {userAge && (
+                  <div>
+                    <span className="text-sm text-gray-500">Analysis Mode</span>
+                    <p className="font-medium">
+                      {parseInt(userAge) < 10 && '🌟 Young Trainer Mode'}
+                      {parseInt(userAge) >= 10 && parseInt(userAge) < 13 && '✨ Junior Trainer Mode'}
+                      {parseInt(userAge) >= 13 && parseInt(userAge) < 18 && '🎯 Teen Trainer Mode'}
+                      {parseInt(userAge) >= 18 && '🏆 Master Trainer Mode'}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
