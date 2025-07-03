@@ -25,7 +25,7 @@ export default async function AIAnalysisPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get user subscription info
+  // Get user subscription info (AI analysis is now free for all)
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
     select: { 
@@ -34,31 +34,19 @@ export default async function AIAnalysisPage({ params }: PageProps) {
     }
   });
 
-  if (!user || user.subscriptionTier === 'FREE') {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold mb-4">AI Analysis Requires Subscription</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Unlock AI-powered deck analysis with expert insights and recommendations
-            by upgrading to a Basic subscription or higher.
-          </p>
-          <a
-            href="/pricing"
-            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            View Pricing Plans
-          </a>
-        </div>
-      </div>
-    );
-  }
+  // Create user if they don't exist
+  const finalUser = user || await prisma.user.create({
+    data: {
+      clerkUserId: userId,
+      subscriptionTier: 'FREE'
+    }
+  });
 
   // Get deck
   const deck = await prisma.deck.findFirst({
     where: { 
       id,
-      userId: user.id
+      userId: finalUser.id
     },
     include: {
       cards: {
@@ -81,7 +69,7 @@ export default async function AIAnalysisPage({ params }: PageProps) {
     <div className="container mx-auto px-4 py-8">
       <AIAnalysisClient 
         deck={deck}
-        userTier={user.subscriptionTier}
+        userTier={finalUser.subscriptionTier}
       />
     </div>
   );
