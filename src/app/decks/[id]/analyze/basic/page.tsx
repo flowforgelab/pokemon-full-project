@@ -20,6 +20,7 @@ import {
   XCircleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import { AnalysisReviewButton } from '@/components/analysis/AnalysisReviewButton';
 
 export default function BasicDeckAnalyzePage() {
   const params = useParams();
@@ -320,6 +321,16 @@ export default function BasicDeckAnalyzePage() {
                 Print This Page
               </button>
             </div>
+            
+            {/* AI Review Button */}
+            {deck && analysis && (
+              <AnalysisReviewButton
+                deckName={deck.name}
+                deckCards={deck.cards}
+                analysis={analysis}
+                analysisType="basic"
+              />
+            )}
           </>
         )}
       </div>

@@ -28,6 +28,7 @@ import AnalysisDashboard from '@/components/analysis/AnalysisDashboard';
 import CardRecommendations from '@/components/analysis/CardRecommendations';
 import DeckOptimizer from '@/components/analysis/DeckOptimizer';
 import { SafeAnalysisWrapper } from '@/components/analysis/SafeAnalysisWrapper';
+import { AnalysisReviewButton } from '@/components/analysis/AnalysisReviewButton';
 
 export default function DeckAnalyzePage() {
   const params = useParams();
@@ -310,6 +311,18 @@ export default function DeckAnalyzePage() {
                 {analysis?.archetype?.confidence || 0}% confidence
               </p>
             </div>
+          </div>
+        )}
+        
+        {/* AI Review Button */}
+        {deck && analysis && (
+          <div className="mt-6">
+            <AnalysisReviewButton
+              deckName={deck.name}
+              deckCards={deck.cards}
+              analysis={analysis}
+              analysisType="advanced"
+            />
           </div>
         )}
       </div>

@@ -42,6 +42,65 @@ export async function POST(req: NextRequest) {
       configOverrides = {}
     } = body;
     
+    // Check if this is a single deck test
+    if (options.testSingleDeck) {
+      const { name, cards, analysis, analysisType } = options.testSingleDeck;
+      
+      // Create a test deck from the provided data
+      const testDeck = {
+        id: 'user-deck',
+        name,
+        description: 'User submitted deck for review',
+        category: 'well-built' as const,
+        cards,
+        expectedIssues: [],
+        expectedScore: { min: 0, max: 100, reason: 'User deck' }
+      };
+      
+      // Create a minimal test result
+      const testResult = {
+        deckId: testDeck.id,
+        deckName: testDeck.name,
+        category: testDeck.category,
+        passedChecks: [],
+        failedChecks: [],
+        unexpectedIssues: [],
+        missedIssues: [],
+        scoreInRange: true,
+        actualScore: analysisType === 'basic' ? analysis.deckScore : analysis.scores?.overall || 0,
+        accuracy: 100 // Assume current analysis is baseline
+      };
+      
+      // Get review from OpenAI
+      const config = loadConfig({ ...presetConfig, ...configOverrides });
+      const improvementSystem = new AnalyzerImprovementSystem(config);
+      
+      // @ts-ignore - accessing private method
+      const review = await improvementSystem.getOpenAISuggestions(testDeck, testResult);
+      
+      return NextResponse.json({
+        success: true,
+        runId: `single-${Date.now()}`,
+        summary: {
+          accuracyBefore: review.accuracyScore || 70,
+          criticalMisses: review.missedIssues?.filter(i => i.severity === 'critical').length || 0,
+          improvements: review.suggestedImprovements?.length || 0,
+          estimatedCost: '$0.01'
+        },
+        review: {
+          accuracyScore: review.accuracyScore,
+          missedIssues: review.missedIssues,
+          incorrectRecommendations: review.incorrectRecommendations,
+          goodPoints: review.goodPoints,
+          suggestedImprovements: review.suggestedImprovements
+        },
+        improvements: {
+          applied: [],
+          pending: review.codeImprovements || []
+        }
+      });
+    }
+    
     // Load configuration
     const presetConfig = preset ? configPresets[preset as keyof typeof configPresets] : {};
     const config = loadConfig({
