@@ -59,6 +59,9 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
     });
   }
   
+  // 1.5 Check format legality and card limits
+  checkFormatLegality(cards, advice);
+  
   // 2. Check Pokemon balance
   checkPokemonBalance(counts, advice, cards, swapSuggestions);
   
@@ -95,6 +98,66 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
     swapSuggestions: swapSuggestions.length > 0 ? swapSuggestions : undefined,
     tradeSuggestions: tradeSuggestions.length > 0 ? tradeSuggestions : undefined
   };
+}
+
+/**
+ * Check format legality and card limits
+ */
+function checkFormatLegality(
+  cards: Array<DeckCard & { card: Card }>,
+  advice: KidFriendlyAdvice[]
+) {
+  // Check for cards with more than 4 copies (except basic energy)
+  const cardCounts = new Map<string, number>();
+  const illegalCards: string[] = [];
+  
+  cards.forEach(dc => {
+    const cardName = dc.card.name;
+    const isBasicEnergy = dc.card.supertype === 'ENERGY' && 
+                          (!dc.card.subtypes || dc.card.subtypes.length === 0 || 
+                           dc.card.subtypes.includes('Basic'));
+    
+    if (!isBasicEnergy) {
+      if (dc.quantity > 4) {
+        illegalCards.push(`${cardName} (you have ${dc.quantity}, max is 4)`);
+      }
+    }
+    
+    // Check for special energy limits
+    if (dc.card.supertype === 'ENERGY' && dc.card.subtypes?.includes('Special')) {
+      if (dc.quantity > 4) {
+        illegalCards.push(`${cardName} Special Energy (you have ${dc.quantity}, max is 4)`);
+      }
+    }
+  });
+  
+  if (illegalCards.length > 0) {
+    advice.push({
+      category: 'oops',
+      icon: '❌',
+      title: 'Too Many Copies!',
+      message: 'You can only have 4 copies of any card (except Basic Energy)!',
+      tip: illegalCards.join(', '),
+      fixIt: 'Reduce these cards to 4 copies maximum.'
+    });
+  }
+  
+  // Check for banned cards in Standard format
+  const bannedInStandard = ['Lugia VSTAR', 'Forest Seal Stone']; // Example banned cards
+  const foundBanned = cards.filter(dc => 
+    bannedInStandard.some(banned => dc.card.name.includes(banned))
+  );
+  
+  if (foundBanned.length > 0) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Check Format Rules!',
+      message: 'Some cards might not be allowed in Standard format tournaments.',
+      tip: `Cards to check: ${foundBanned.map(dc => dc.card.name).join(', ')}`,
+      fixIt: 'Make sure all your cards are legal for the format you want to play!'
+    });
+  }
 }
 
 /**
