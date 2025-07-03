@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 // Request validation schema
 const aiAnalysisSchema = z.object({
-  deckId: z.string(),
+  deckId: z.string().min(1, 'Deck ID is required'),
   options: z.object({
     model: z.enum(['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo']).optional(),
     temperature: z.number().min(0).max(1).optional(),
@@ -48,22 +48,55 @@ export async function POST(req: NextRequest) {
     
     // Validate request
     const body = await req.json();
+    console.log('AI Analysis Request:', { deckId: body.deckId, userId });
     const validated = aiAnalysisSchema.parse(body);
     
+    // Get user first to get their database ID
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { id: true, subscriptionTier: true }
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
     // Get deck with cards
-    const deck = await prisma.deck.findUnique({
-      where: { 
-        id: validated.deckId,
-        userId // Ensure user owns the deck
-      },
-      include: {
-        cards: {
-          include: {
-            card: true
+    let deck;
+    try {
+      deck = await prisma.deck.findFirst({
+        where: { 
+          id: validated.deckId,
+          userId: user.id // Use database user ID, not Clerk ID
+        },
+        include: {
+          cards: {
+            include: {
+              card: true
+            }
           }
         }
-      }
-    });
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      console.log('Deck ID:', validated.deckId);
+      console.log('User ID:', user.id);
+      
+      // Try to parse the error message for more details
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to retrieve deck',
+          details: errorMessage,
+          deckId: validated.deckId
+        },
+        { status: 500 }
+      );
+    }
     
     if (!deck) {
       return NextResponse.json(
@@ -71,12 +104,6 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
-    
-    // Check if user exists (for rate limiting later)
-    const user = await prisma.user.findUnique({
-      where: { clerkUserId: userId },
-      select: { subscriptionTier: true }
-    });
     
     // AI analysis is now free for all users
     

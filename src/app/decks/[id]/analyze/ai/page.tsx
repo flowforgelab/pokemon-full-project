@@ -24,6 +24,13 @@ export default async function AIAnalysisPage({ params }: PageProps) {
   if (!userId) {
     notFound();
   }
+  
+  // Validate deck ID is a valid UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    console.error('Invalid deck ID format:', id);
+    notFound();
+  }
 
   // Get user subscription info (AI analysis is now free for all)
   const user = await prisma.user.findUnique({
@@ -43,23 +50,31 @@ export default async function AIAnalysisPage({ params }: PageProps) {
   });
 
   // Get deck
-  const deck = await prisma.deck.findFirst({
-    where: { 
-      id,
-      userId: finalUser.id
-    },
-    include: {
-      cards: {
-        include: {
-          card: {
-            include: {
-              set: true
+  let deck;
+  try {
+    deck = await prisma.deck.findFirst({
+      where: { 
+        id,
+        userId: finalUser.id
+      },
+      include: {
+        cards: {
+          include: {
+            card: {
+              include: {
+                set: true
+              }
             }
           }
         }
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Error fetching deck:', error);
+    console.error('Deck ID:', id);
+    console.error('User ID:', finalUser.id);
+    notFound();
+  }
 
   if (!deck) {
     notFound();
