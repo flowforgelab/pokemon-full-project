@@ -257,8 +257,17 @@ export async function analyzeWithAI(
 ): Promise<AIDeckAnalysis> {
   const deckData = prepareDeckForAI(cards, deckName);
   
-  // Add focus areas to the deck data if provided in system prompt
+  // Build the full prompt including all context
   let fullPrompt = `Please analyze this Pokemon TCG deck:\n\n${deckData}`;
+  
+  // Extract age context if present
+  if (options.systemPrompt && options.systemPrompt.includes('USER AGE CONTEXT:')) {
+    const ageSection = options.systemPrompt.split('USER AGE CONTEXT:')[1].split('FOCUS AREAS:')[0];
+    // Put age instructions at the very beginning and make them very clear
+    fullPrompt = `🚨 CRITICAL INSTRUCTION 🚨\n${ageSection.trim()}\n\nREMEMBER: You MUST follow the age-appropriate language guidelines above!\n\n${fullPrompt}`;
+  }
+  
+  // Add focus areas if present
   if (options.systemPrompt && options.systemPrompt.includes('FOCUS AREAS:')) {
     fullPrompt += '\n\n' + options.systemPrompt.split('FOCUS AREAS:')[1];
   }

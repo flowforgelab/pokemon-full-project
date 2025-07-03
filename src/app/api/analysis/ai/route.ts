@@ -130,13 +130,15 @@ export async function POST(req: NextRequest) {
       customPrompt += '\n\nUSER AGE CONTEXT:\n';
       
       if (age < 10) {
-        customPrompt += `The user is ${age} years old. Please:\n`;
-        customPrompt += '- Use very simple language appropriate for young children\n';
-        customPrompt += '- Include fun analogies and comparisons they can understand\n';
-        customPrompt += '- Use emojis and enthusiasm to keep them engaged\n';
-        customPrompt += '- Explain Pokemon TCG concepts in the simplest possible way\n';
-        customPrompt += '- Focus on fun and learning rather than competitive optimization\n';
-        customPrompt += '- Give encouragement and positive feedback\n';
+        customPrompt += `The user is ${age} years old - a young child. You MUST:\n`;
+        customPrompt += '- Use VERY SIMPLE words that an 8-year-old can understand\n';
+        customPrompt += '- NO competitive jargon like "meta", "engine", "consistency", etc.\n';
+        customPrompt += '- Use fun comparisons like "Your deck is like a superhero team!"\n';
+        customPrompt += '- Include LOTS of emojis 🌟 😊 🎉 to make it fun\n';
+        customPrompt += '- Say things like "Great job!" and "This is so cool!"\n';
+        customPrompt += '- Explain cards like "Rayquaza is a super strong dragon!"\n';
+        customPrompt += '- Focus on what\'s FUN about their deck, not optimization\n';
+        customPrompt += '- Keep sentences SHORT and SIMPLE\n';
       } else if (age < 13) {
         customPrompt += `The user is ${age} years old. Please:\n`;
         customPrompt += '- Use clear, simple language appropriate for kids\n';
