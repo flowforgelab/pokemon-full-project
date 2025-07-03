@@ -127,12 +127,14 @@ export async function callOpenAIAssistant(
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2'
       }
     });
     
     if (!threadResponse.ok) {
-      throw new Error(`Failed to create thread: ${threadResponse.statusText}`);
+      const errorData = await threadResponse.text();
+      console.error('Thread creation error:', errorData);
+      throw new Error(`Failed to create thread: ${threadResponse.statusText} - ${errorData}`);
     }
     
     const thread = await threadResponse.json();
@@ -143,7 +145,7 @@ export async function callOpenAIAssistant(
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
         role: 'user',
@@ -152,7 +154,9 @@ export async function callOpenAIAssistant(
     });
     
     if (!messageResponse.ok) {
-      throw new Error(`Failed to add message: ${messageResponse.statusText}`);
+      const errorData = await messageResponse.text();
+      console.error('Message creation error:', errorData);
+      throw new Error(`Failed to add message: ${messageResponse.statusText} - ${errorData}`);
     }
     
     // Run the assistant
@@ -161,18 +165,18 @@ export async function callOpenAIAssistant(
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
-        assistant_id: config.assistantId,
-        temperature: config.temperature ?? 0.3,
-        top_p: config.topP ?? 0.9,
-        max_prompt_tokens: config.maxTokens
+        assistant_id: config.assistantId
+        // o3-mini doesn't support temperature/top_p parameters
       })
     });
     
     if (!runResponse.ok) {
-      throw new Error(`Failed to run assistant: ${runResponse.statusText}`);
+      const errorData = await runResponse.text();
+      console.error('Run creation error:', errorData);
+      throw new Error(`Failed to run assistant: ${runResponse.statusText} - ${errorData}`);
     }
     
     const run = await runResponse.json();
@@ -187,7 +191,7 @@ export async function callOpenAIAssistant(
         {
           headers: {
             'Authorization': `Bearer ${config.apiKey}`,
-            'OpenAI-Beta': 'assistants=v1'
+            'OpenAI-Beta': 'assistants=v2'
           }
         }
       );
@@ -206,7 +210,7 @@ export async function callOpenAIAssistant(
       {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
-          'OpenAI-Beta': 'assistants=v1'
+          'OpenAI-Beta': 'assistants=v2'
         }
       }
     );
