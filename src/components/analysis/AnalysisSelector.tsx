@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   BeakerIcon
 } from '@heroicons/react/24/outline';
+import { Brain } from 'lucide-react';
 
 interface AnalysisSelectorProps {
   deckId: string;
@@ -16,7 +17,7 @@ interface AnalysisSelectorProps {
 
 export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
   const router = useRouter();
-  const [selected, setSelected] = useState<'basic' | 'advanced' | null>(null);
+  const [selected, setSelected] = useState<'basic' | 'advanced' | 'ai' | null>(null);
 
   const options = [
     {
@@ -31,7 +32,8 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
         '😊 Friendly explanations',
         '🌟 Fun facts about Pokemon',
         '💡 Simple card suggestions'
-      ]
+      ],
+      requiresSubscription: false
     },
     {
       id: 'advanced' as const,
@@ -45,7 +47,24 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
         '🎮 Meta game analysis',
         '💰 Budget recommendations',
         '🏆 Tournament sideboards'
-      ]
+      ],
+      requiresSubscription: false
+    },
+    {
+      id: 'ai' as const,
+      title: 'AI Expert Analysis',
+      subtitle: 'Powered by GPT-4',
+      description: 'Get nuanced insights from an AI trained on competitive Pokemon TCG knowledge. Provides conversational analysis beyond rule-based systems.',
+      icon: Brain,
+      color: 'green',
+      features: [
+        '🤖 Advanced AI insights',
+        '💬 Conversational analysis',
+        '🎯 Custom focus areas',
+        '📈 Adaptive recommendations'
+      ],
+      requiresSubscription: true,
+      badge: 'Premium'
     }
   ];
 
@@ -54,6 +73,8 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
       router.push(`/decks/${deckId}/analyze/basic`);
     } else if (selected === 'advanced') {
       router.push(`/decks/${deckId}/analyze`);
+    } else if (selected === 'ai') {
+      router.push(`/decks/${deckId}/analyze/ai`);
     }
   };
 
@@ -69,7 +90,7 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
         {options.map((option) => {
           const Icon = option.icon;
           const isSelected = selected === option.id;
@@ -83,25 +104,34 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
                 ${isSelected 
                   ? option.color === 'blue' 
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : option.color === 'purple'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-green-500 bg-green-50 dark:bg-green-900/20'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }
               `}
             >
               {isSelected && (
-                <div className={`absolute top-4 right-4 w-6 h-6 ${option.color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'} rounded-full flex items-center justify-center`}>
+                <div className={`absolute top-4 right-4 w-6 h-6 ${option.color === 'blue' ? 'bg-blue-500' : option.color === 'purple' ? 'bg-purple-500' : 'bg-green-500'} rounded-full flex items-center justify-center`}>
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
 
-              <Icon className={`h-10 w-10 mb-4 ${isSelected ? (option.color === 'blue' ? 'text-blue-600' : 'text-purple-600') : 'text-gray-400'}`} />
+              <div className="flex items-start justify-between mb-4">
+                <Icon className={`h-10 w-10 ${isSelected ? (option.color === 'blue' ? 'text-blue-600' : option.color === 'purple' ? 'text-purple-600' : 'text-green-600') : 'text-gray-400'}`} />
+                {option.badge && (
+                  <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                    {option.badge}
+                  </span>
+                )}
+              </div>
               
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
                 {option.title}
               </h3>
-              <p className={`text-sm font-medium mb-3 ${isSelected ? (option.color === 'blue' ? 'text-blue-600' : 'text-purple-600') : 'text-gray-500'}`}>
+              <p className={`text-sm font-medium mb-3 ${isSelected ? (option.color === 'blue' ? 'text-blue-600' : option.color === 'purple' ? 'text-purple-600' : 'text-green-600') : 'text-gray-500'}`}>
                 {option.subtitle}
               </p>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -132,7 +162,7 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
             }
           `}
         >
-          {selected ? `Start ${selected === 'basic' ? 'Basic' : 'Advanced'} Analysis` : 'Select an Analysis Type'}
+          {selected ? `Start ${selected === 'basic' ? 'Basic' : selected === 'advanced' ? 'Advanced' : 'AI'} Analysis` : 'Select an Analysis Type'}
         </button>
       </div>
     </div>

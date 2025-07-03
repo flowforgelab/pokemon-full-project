@@ -1,0 +1,227 @@
+/**
+ * API Route for AI-powered deck analysis
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { analyzeWithAI } from '@/lib/analysis/ai-deck-analyzer';
+import { prisma } from '@/server/db/prisma';
+import { z } from 'zod';
+
+// Request validation schema
+const aiAnalysisSchema = z.object({
+  deckId: z.string(),
+  options: z.object({
+    model: z.enum(['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo']).optional(),
+    temperature: z.number().min(0).max(1).optional(),
+    focusAreas: z.array(z.enum([
+      'competitive', 'budget', 'beginner', 'synergy', 'matchups'
+    ])).optional()
+  }).optional()
+});
+
+// Load system prompt
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+let systemPrompt: string;
+try {
+  systemPrompt = readFileSync(
+    join(process.cwd(), 'AI_DECK_ANALYZER_PROMPT.md'),
+    'utf-8'
+  );
+} catch (error) {
+  console.error('Failed to load AI analyzer prompt:', error);
+  systemPrompt = `You are an expert Pokemon TCG analyst. Provide comprehensive deck analysis in JSON format.`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    // Check authentication
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Validate request
+    const body = await req.json();
+    const validated = aiAnalysisSchema.parse(body);
+    
+    // Get deck with cards
+    const deck = await prisma.deck.findUnique({
+      where: { 
+        id: validated.deckId,
+        userId // Ensure user owns the deck
+      },
+      include: {
+        cards: {
+          include: {
+            card: true
+          }
+        }
+      }
+    });
+    
+    if (!deck) {
+      return NextResponse.json(
+        { error: 'Deck not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Check if user has premium features for AI analysis
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { subscriptionTier: true }
+    });
+    
+    // AI analysis requires at least Basic tier
+    if (!user || user.subscriptionTier === 'FREE') {
+      return NextResponse.json(
+        { error: 'AI analysis requires a Basic subscription or higher' },
+        { status: 403 }
+      );
+    }
+    
+    // Get OpenAI API key
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error('OpenAI API key not configured');
+      return NextResponse.json(
+        { error: 'AI analysis service not configured' },
+        { status: 500 }
+      );
+    }
+    
+    // Customize prompt based on focus areas
+    let customPrompt = systemPrompt;
+    if (validated.options?.focusAreas && validated.options.focusAreas.length > 0) {
+      customPrompt += '\n\nFOCUS AREAS: Please pay special attention to:\n';
+      validated.options.focusAreas.forEach(area => {
+        switch (area) {
+          case 'competitive':
+            customPrompt += '- Competitive viability and tournament performance\n';
+            break;
+          case 'budget':
+            customPrompt += '- Budget considerations and cost-effective alternatives\n';
+            break;
+          case 'beginner':
+            customPrompt += '- Beginner-friendly explanations and simple improvements\n';
+            break;
+          case 'synergy':
+            customPrompt += '- Card synergies, combos, and anti-synergies\n';
+            break;
+          case 'matchups':
+            customPrompt += '- Detailed matchup analysis against meta decks\n';
+            break;
+        }
+      });
+    }
+    
+    // Perform AI analysis
+    const analysis = await analyzeWithAI(
+      deck.cards,
+      deck.name,
+      {
+        apiKey,
+        model: validated.options?.model || 'gpt-4-turbo-preview',
+        temperature: validated.options?.temperature || 0.7,
+        systemPrompt: customPrompt
+      }
+    );
+    
+    // Store analysis result (optional - for history/caching)
+    await prisma.$executeRaw`
+      INSERT INTO "DeckAnalysis" (deck_id, type, data, created_at)
+      VALUES (${deck.id}, 'AI', ${JSON.stringify(analysis)}::jsonb, NOW())
+      ON CONFLICT (deck_id, type) DO UPDATE
+      SET data = EXCLUDED.data, created_at = NOW()
+    `;
+    
+    // Track usage for rate limiting (premium users get more)
+    const dailyLimit = user.subscriptionTier === 'ULTIMATE' ? 50 :
+                      user.subscriptionTier === 'PREMIUM' ? 20 : 10;
+    
+    // Simple in-memory rate limiting (should use Redis in production)
+    // TODO: Implement proper rate limiting with Redis
+    
+    return NextResponse.json({
+      success: true,
+      analysis,
+      deck: {
+        id: deck.id,
+        name: deck.name,
+        format: deck.format
+      },
+      usage: {
+        remaining: dailyLimit - 1, // Simplified
+        resetAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    });
+    
+  } catch (error) {
+    console.error('AI analysis error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { 
+        error: 'Analysis failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// GET endpoint to check rate limits
+export async function GET(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { subscriptionTier: true }
+    });
+    
+    const dailyLimit = !user ? 0 :
+                      user.subscriptionTier === 'ULTIMATE' ? 50 :
+                      user.subscriptionTier === 'PREMIUM' ? 20 :
+                      user.subscriptionTier === 'BASIC' ? 10 : 0;
+    
+    return NextResponse.json({
+      tier: user?.subscriptionTier || 'FREE',
+      dailyLimit,
+      used: 0, // TODO: Track actual usage
+      remaining: dailyLimit,
+      resetAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      features: {
+        aiAnalysis: user && user.subscriptionTier !== 'FREE',
+        models: user?.subscriptionTier === 'ULTIMATE' ? 
+          ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'] :
+          ['gpt-3.5-turbo'],
+        temperature: user?.subscriptionTier === 'ULTIMATE'
+      }
+    });
+    
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to get usage info' },
+      { status: 500 }
+    );
+  }
+}
