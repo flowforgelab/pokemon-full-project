@@ -425,14 +425,44 @@ function checkEnergyBalance(
   advice: KidFriendlyAdvice[],
   swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
+  // First, analyze energy requirements from attackers
+  const pokemonCards = cards.filter(dc => dc.card.supertype === 'POKEMON');
+  const energyRequirements = new Map<string, number>();
+  let totalEnergyNeeded = 0;
+  let hasColorlessOnlyAttackers = false;
+  
+  // Count energy requirements from all attackers
+  pokemonCards.forEach(dc => {
+    if (dc.card.attacks && dc.card.attacks.length > 0) {
+      dc.card.attacks.forEach(attack => {
+        if (attack.cost && attack.cost.length > 0) {
+          attack.cost.forEach(energyType => {
+            if (energyType === 'Colorless') {
+              hasColorlessOnlyAttackers = true;
+            } else {
+              energyRequirements.set(energyType, 
+                (energyRequirements.get(energyType) || 0) + dc.quantity);
+            }
+          });
+          // Track total energy needed per attacker
+          totalEnergyNeeded += attack.cost.length * dc.quantity;
+        }
+      });
+    }
+  });
+  
+  // Calculate recommended energy count (average needed + buffer)
+  const avgEnergyPerAttacker = totalEnergyNeeded > 0 ? Math.ceil(totalEnergyNeeded / 6) : 2;
+  const recommendedEnergy = Math.max(12, Math.min(15, avgEnergyPerAttacker + 3));
+  
   // Check total energy
   if (counts.energy < 10) {
     advice.push({
-      category: 'needs-help',
-      icon: '🤔',
+      category: 'oops',
+      icon: '❌',
       title: 'Need More Energy!',
       message: `You only have ${counts.energy} Energy cards. Your Pokemon need energy to attack!`,
-      tip: 'Most decks need 12-15 Energy cards to work well.',
+      tip: `Based on your attackers, you need about ${recommendedEnergy} Energy cards.`,
       fixIt: 'Add more Basic Energy cards that match your Pokemon\'s types!'
     });
   } else if (counts.energy > 20) {
@@ -442,29 +472,58 @@ function checkEnergyBalance(
       title: 'Too Much Energy!',
       message: `You have ${counts.energy} Energy cards. That\'s too many!`,
       tip: 'Too much Energy means you\'ll draw Energy when you need Pokemon or Trainers.',
-      fixIt: 'Try using 12-15 Energy cards instead.'
+      fixIt: `Try using ${recommendedEnergy} Energy cards instead.`
     });
-  } else {
+  } else if (Math.abs(counts.energy - recommendedEnergy) <= 2) {
     advice.push({
       category: 'good',
       icon: '👍',
       title: 'Good Energy Amount!',
-      message: `${counts.energy} Energy cards is perfect!`
+      message: `${counts.energy} Energy cards matches your attackers' needs!`
     });
   }
   
-  // Check energy types
+  // Check energy types match requirements
   const energyTypeCount = new Map<string, number>();
   const pokemonTypes = new Set<string>();
   
+  // Count actual energy cards in deck
   cards.forEach(dc => {
-    if (dc.card.supertype === 'ENERGY' && dc.card.subtypes?.includes('Basic')) {
-      const energyType = dc.card.name.replace(' Energy', '');
-      energyTypeCount.set(energyType, (energyTypeCount.get(energyType) || 0) + dc.quantity);
+    if (dc.card.supertype === 'ENERGY') {
+      if (dc.card.subtypes?.includes('Basic')) {
+        const energyType = dc.card.name.replace(' Energy', '');
+        energyTypeCount.set(energyType, (energyTypeCount.get(energyType) || 0) + dc.quantity);
+      } else if (dc.card.subtypes?.includes('Special')) {
+        // Special energy can often provide multiple types
+        energyTypeCount.set('Special', (energyTypeCount.get('Special') || 0) + dc.quantity);
+      }
     } else if (dc.card.supertype === 'POKEMON' && dc.card.types) {
       dc.card.types.forEach(type => pokemonTypes.add(type));
     }
   });
+  
+  // Check if we have energy for required types
+  const missingEnergyTypes: string[] = [];
+  energyRequirements.forEach((count, type) => {
+    if (type !== 'Colorless' && !energyTypeCount.has(type)) {
+      missingEnergyTypes.push(type);
+    }
+  });
+  
+  if (missingEnergyTypes.length > 0) {
+    advice.push({
+      category: 'oops',
+      icon: '❌',
+      title: 'Energy Types Don\'t Match!',
+      message: `Your Pokemon need ${missingEnergyTypes.join(' and ')} Energy, but you don\'t have any!`,
+      tip: 'Pokemon can only attack if you have the right type of Energy.',
+      fixIt: `Add ${missingEnergyTypes.join(' and ')} Energy cards to your deck!`,
+      cardsToAdd: missingEnergyTypes.map(type => ({
+        name: `${type} Energy`,
+        why: 'Your Pokemon need this to attack!'
+      }))
+    });
+  }
   
   if (energyTypeCount.size > 2) {
     // Sort energy types by count
@@ -515,9 +574,12 @@ function checkTrainerCards(
   let drawSupporters = 0;
   let searchCards = 0;
   let energyAccel = 0;
+  let hasDrawAbilities = false;
   
   const trainerCards = cards.filter(dc => dc.card.supertype === 'TRAINER');
+  const pokemonCards = cards.filter(dc => dc.card.supertype === 'POKEMON');
   
+  // Check trainers
   trainerCards.forEach(dc => {
     const cardName = dc.card.name.toLowerCase();
     const cardText = (dc.card.rules?.join(' ') || '').toLowerCase();
@@ -525,12 +587,14 @@ function checkTrainerCards(
     // Count draw supporters
     if (cardName.includes('professor') || cardName.includes('research') || 
         cardName.includes('cynthia') || cardName.includes('marnie') ||
+        cardName.includes('lillie') || cardName.includes('hop') ||
         cardText.includes('draw')) {
       drawSupporters += dc.quantity;
     }
     
     // Count search cards
     if (cardName.includes('ball') || cardName.includes('search') ||
+        cardName.includes('communication') || cardName.includes('fan club') ||
         cardText.includes('search your deck')) {
       searchCards += dc.quantity;
     }
@@ -538,6 +602,22 @@ function checkTrainerCards(
     // Count energy acceleration
     if (cardText.includes('attach') && cardText.includes('energy')) {
       energyAccel += dc.quantity;
+    }
+  });
+  
+  // Check Pokemon abilities that help consistency
+  pokemonCards.forEach(dc => {
+    if (dc.card.abilities) {
+      dc.card.abilities.forEach(ability => {
+        const abilityText = (ability.text || '').toLowerCase();
+        // Check for draw abilities like Shady Dealings, Trade, Concealed Cards
+        if (abilityText.includes('draw') || 
+            ability.name.toLowerCase().includes('trade') ||
+            ability.name.toLowerCase().includes('shady') ||
+            ability.name.toLowerCase().includes('concealed')) {
+          hasDrawAbilities = true;
+        }
+      });
     }
   });
   
@@ -799,8 +879,13 @@ function checkEvolutions(
     }
   });
   
-  // Report evolution ratio problems first
-  if (evolutionLineIssues.length > 0) {
+  // Check for Rare Candy which allows skipping Stage 1
+  const hasRareCandy = cards.some(dc => 
+    dc.card.name.toLowerCase().includes('rare candy') && dc.quantity > 0
+  );
+  
+  // Report evolution ratio problems first (unless Rare Candy is present)
+  if (evolutionLineIssues.length > 0 && !hasRareCandy) {
     const issue = evolutionLineIssues[0];
     advice.push({
       category: 'oops',
@@ -816,6 +901,14 @@ function checkEvolutions(
       priority: 'high',
       remove: [{name: issue.stage2, quantity: 1, reason: `You have ${issue.stage2Qty} but only ${issue.stage1Qty} ${issue.stage1}`}],
       add: [{name: issue.stage1, quantity: 1, why: 'Balance your evolution line'}]
+    });
+  } else if (evolutionLineIssues.length > 0 && hasRareCandy) {
+    // Just a tip if they have Rare Candy
+    advice.push({
+      category: 'good',
+      icon: '👍',
+      title: 'Using Rare Candy Strategy!',
+      message: 'Your evolution line looks uneven, but Rare Candy lets you skip Stage 1!'
     });
   }
   
@@ -848,48 +941,119 @@ function checkEvolutions(
 }
 
 /**
- * Calculate kid-friendly score
+ * Calculate kid-friendly score using tiered system
  */
 function calculateKidScore(advice: KidFriendlyAdvice[]): number {
-  let score = 100;
+  // Start with base score
+  let baseScore = 100;
   
-  // Count issues by category
-  let oopsCount = 0;
-  let needsHelpCount = 0;
-  let goodCount = 0;
+  // Categorize issues by tier
+  const tier1Issues: KidFriendlyAdvice[] = [];
+  const tier2Issues: KidFriendlyAdvice[] = [];
+  const tier3Issues: KidFriendlyAdvice[] = [];
+  const tier4Issues: KidFriendlyAdvice[] = [];
+  const positives: KidFriendlyAdvice[] = [];
   
   advice.forEach(item => {
-    switch (item.category) {
-      case 'oops':
-        oopsCount++;
-        score -= 15; // Reduced from 20
-        break;
-      case 'needs-help':
-        needsHelpCount++;
-        score -= 8; // Reduced from 10
-        break;
-      case 'good':
-        goodCount++;
-        score += 3; // Reduced from 5
-        break;
-      case 'great':
-        score += 5; // Reduced from 10
-        break;
+    // Tier 1: Fundamental issues (critical)
+    if (item.title.includes('No Pokemon Can Attack') ||
+        item.title.includes('Need More Basic Pokemon') ||
+        item.title.includes('Not Enough Cards') ||
+        item.title.includes('Too Many Cards') ||
+        item.title.includes('Too Many Copies') ||
+        item.title.includes('Missing Pokemon to Evolve') ||
+        item.title.includes('Energy Types Don\'t Match')) {
+      tier1Issues.push(item);
+    }
+    // Tier 2: Consistency issues
+    else if (item.title.includes('Need Draw Power') ||
+             item.title.includes('Missing Draw Power') ||
+             item.title.includes('Need Pokemon Search') ||
+             item.title.includes('Missing Switch Cards') ||
+             item.title.includes('Need More Energy') ||
+             item.title.includes('Slow Energy Setup') ||
+             item.title.includes('Need More Trainer Cards')) {
+      tier2Issues.push(item);
+    }
+    // Tier 3: Optimization issues
+    else if (item.title.includes('Attacks Need More Power') ||
+             item.title.includes('Too Many Energy Types') ||
+             item.title.includes('Too Much Energy') ||
+             item.title.includes('Need More Attackers') ||
+             item.title.includes('Too Many Special Pokemon')) {
+      tier3Issues.push(item);
+    }
+    // Tier 4: Fine-tuning
+    else if (item.category === 'needs-help') {
+      tier4Issues.push(item);
+    }
+    // Positive feedback
+    else if (item.category === 'good' || item.category === 'great') {
+      positives.push(item);
     }
   });
   
-  // Additional penalties for multiple issues
-  if (oopsCount >= 2) score -= 10;
-  if (needsHelpCount >= 3) score -= 10;
+  // Calculate base deductions with balanced penalties
+  let deductions = 0;
   
-  // Cap bonuses from 'good' categories
-  const maxGoodBonus = 15;
-  const currentGoodBonus = goodCount * 3;
-  if (currentGoodBonus > maxGoodBonus) {
-    score = score - currentGoodBonus + maxGoodBonus;
+  // Tier 1: Fundamental failures (25 points each, hard cap at 50)
+  if (tier1Issues.length > 0) {
+    deductions += 25 * tier1Issues.length;
+    // If ANY Tier 1 issue exists, score cannot exceed 50
+    baseScore = Math.min(baseScore, 50);
   }
   
-  return Math.max(0, Math.min(100, score));
+  // Tier 2: Consistency problems (15 points each, cap at 70)
+  if (tier2Issues.length > 0) {
+    deductions += 15 * tier2Issues.length;
+    // With Tier 2 issues, score cannot exceed 70
+    if (tier1Issues.length === 0) {
+      baseScore = Math.min(baseScore, 70);
+    }
+  }
+  
+  // Tier 3: Power/efficiency issues (8 points each, cap at 85)
+  if (tier3Issues.length > 0) {
+    deductions += 8 * tier3Issues.length;
+    // With only Tier 3 issues, score cannot exceed 85
+    if (tier1Issues.length === 0 && tier2Issues.length === 0) {
+      baseScore = Math.min(baseScore, 85);
+    }
+  }
+  
+  // Tier 4: Minor optimizations (3 points each)
+  deductions += 3 * tier4Issues.length;
+  
+  // Apply deductions but ensure minimum score based on issue severity
+  let finalScore = baseScore - deductions;
+  
+  // Bonuses for positives (max 10 points, 2 per positive)
+  const bonusPoints = Math.min(10, positives.length * 2);
+  finalScore += bonusPoints;
+  
+  // Additional severity checks
+  const totalIssues = tier1Issues.length + tier2Issues.length + tier3Issues.length + tier4Issues.length;
+  
+  // Many issues = lower score
+  if (totalIssues >= 8) {
+    finalScore = Math.min(finalScore, 50);
+  } else if (totalIssues >= 6) {
+    finalScore = Math.min(finalScore, 65);
+  } else if (totalIssues >= 4) {
+    finalScore = Math.min(finalScore, 75);
+  }
+  
+  // Multiple critical issues = very low score
+  if (tier1Issues.length >= 2) {
+    finalScore = Math.min(finalScore, 25);
+  }
+  
+  // Perfect deck is rare - need zero issues for 95+
+  if (totalIssues === 0 && positives.length >= 5) {
+    finalScore = Math.min(95, finalScore);
+  }
+  
+  return Math.max(0, Math.min(100, finalScore));
 }
 
 /**
@@ -1019,6 +1183,70 @@ export function getDetailedSwapRecommendations(
 }
 
 /**
+ * Calculate setup probability for the deck
+ */
+function calculateSetupProbability(
+  cards: Array<DeckCard & { card: Card }>
+): { firstTurn: number; byTurn3: number } {
+  const basicPokemon = cards.filter(dc => 
+    dc.card.supertype === 'POKEMON' && dc.card.subtypes?.includes('Basic')
+  );
+  const totalBasics = basicPokemon.reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  // Calculate probability of ideal setup (Basic + Energy + Draw)
+  const energyCount = cards.filter(dc => dc.card.supertype === 'ENERGY')
+    .reduce((sum, dc) => sum + dc.quantity, 0);
+  const drawCards = cards.filter(dc => {
+    const name = dc.card.name.toLowerCase();
+    const text = (dc.card.rules?.join(' ') || '').toLowerCase();
+    return name.includes('professor') || name.includes('research') || 
+           name.includes('marnie') || text.includes('draw');
+  }).reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  // More realistic probabilities
+  // Chance of at least 1 basic in opening 7 cards
+  const basicProb = 1 - (Math.pow((60 - totalBasics) / 60, 7) * Math.pow((59 - totalBasics) / 59, 6) * 
+                         Math.pow((58 - totalBasics) / 58, 5) * Math.pow((57 - totalBasics) / 57, 4) * 
+                         Math.pow((56 - totalBasics) / 56, 3) * Math.pow((55 - totalBasics) / 55, 2) * 
+                         Math.pow((54 - totalBasics) / 54, 1));
+  
+  // Simplified setup probability (basic + some resources)
+  const firstTurnSetup = basicProb * (energyCount / 60) * (drawCards / 60);
+  const byTurn3Setup = Math.min(0.85, firstTurnSetup * 2.5); // More realistic
+  
+  return {
+    firstTurn: Math.round(firstTurnSetup * 100),
+    byTurn3: Math.round(byTurn3Setup * 100)
+  };
+}
+
+/**
+ * Analyze prize trade economy
+ */
+function analyzePrizeTrade(
+  cards: Array<DeckCard & { card: Card }>
+): { rating: 'favorable' | 'neutral' | 'unfavorable'; multiPrizers: number } {
+  const multiPrizers = cards.filter(dc => 
+    dc.card.supertype === 'POKEMON' && 
+    (dc.card.subtypes?.includes('GX') || dc.card.subtypes?.includes('EX') || 
+     dc.card.subtypes?.includes('V') || dc.card.subtypes?.includes('VMAX') ||
+     dc.card.subtypes?.includes('VSTAR'))
+  ).reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  const singlePrizers = cards.filter(dc => 
+    dc.card.supertype === 'POKEMON' && 
+    !dc.card.subtypes?.includes('GX') && !dc.card.subtypes?.includes('EX') && 
+    !dc.card.subtypes?.includes('V') && !dc.card.subtypes?.includes('VMAX') &&
+    !dc.card.subtypes?.includes('VSTAR')
+  ).reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  if (multiPrizers > 8) return { rating: 'unfavorable', multiPrizers };
+  if (multiPrizers > 4 && singlePrizers < multiPrizers) return { rating: 'unfavorable', multiPrizers };
+  if (multiPrizers <= 4 && singlePrizers >= multiPrizers * 2) return { rating: 'favorable', multiPrizers };
+  return { rating: 'neutral', multiPrizers };
+}
+
+/**
  * Check deck balance and common issues
  */
 function checkDeckBalance(
@@ -1070,30 +1298,57 @@ function checkDeckBalance(
     });
   }
   
-  // Check for excessive legendary/rare Pokemon
-  const specialPokemon = cards.filter(dc => 
-    dc.card.supertype === 'POKEMON' && 
-    (dc.card.subtypes?.includes('GX') || dc.card.subtypes?.includes('EX') || 
-     dc.card.subtypes?.includes('V') || dc.card.subtypes?.includes('VMAX') ||
-     dc.card.subtypes?.includes('Prism Star'))
-  );
-  const rareCount = specialPokemon.reduce((sum, dc) => sum + dc.quantity, 0);
+  // Check for excessive legendary/rare Pokemon and prize trade
+  const prizeTrade = analyzePrizeTrade(cards);
   
-  if (rareCount > 6) {
+  if (prizeTrade.rating === 'unfavorable') {
     advice.push({
       category: 'needs-help',
       icon: '🤔',
       title: 'Too Many Special Pokemon!',
-      message: `You have ${rareCount} GX/EX/V/Prism Star Pokemon. That\'s a lot!`,
+      message: `You have ${prizeTrade.multiPrizers} GX/EX/V Pokemon. That\'s a lot!`,
       tip: 'When these get knocked out, your opponent takes 2 or 3 prizes instead of 1!',
       fixIt: 'Mix in some regular Pokemon that only give up 1 prize.',
-      cardsToRemove: specialPokemon.slice(0, 2).map(dc => ({
+      cardsToRemove: cards.filter(dc => 
+        dc.card.supertype === 'POKEMON' && 
+        (dc.card.subtypes?.includes('GX') || dc.card.subtypes?.includes('EX') || 
+         dc.card.subtypes?.includes('V') || dc.card.subtypes?.includes('VMAX'))
+      ).slice(0, 2).map(dc => ({
         name: dc.card.name,
         reason: 'Gives up multiple prizes'
       })),
       cardsToAdd: [
         { name: 'Regular Pokemon (1 prize)', why: 'Harder for opponent to win!' }
       ]
+    });
+  }
+  
+  // Check setup probability with more reasonable thresholds
+  const setupProb = calculateSetupProbability(cards);
+  if (setupProb.firstTurn < 10) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Very Slow Setup!',
+      message: `Only ${setupProb.firstTurn}% chance of good first turn setup!`,
+      tip: 'You need Basic Pokemon + Energy + Draw cards to start strong.',
+      fixIt: 'Add more consistency cards to improve your early game.'
+    });
+  } else if (setupProb.byTurn3 < 40) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Inconsistent Setup!',
+      message: `Only ${setupProb.byTurn3}% chance of setup by turn 3.`,
+      tip: 'Most games are decided in the first few turns!',
+      fixIt: 'Add more search and draw cards for consistency.'
+    });
+  } else if (setupProb.firstTurn >= 25) {
+    advice.push({
+      category: 'good',
+      icon: '👍',
+      title: 'Good Setup Potential!',
+      message: `${setupProb.firstTurn}% chance of strong first turn!`
     });
   }
   
