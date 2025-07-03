@@ -3,7 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 import { 
   reviewAnalysisWithOpenAI, 
   type DeckAnalysisPayload,
-  type OpenAIReviewResponse 
+  type OpenAIReviewResponse,
+  type OpenAIModelConfig
 } from '@/lib/analysis/openai-analysis-reviewer';
 
 export async function POST(request: NextRequest) {
@@ -28,9 +29,10 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { payload, systemPrompt } = body as {
+    const { payload, systemPrompt, modelConfig } = body as {
       payload: DeckAnalysisPayload;
       systemPrompt?: string;
+      modelConfig?: Partial<OpenAIModelConfig>;
     };
 
     if (!payload) {
@@ -44,7 +46,8 @@ export async function POST(request: NextRequest) {
     const review = await reviewAnalysisWithOpenAI(
       payload,
       openAIKey,
-      systemPrompt
+      systemPrompt,
+      modelConfig
     );
 
     return NextResponse.json({

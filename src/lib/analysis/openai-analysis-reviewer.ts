@@ -125,13 +125,20 @@ export function prepareDeckAnalysisPayload(
   };
 }
 
+export interface OpenAIModelConfig {
+  model: 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4o' | 'gpt-4-turbo';
+  temperature?: number;
+  maxTokens?: number;
+}
+
 /**
  * Call OpenAI API to review the analysis
  */
 export async function reviewAnalysisWithOpenAI(
   payload: DeckAnalysisPayload,
   apiKey: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  modelConfig?: Partial<OpenAIModelConfig>
 ): Promise<OpenAIReviewResponse> {
   const defaultSystemPrompt = `You are an expert Pokemon TCG deck analyst reviewer. Your job is to evaluate how well a deck analysis tool performed its analysis.
 
@@ -165,7 +172,7 @@ Return your assessment in the specified JSON format.`;
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
+        model: modelConfig?.model || 'gpt-4.1-mini', // Default to GPT-4.1 mini
         messages: [
           {
             role: 'system',
@@ -177,8 +184,8 @@ Return your assessment in the specified JSON format.`;
           }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.3,
-        max_tokens: 2000
+        temperature: modelConfig?.temperature ?? 0.3,
+        max_tokens: modelConfig?.maxTokens ?? 1500
       })
     });
 

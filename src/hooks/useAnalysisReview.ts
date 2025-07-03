@@ -4,7 +4,8 @@ import type { BasicDeckAnalysis } from '@/lib/analysis/basic-deck-analyzer';
 import type { DeckAnalysis } from '@/lib/analysis/deck-analyzer';
 import { 
   prepareDeckAnalysisPayload,
-  type OpenAIReviewResponse 
+  type OpenAIReviewResponse,
+  type OpenAIModelConfig
 } from '@/lib/analysis/openai-analysis-reviewer';
 
 export function useAnalysisReview() {
@@ -17,7 +18,8 @@ export function useAnalysisReview() {
     cards: Array<DeckCard & { card: Card }>,
     analysis: BasicDeckAnalysis | DeckAnalysis,
     analysisType: 'basic' | 'advanced' = 'basic',
-    systemPrompt?: string
+    systemPrompt?: string,
+    modelConfig?: Partial<OpenAIModelConfig>
   ) => {
     setIsLoading(true);
     setError(null);
@@ -39,7 +41,8 @@ export function useAnalysisReview() {
         },
         body: JSON.stringify({
           payload,
-          systemPrompt
+          systemPrompt,
+          modelConfig: modelConfig || { model: 'gpt-4.1-mini' }
         })
       });
 
