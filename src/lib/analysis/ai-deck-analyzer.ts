@@ -267,6 +267,11 @@ export async function analyzeWithAI(
     // Use the OpenAI Assistant API
     const assistantId = 'asst_6zlH4JsbKRq10am9JTAULmRP';
     
+    // Validate API key
+    if (!options.apiKey) {
+      throw new Error('OpenAI API key is required');
+    }
+    
     // Create a thread
     const threadResponse = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
@@ -278,7 +283,9 @@ export async function analyzeWithAI(
     });
     
     if (!threadResponse.ok) {
-      throw new Error(`Failed to create thread: ${threadResponse.statusText}`);
+      const errorData = await threadResponse.json().catch(() => ({}));
+      console.error('Thread creation error:', errorData);
+      throw new Error(`Failed to create thread: ${threadResponse.statusText} - ${JSON.stringify(errorData)}`);
     }
     
     const thread = await threadResponse.json();
@@ -298,7 +305,9 @@ export async function analyzeWithAI(
     });
     
     if (!messageResponse.ok) {
-      throw new Error(`Failed to add message: ${messageResponse.statusText}`);
+      const errorData = await messageResponse.json().catch(() => ({}));
+      console.error('Message creation error:', errorData);
+      throw new Error(`Failed to add message: ${messageResponse.statusText} - ${JSON.stringify(errorData)}`);
     }
     
     // Run the assistant
@@ -310,22 +319,27 @@ export async function analyzeWithAI(
         'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
-        assistant_id: assistantId,
-        model: options.model || 'gpt-4-turbo-preview',
-        temperature: options.temperature || 0.7
+        assistant_id: assistantId
+        // Note: model and temperature are configured on the assistant itself
       })
     });
     
     if (!runResponse.ok) {
-      throw new Error(`Failed to run assistant: ${runResponse.statusText}`);
+      const errorData = await runResponse.json().catch(() => ({}));
+      console.error('Assistant run error:', errorData);
+      throw new Error(`Failed to run assistant: ${runResponse.statusText} - ${JSON.stringify(errorData)}`);
     }
     
     const run = await runResponse.json();
     
-    // Poll for completion
+    // Poll for completion with timeout
     let runStatus = run;
-    while (runStatus.status !== 'completed') {
+    const maxAttempts = 60; // 60 seconds timeout
+    let attempts = 0;
+    
+    while (runStatus.status !== 'completed' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
       
       const statusResponse = await fetch(
         `https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`,
@@ -338,14 +352,21 @@ export async function analyzeWithAI(
       );
       
       if (!statusResponse.ok) {
-        throw new Error(`Failed to check run status: ${statusResponse.statusText}`);
+        const errorData = await statusResponse.json().catch(() => ({}));
+        throw new Error(`Failed to check run status: ${statusResponse.statusText} - ${JSON.stringify(errorData)}`);
       }
       
       runStatus = await statusResponse.json();
+      console.log(`Run status: ${runStatus.status} (attempt ${attempts})`);
       
       if (runStatus.status === 'failed' || runStatus.status === 'cancelled') {
-        throw new Error(`Assistant run ${runStatus.status}`);
+        console.error('Run failed:', runStatus);
+        throw new Error(`Assistant run ${runStatus.status}: ${runStatus.last_error?.message || 'Unknown error'}`);
       }
+    }
+    
+    if (attempts >= maxAttempts) {
+      throw new Error('Assistant run timed out after 60 seconds');
     }
     
     // Get messages
