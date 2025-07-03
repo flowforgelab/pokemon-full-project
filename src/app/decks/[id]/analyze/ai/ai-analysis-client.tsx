@@ -6,8 +6,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { PremiumCard } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { 
   Brain, 
   Sparkles, 
@@ -23,7 +23,7 @@ import {
   Info
 } from 'lucide-react';
 import type { AIDeckAnalysis } from '@/lib/analysis/ai-deck-analyzer';
-import { Badge } from '@/components/ui/Badge';
+// Badge component inline since it doesn't exist in UI library
 import { cn } from '@/lib/utils';
 
 interface AIAnalysisClientProps {
@@ -116,7 +116,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
       {!analysis ? (
         /* Configuration Section */
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <PremiumCard>
             <div className="p-6">
               <h2 className="text-xl font-semibold mb-4">Analysis Options</h2>
               
@@ -197,10 +197,10 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                 </div>
               )}
             </div>
-          </Card>
+          </PremiumCard>
 
           {/* Deck Summary */}
-          <Card>
+          <PremiumCard>
             <div className="p-6">
               <h2 className="text-xl font-semibold mb-4">Deck Summary</h2>
               <div className="space-y-3">
@@ -238,13 +238,13 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                 </div>
               </div>
             </div>
-          </Card>
+          </PremiumCard>
         </div>
       ) : (
         /* Analysis Results */
         <div className="space-y-6">
           {/* Overall Rating */}
-          <Card>
+          <PremiumCard>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -255,18 +255,18 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                 </div>
                 <div className="text-center">
                   <div className="text-4xl font-bold mb-2">{analysis.overallRating}/100</div>
-                  <Badge className={cn("text-lg px-3 py-1", tierColors[analysis.tierRating])}>
+                  <span className={cn("inline-block text-lg px-3 py-1 rounded-full font-semibold", tierColors[analysis.tierRating])}>
                     Tier {analysis.tierRating}
-                  </Badge>
+                  </span>
                 </div>
               </div>
             </div>
-          </Card>
+          </PremiumCard>
 
           {/* Strengths & Weaknesses */}
           <div className="grid gap-6 md:grid-cols-2">
             {/* Strengths */}
-            <Card>
+            <PremiumCard>
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
@@ -288,10 +288,10 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                   ))}
                 </div>
               </div>
-            </Card>
+            </PremiumCard>
 
             {/* Weaknesses */}
-            <Card>
+            <PremiumCard>
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -316,22 +316,29 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                   ))}
                 </div>
               </div>
-            </Card>
+            </PremiumCard>
           </div>
 
           {/* Improvements */}
           {analysis.improvements.length > 0 && (
-            <Card>
+            <PremiumCard>
               <div className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Recommended Improvements</h3>
                 <div className="space-y-4">
                   {analysis.improvements.map((improvement, idx) => (
                     <div key={idx} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant={improvement.priority === 'immediate' ? 'destructive' : 'default'}>
+                        <span className={cn(
+                          "inline-block px-2 py-1 text-xs font-semibold rounded-full",
+                          improvement.priority === 'immediate' 
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                        )}>
                           {improvement.priority}
-                        </Badge>
-                        <Badge variant="outline">{improvement.category}</Badge>
+                        </span>
+                        <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full border border-gray-300 dark:border-gray-600">
+                          {improvement.category}
+                        </span>
                       </div>
                       <p className="font-medium mb-2">{improvement.suggestion}</p>
                       
@@ -364,7 +371,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                   ))}
                 </div>
               </div>
-            </Card>
+            </PremiumCard>
           )}
 
           {/* Action Buttons */}
