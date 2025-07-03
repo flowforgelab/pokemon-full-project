@@ -1,13 +1,21 @@
-# Pokemon TCG Deck Builder - Project Checklist
+# Pokemon TCG Deck Builder - Project Checklist (v1.1.0)
 
 ## 🎯 Project Overview
 A comprehensive Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks.
 
 ### 🚀 Current Focus: Deck Analyzer Transformation
 - **Phase 1**: ✅ Core Calculations (100% Complete)
-- **Phase 2**: ⚡ Competitive Intelligence (60% Complete - 3/5 tasks)
+- **Phase 2**: ✅ Competitive Intelligence (100% Complete - 5/5 tasks)
 - **Phase 3**: ✅ Nuanced Scoring (100% Complete)
-- **Phase 4**: 🚧 Actionable Recommendations (80% Complete - 4/5 tasks)
+- **Phase 4**: ✅ Actionable Recommendations (100% Complete - 5/5 tasks)
+- **Phase 5**: ✅ AI Integration & External Data (100% Complete)
+
+### 🆕 Recent Updates (July 3, 2025)
+- **Deck Analyzer Overhaul**: Implemented tiered scoring system with strict penalties for fundamental issues
+- **AI-Powered Analysis**: Added GPT-4 integration with customizable focus areas and detailed recommendations
+- **Limitless TCG Integration**: Built web scraper for real tournament data and meta analysis
+- **AI Feedback Loop**: Created automated improvement system using OpenAI Assistant API
+- **UI Enhancements**: Added three analyzer options (Basic, Advanced, AI) with selection interface
 
 ## ✅ Completed Items
 
@@ -540,6 +548,27 @@ To deploy successfully on Vercel, configure these environment variables:
   - [x] Performance predictor with scoring system
   - [x] Deck comparison and head-to-head analysis
   - [x] API endpoints for analysis
+  - [x] **Enhanced Basic Analyzer** (Completed 2025-07-03):
+    - [x] Tiered scoring system with strict penalties (Tier 1-4)
+    - [x] Setup probability calculations with hypergeometric distribution
+    - [x] Prize trade economy analysis
+    - [x] Energy acceleration detection
+    - [x] Improved card quality scoring
+    - [x] Evolution line validation
+  - [x] **AI-Powered Analysis** (Completed 2025-07-03):
+    - [x] GPT-4 integration for nuanced deck analysis
+    - [x] Comprehensive AI analyzer module with structured output
+    - [x] AI analysis API route with model selection
+    - [x] Custom focus areas (competitive, budget, beginner, synergy, matchups)
+    - [x] Tier-based rating system (S/A/B/C/D/F)
+    - [x] Detailed improvement suggestions with card changes
+    - [x] AI_DECK_ANALYZER_PROMPT.md system prompt
+  - [x] **Analysis UI Enhancements** (Completed 2025-07-03):
+    - [x] AnalysisReviewButton for AI feedback loop
+    - [x] Three analyzer options: Basic, Advanced, AI
+    - [x] AnalysisSelector component for choosing analysis type
+    - [x] AI analysis client with configuration options
+    - [x] Ultimate tier model selection (GPT-3.5/4/4-Turbo)
 - [x] AI-Powered Recommendation System:
   - [x] Archetype-based deck generation from scratch
   - [x] Intelligent card replacement optimizer
@@ -551,6 +580,16 @@ To deploy successfully on Vercel, configure these environment variables:
   - [x] Multi-variant deck generation
   - [x] Smart filtering and constraint handling
   - [x] API endpoints for all recommendation features
+- [x] **AI Feedback Loop System** (Completed 2025-07-03):
+  - [x] OpenAI Assistant integration (asst_P2cUMxaYYnH1O6naiuRqAC72)
+  - [x] Feedback loop orchestrator for continuous improvement
+  - [x] Improvement parser to extract actionable insights
+  - [x] Automated improvement applier
+  - [x] Test deck library for validation
+  - [x] Improvement tracking with database storage
+  - [x] Configuration system for feedback parameters
+  - [x] API route for feedback loop execution
+  - [x] Performance metrics tracking
 - [x] Deck Building System:
   - [x] Drag-and-drop deck builder with touch support
   - [x] Deck validation (60 cards, etc.)
@@ -584,6 +623,15 @@ To deploy successfully on Vercel, configure these environment variables:
   - [x] Advanced search with filters
   - [x] Batch operations support
   - [x] Pricing data extraction (TCGPlayer USD & CardMarket EUR)
+- [x] **Limitless TCG Integration** (Completed 2025-07-03):
+  - [x] Web scraper for tournament data with Cheerio
+  - [x] Tournament list scraping with pagination
+  - [x] Individual tournament data extraction
+  - [x] Deck list parsing from tournament pages
+  - [x] Meta analysis service for tournament trends
+  - [x] Rate limiting (10 requests/minute)
+  - [x] Caching layer for scraped data
+  - [x] API routes for tournament data access
 - [x] Pricing API Integration:
   - [x] TCGPlayer prices provided by Pokemon TCG API
   - [x] CardMarket prices provided by Pokemon TCG API

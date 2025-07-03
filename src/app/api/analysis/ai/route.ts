@@ -72,19 +72,13 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Check if user has premium features for AI analysis
+    // Check if user exists (for rate limiting later)
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
       select: { subscriptionTier: true }
     });
     
-    // AI analysis requires at least Basic tier
-    if (!user || user.subscriptionTier === 'FREE') {
-      return NextResponse.json(
-        { error: 'AI analysis requires a Basic subscription or higher' },
-        { status: 403 }
-      );
-    }
+    // AI analysis is now free for all users
     
     // Get OpenAI API key
     const apiKey = process.env.OPENAI_API_KEY;
@@ -141,9 +135,11 @@ export async function POST(req: NextRequest) {
       SET data = EXCLUDED.data, created_at = NOW()
     `;
     
-    // Track usage for rate limiting (premium users get more)
-    const dailyLimit = user.subscriptionTier === 'ULTIMATE' ? 50 :
-                      user.subscriptionTier === 'PREMIUM' ? 20 : 10;
+    // Track usage for rate limiting (free users get 5 per day)
+    const dailyLimit = !user ? 5 :
+                      user.subscriptionTier === 'ULTIMATE' ? 50 :
+                      user.subscriptionTier === 'PREMIUM' ? 20 :
+                      user.subscriptionTier === 'BASIC' ? 10 : 5;
     
     // Simple in-memory rate limiting (should use Redis in production)
     // TODO: Implement proper rate limiting with Redis
@@ -198,10 +194,11 @@ export async function GET(req: NextRequest) {
       select: { subscriptionTier: true }
     });
     
-    const dailyLimit = !user ? 0 :
+    // Free tier now has access to AI analysis with daily limit
+    const dailyLimit = !user ? 5 :
                       user.subscriptionTier === 'ULTIMATE' ? 50 :
                       user.subscriptionTier === 'PREMIUM' ? 20 :
-                      user.subscriptionTier === 'BASIC' ? 10 : 0;
+                      user.subscriptionTier === 'BASIC' ? 10 : 5;
     
     return NextResponse.json({
       tier: user?.subscriptionTier || 'FREE',
@@ -210,7 +207,7 @@ export async function GET(req: NextRequest) {
       remaining: dailyLimit,
       resetAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       features: {
-        aiAnalysis: user && user.subscriptionTier !== 'FREE',
+        aiAnalysis: true, // Now available to all users
         models: user?.subscriptionTier === 'ULTIMATE' ? 
           ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'] :
           ['gpt-3.5-turbo'],

@@ -53,8 +53,8 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
     {
       id: 'ai' as const,
       title: 'AI Expert Analysis',
-      subtitle: 'Powered by GPT-4',
-      description: 'Get nuanced insights from an AI trained on competitive Pokemon TCG knowledge. Provides conversational analysis beyond rule-based systems.',
+      subtitle: 'Powered by GPT-4 (Free for now!)',
+      description: 'Get nuanced insights from an AI trained on competitive Pokemon TCG knowledge. Provides conversational analysis beyond rule-based systems. Currently available to all users!',
       icon: Brain,
       color: 'green',
       features: [
@@ -63,8 +63,8 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
         '🎯 Custom focus areas',
         '📈 Adaptive recommendations'
       ],
-      requiresSubscription: true,
-      badge: 'Premium'
+      requiresSubscription: false,
+      badge: 'FREE'
     }
   ];
 
@@ -122,7 +122,11 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
               <div className="flex items-start justify-between mb-4">
                 <Icon className={`h-10 w-10 ${isSelected ? (option.color === 'blue' ? 'text-blue-600' : option.color === 'purple' ? 'text-purple-600' : 'text-green-600') : 'text-gray-400'}`} />
                 {option.badge && (
-                  <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    option.badge === 'FREE' 
+                      ? 'text-blue-700 bg-blue-100' 
+                      : 'text-green-700 bg-green-100'
+                  }`}>
                     {option.badge}
                   </span>
                 )}

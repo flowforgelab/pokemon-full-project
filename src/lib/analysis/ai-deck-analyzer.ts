@@ -243,7 +243,7 @@ export function parseAIAnalysis(aiResponse: string): AIDeckAnalysis {
 }
 
 /**
- * Generate AI analysis using OpenAI
+ * Generate AI analysis using OpenAI Assistant API
  */
 export async function analyzeWithAI(
   cards: Array<DeckCard & { card: Card }>,
@@ -257,33 +257,120 @@ export async function analyzeWithAI(
 ): Promise<AIDeckAnalysis> {
   const deckData = prepareDeckForAI(cards, deckName);
   
-  // Use custom system prompt or default
-  const systemPrompt = options.systemPrompt || `You are an expert Pokemon Trading Card Game analyst and coach. Analyze the provided deck and give comprehensive feedback. Return your analysis as a JSON object matching the AIDeckAnalysis interface structure. Be specific, actionable, and consider both competitive and casual perspectives.`;
+  // Add focus areas to the deck data if provided in system prompt
+  let fullPrompt = `Please analyze this Pokemon TCG deck:\n\n${deckData}`;
+  if (options.systemPrompt && options.systemPrompt.includes('FOCUS AREAS:')) {
+    fullPrompt += '\n\n' + options.systemPrompt.split('FOCUS AREAS:')[1];
+  }
   
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use the OpenAI Assistant API
+    const assistantId = 'asst_6zlH4JsbKRq10am9JTAULmRP';
+    
+    // Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${options.apiKey}`
+        'Authorization': `Bearer ${options.apiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
+    
+    if (!threadResponse.ok) {
+      throw new Error(`Failed to create thread: ${threadResponse.statusText}`);
+    }
+    
+    const thread = await threadResponse.json();
+    
+    // Add message to thread
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${options.apiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify({
-        model: options.model || 'gpt-4-turbo-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Please analyze this Pokemon TCG deck:\n\n${deckData}` }
-        ],
-        temperature: options.temperature || 0.7,
-        response_format: { type: 'json_object' }
+        role: 'user',
+        content: fullPrompt
       })
     });
     
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+    if (!messageResponse.ok) {
+      throw new Error(`Failed to add message: ${messageResponse.statusText}`);
     }
     
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    // Run the assistant
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${options.apiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId,
+        model: options.model || 'gpt-4-turbo-preview',
+        temperature: options.temperature || 0.7
+      })
+    });
+    
+    if (!runResponse.ok) {
+      throw new Error(`Failed to run assistant: ${runResponse.statusText}`);
+    }
+    
+    const run = await runResponse.json();
+    
+    // Poll for completion
+    let runStatus = run;
+    while (runStatus.status !== 'completed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(
+        `https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${options.apiKey}`,
+            'OpenAI-Beta': 'assistants=v2'
+          }
+        }
+      );
+      
+      if (!statusResponse.ok) {
+        throw new Error(`Failed to check run status: ${statusResponse.statusText}`);
+      }
+      
+      runStatus = await statusResponse.json();
+      
+      if (runStatus.status === 'failed' || runStatus.status === 'cancelled') {
+        throw new Error(`Assistant run ${runStatus.status}`);
+      }
+    }
+    
+    // Get messages
+    const messagesResponse = await fetch(
+      `https://api.openai.com/v1/threads/${thread.id}/messages`,
+      {
+        headers: {
+          'Authorization': `Bearer ${options.apiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      }
+    );
+    
+    if (!messagesResponse.ok) {
+      throw new Error(`Failed to get messages: ${messagesResponse.statusText}`);
+    }
+    
+    const messages = await messagesResponse.json();
+    const assistantMessage = messages.data.find((m: any) => m.role === 'assistant');
+    
+    if (!assistantMessage || !assistantMessage.content[0] || assistantMessage.content[0].type !== 'text') {
+      throw new Error('No response from assistant');
+    }
+    
+    const aiResponse = assistantMessage.content[0].text.value;
     
     return parseAIAnalysis(aiResponse);
     
