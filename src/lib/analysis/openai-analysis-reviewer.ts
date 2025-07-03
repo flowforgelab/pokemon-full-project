@@ -129,10 +129,17 @@ export interface OpenAIModelConfig {
   model: 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4o' | 'gpt-4-turbo';
   temperature?: number;
   maxTokens?: number;
+  topP?: number;
+  assistantId?: string; // Optional: Use Assistant API instead of chat completion
 }
 
 /**
  * Call OpenAI API to review the analysis
+ * 
+ * @param payload - The deck and analysis data
+ * @param apiKey - OpenAI API key
+ * @param systemPrompt - System prompt (ignored if using assistant)
+ * @param modelConfig - Model configuration including optional assistantId
  */
 export async function reviewAnalysisWithOpenAI(
   payload: DeckAnalysisPayload,
@@ -140,6 +147,31 @@ export async function reviewAnalysisWithOpenAI(
   systemPrompt?: string,
   modelConfig?: Partial<OpenAIModelConfig>
 ): Promise<OpenAIReviewResponse> {
+  // If assistant ID is provided, use the enhanced integration
+  if (modelConfig?.assistantId) {
+    const { reviewAnalysisWithAssistant } = await import('./openai-enhanced-integration');
+    const result = await reviewAnalysisWithAssistant(
+      [], // Note: This would need the actual deck cards
+      { deckScore: payload.analysisOutput.score } as any,
+      {
+        apiKey,
+        assistantId: modelConfig.assistantId,
+        temperature: modelConfig.temperature,
+        topP: modelConfig.topP,
+        maxTokens: modelConfig.maxTokens
+      }
+    );
+    
+    // Convert enhanced response to basic response
+    return {
+      accuracyScore: result.accuracyScore,
+      missedIssues: result.missedIssues,
+      incorrectRecommendations: result.incorrectRecommendations,
+      goodPoints: result.goodPoints,
+      overallAssessment: result.overallAssessment,
+      suggestedImprovements: result.suggestedImprovements
+    };
+  }
   const defaultSystemPrompt = `You are an expert Pokemon TCG deck analyst reviewer. Your job is to evaluate how well a deck analysis tool performed its analysis.
 
 You will receive:

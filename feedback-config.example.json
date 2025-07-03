@@ -1,0 +1,54 @@
+{
+  "openAI": {
+    "assistantId": "asst_P2cUMxaYYnH1O6naiuRqAC72",
+    "temperature": 0.3,
+    "topP": 0.9,
+    "maxTokens": 2000
+  },
+  "autoApplyThreshold": 85,
+  "maxImprovementsPerRun": 10,
+  "requireTestsPass": true,
+  "testSettings": {
+    "sampleSize": 20,
+    "categories": ["energy-problems", "consistency-issues", "evolution-heavy"],
+    "parallelTests": true,
+    "timeout": 5000
+  },
+  "safety": {
+    "allowCriticalFileChanges": false,
+    "maxCodeChangeSize": 100,
+    "requireBackup": true,
+    "rollbackThreshold": 5
+  },
+  "improvementCategories": {
+    "bugFixes": true,
+    "performance": true,
+    "accuracy": true,
+    "newFeatures": false,
+    "refactoring": false,
+    "documentation": true
+  },
+  "filePatterns": {
+    "include": [
+      "src/lib/analysis/**/*.ts",
+      "!src/lib/analysis/test-decks/**",
+      "!src/lib/analysis/feedback-loop/**"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "**/types.ts",
+      "**/index.ts"
+    ]
+  },
+  "notifications": {
+    "onSuccess": true,
+    "onFailure": true,
+    "onRollback": true
+  },
+  "costControls": {
+    "maxCostPerRun": 1.00,
+    "maxMonthlyBudget": 30.00,
+    "pauseOnBudgetExceeded": true
+  }
+}
