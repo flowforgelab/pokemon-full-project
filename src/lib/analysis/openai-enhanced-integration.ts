@@ -368,7 +368,7 @@ Please provide:
 Be specific and detailed in your feedback.`;
 
   // Send as a text message to the assistant
-  const response = await fetch('https://api.openai.com/v1/threads', {
+  const threadResponse = await fetch('https://api.openai.com/v1/threads', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -377,12 +377,12 @@ Be specific and detailed in your feedback.`;
     }
   });
   
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Failed to create thread: ${response.statusText} - ${errorData}`);
+  if (!threadResponse.ok) {
+    const errorData = await threadResponse.text();
+    throw new Error(`Failed to create thread: ${threadResponse.statusText} - ${errorData}`);
   }
   
-  const thread = await response.json();
+  const thread = await threadResponse.json();
   
   // Add message with detailed prompt
   const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
@@ -465,15 +465,15 @@ Be specific and detailed in your feedback.`;
   const content = assistantMessage.content[0]?.text?.value || '';
   
   // Parse the response to extract structured feedback
-  const response = parseAssistantResponse(content);
+  const parsedResponse = parseAssistantResponse(content);
   
   return {
-    accuracyScore: response.accuracyScore || 70,
-    missedIssues: response.missedIssues || [],
-    incorrectRecommendations: response.incorrectRecommendations || [],
-    goodPoints: response.goodPoints || [],
-    overallAssessment: response.overallAssessment || content,
-    suggestedImprovements: response.suggestedImprovements || [],
+    accuracyScore: parsedResponse.accuracyScore || 70,
+    missedIssues: parsedResponse.missedIssues || [],
+    incorrectRecommendations: parsedResponse.incorrectRecommendations || [],
+    goodPoints: parsedResponse.goodPoints || [],
+    overallAssessment: parsedResponse.overallAssessment || content,
+    suggestedImprovements: parsedResponse.suggestedImprovements || [],
     codeImprovements: [],
     testCases: []
   };
