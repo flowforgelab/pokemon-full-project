@@ -121,44 +121,8 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Customize prompt based on user age and focus areas
+    // Customize prompt based on focus areas
     let customPrompt = systemPrompt;
-    
-    // Add age-appropriate instructions
-    if (validated.options?.userAge) {
-      const age = validated.options.userAge;
-      customPrompt += '\n\nUSER AGE CONTEXT:\n';
-      
-      if (age < 10) {
-        customPrompt += `The user is ${age} years old - a young child. You MUST:\n`;
-        customPrompt += '- Use VERY SIMPLE words that an 8-year-old can understand\n';
-        customPrompt += '- NO competitive jargon like "meta", "engine", "consistency", etc.\n';
-        customPrompt += '- Use fun comparisons like "Your deck is like a superhero team!"\n';
-        customPrompt += '- Include LOTS of emojis 🌟 😊 🎉 to make it fun\n';
-        customPrompt += '- Say things like "Great job!" and "This is so cool!"\n';
-        customPrompt += '- Explain cards like "Rayquaza is a super strong dragon!"\n';
-        customPrompt += '- Focus on what\'s FUN about their deck, not optimization\n';
-        customPrompt += '- Keep sentences SHORT and SIMPLE\n';
-      } else if (age < 13) {
-        customPrompt += `The user is ${age} years old. Please:\n`;
-        customPrompt += '- Use clear, simple language appropriate for kids\n';
-        customPrompt += '- Explain concepts in an engaging, educational way\n';
-        customPrompt += '- Balance fun with learning strategy basics\n';
-        customPrompt += '- Avoid overly complex competitive terminology\n';
-        customPrompt += '- Include some emojis to make it more engaging\n';
-      } else if (age < 18) {
-        customPrompt += `The user is ${age} years old (teenager). Please:\n`;
-        customPrompt += '- Use clear, accessible language\n';
-        customPrompt += '- Balance competitive insights with learning\n';
-        customPrompt += '- Explain advanced concepts when relevant\n';
-        customPrompt += '- Be encouraging while providing honest feedback\n';
-      } else {
-        customPrompt += `The user is ${age} years old (adult). Please:\n`;
-        customPrompt += '- Use appropriate technical language\n';
-        customPrompt += '- Provide detailed competitive analysis\n';
-        customPrompt += '- Focus on optimization and advanced strategies\n';
-      }
-    }
     
     if (validated.options?.focusAreas && validated.options.focusAreas.length > 0) {
       customPrompt += '\n\nFOCUS AREAS: Please pay special attention to:\n';
@@ -191,7 +155,8 @@ export async function POST(req: NextRequest) {
         apiKey,
         model: validated.options?.model || 'gpt-4-turbo-preview',
         temperature: validated.options?.temperature || 0.7,
-        systemPrompt: customPrompt
+        systemPrompt: customPrompt,
+        userAge: validated.options?.userAge
       }
     );
     

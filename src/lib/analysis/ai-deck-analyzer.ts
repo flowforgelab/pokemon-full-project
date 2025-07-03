@@ -88,7 +88,8 @@ export interface AIDeckAnalysis {
 export function prepareDeckForAI(
   cards: Array<DeckCard & { card: Card }>,
   deckName: string = 'Unnamed Deck',
-  format: 'STANDARD' | 'EXPANDED' = 'STANDARD'
+  format: 'STANDARD' | 'EXPANDED' = 'STANDARD',
+  userAge?: number
 ): string {
   // Group cards by category
   const pokemon = cards.filter(dc => dc.card.supertype === 'POKEMON');
@@ -98,7 +99,14 @@ export function prepareDeckForAI(
   // Create structured deck list
   let deckList = `DECK NAME: ${deckName}\n`;
   deckList += `FORMAT: ${format}\n`;
-  deckList += `TOTAL CARDS: ${cards.reduce((sum, dc) => sum + dc.quantity, 0)}\n\n`;
+  deckList += `TOTAL CARDS: ${cards.reduce((sum, dc) => sum + dc.quantity, 0)}\n`;
+  
+  // Add user age if provided
+  if (userAge !== undefined) {
+    deckList += `USER AGE: ${userAge}\n`;
+  }
+  
+  deckList += '\n';
   
   // Pokemon section
   deckList += `POKEMON (${pokemon.reduce((sum, dc) => sum + dc.quantity, 0)}):\n`;
@@ -253,19 +261,14 @@ export async function analyzeWithAI(
     model?: string;
     temperature?: number;
     systemPrompt?: string;
+    userAge?: number;
   }
 ): Promise<AIDeckAnalysis> {
-  const deckData = prepareDeckForAI(cards, deckName);
+  // Pass user age to deck preparation
+  const deckData = prepareDeckForAI(cards, deckName, 'STANDARD', options.userAge);
   
-  // Build the full prompt including all context
+  // Build the prompt - the age is now included in the deck data
   let fullPrompt = `Please analyze this Pokemon TCG deck:\n\n${deckData}`;
-  
-  // Extract age context if present
-  if (options.systemPrompt && options.systemPrompt.includes('USER AGE CONTEXT:')) {
-    const ageSection = options.systemPrompt.split('USER AGE CONTEXT:')[1].split('FOCUS AREAS:')[0];
-    // Put age instructions at the very beginning and make them very clear
-    fullPrompt = `🚨 CRITICAL INSTRUCTION 🚨\n${ageSection.trim()}\n\nREMEMBER: You MUST follow the age-appropriate language guidelines above!\n\n${fullPrompt}`;
-  }
   
   // Add focus areas if present
   if (options.systemPrompt && options.systemPrompt.includes('FOCUS AREAS:')) {
