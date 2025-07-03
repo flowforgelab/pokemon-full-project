@@ -18,7 +18,7 @@ const FEEDBACK_SECRET = process.env.FEEDBACK_LOOP_SECRET || process.env.CRON_SEC
 export async function POST(req: NextRequest) {
   try {
     // Check authentication - either logged in user or valid secret
-    const { userId } = auth();
+    const { userId } = await auth();
     const authHeader = req.headers.get('authorization');
     const providedSecret = authHeader?.replace('Bearer ', '');
     
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     // Check authentication - either logged in user or valid secret
-    const { userId } = auth();
+    const { userId } = await auth();
     const authHeader = req.headers.get('authorization');
     const providedSecret = authHeader?.replace('Bearer ', '');
     
