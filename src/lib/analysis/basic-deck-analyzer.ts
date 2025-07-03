@@ -62,16 +62,19 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
   // 2. Check Pokemon balance
   checkPokemonBalance(counts, advice, cards, swapSuggestions);
   
-  // 3. Check energy cards
+  // 3. Check win conditions
+  checkWinConditions(cards, advice);
+  
+  // 4. Check energy cards
   checkEnergyBalance(cards, counts, advice, swapSuggestions);
   
-  // 4. Check trainer cards
+  // 5. Check trainer cards and consistency
   checkTrainerCards(cards, counts, advice, swapSuggestions);
   
-  // 5. Check for evolution problems
+  // 6. Check for evolution problems (ALL lines)
   checkEvolutions(cards, advice, swapSuggestions);
   
-  // 6. Check for deck balance issues
+  // 7. Check for deck balance issues
   checkDeckBalance(cards, counts, advice);
   
   // Calculate score
@@ -92,6 +95,32 @@ export function analyzeBasicDeck(cards: Array<DeckCard & { card: Card }>): Basic
     swapSuggestions: swapSuggestions.length > 0 ? swapSuggestions : undefined,
     tradeSuggestions: tradeSuggestions.length > 0 ? tradeSuggestions : undefined
   };
+}
+
+/**
+ * Calculate mulligan probability using hypergeometric distribution
+ */
+function calculateMulliganRate(basicPokemonCount: number): number {
+  if (basicPokemonCount === 0) return 100;
+  
+  // Hypergeometric: probability of drawing 0 basics in 7 cards
+  // P(X=0) = C(basics,0) * C(non-basics,7) / C(60,7)
+  const nonBasics = 60 - basicPokemonCount;
+  
+  // Calculate combinations
+  function combinations(n: number, k: number): number {
+    if (k > n) return 0;
+    if (k === 0 || k === n) return 1;
+    
+    let result = 1;
+    for (let i = 0; i < k; i++) {
+      result *= (n - i) / (i + 1);
+    }
+    return result;
+  }
+  
+  const mulliganProb = combinations(nonBasics, 7) / combinations(60, 7);
+  return mulliganProb * 100;
 }
 
 /**
@@ -222,19 +251,105 @@ function checkPokemonBalance(
     });
   }
   
-  // Check Basic Pokemon
+  // Check Basic Pokemon and calculate mulligan rate
+  const mulliganRate = calculateMulliganRate(counts.basicPokemon);
+  
   if (counts.basicPokemon < 8) {
     advice.push({
       category: 'oops',
       icon: '❌',
       title: 'Need More Basic Pokemon!',
-      message: 'You need at least 8-10 Basic Pokemon to start the game!',
+      message: `You only have ${counts.basicPokemon} Basic Pokemon! This gives you a ${mulliganRate.toFixed(1)}% chance of no Pokemon in your starting hand!`,
       tip: 'Basic Pokemon are the ones that don\'t say "Evolves from" on them.',
       fixIt: 'Add more Basic Pokemon. Look for ones without "Stage 1" or "Stage 2" on the card!',
       cardsToAdd: [
         { name: 'Any Basic Pokemon (no "Evolves from" text)', why: 'You need them to start playing!' }
       ]
     });
+  } else if (counts.basicPokemon >= 8 && counts.basicPokemon < 12) {
+    advice.push({
+      category: 'good',
+      icon: '👍',
+      title: 'Decent Basic Pokemon Count',
+      message: `You have ${counts.basicPokemon} Basic Pokemon. Your mulligan rate is ${mulliganRate.toFixed(1)}%`,
+      tip: 'Having 12+ Basic Pokemon would make your starts even better!'
+    });
+  } else {
+    advice.push({
+      category: 'great',
+      icon: '🌟',
+      title: 'Great Basic Pokemon Count!',
+      message: `You have ${counts.basicPokemon} Basic Pokemon. Only ${mulliganRate.toFixed(1)}% chance of mulligan!`
+    });
+  }
+}
+
+/**
+ * Check win conditions - do we have Pokemon that can attack?
+ */
+function checkWinConditions(
+  cards: Array<DeckCard & { card: Card }>,
+  advice: KidFriendlyAdvice[]
+) {
+  const pokemonCards = cards.filter(dc => dc.card.supertype === 'POKEMON');
+  
+  // Find Pokemon with attacks
+  const attackers = pokemonCards.filter(dc => 
+    dc.card.attacks && dc.card.attacks.length > 0
+  );
+  
+  // Count total attacker cards
+  const totalAttackers = attackers.reduce((sum, dc) => sum + dc.quantity, 0);
+  
+  if (totalAttackers === 0) {
+    advice.push({
+      category: 'oops',
+      icon: '❌',
+      title: 'No Pokemon Can Attack!',
+      message: 'None of your Pokemon have attacks! You need Pokemon that can battle!',
+      fixIt: 'Add Pokemon with attack moves listed on the card.',
+      cardsToAdd: [
+        { name: 'Any Pokemon with attacks', why: 'To knock out opponent\'s Pokemon!' }
+      ]
+    });
+  } else if (totalAttackers < 6) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Need More Attackers!',
+      message: `Only ${totalAttackers} of your Pokemon cards can attack. You need more!`,
+      tip: 'Having multiple attackers gives you options during battle.',
+      fixIt: 'Add more Pokemon with strong attacks.'
+    });
+  } else {
+    // Check if attacks are strong enough
+    const strongAttackers = attackers.filter(dc => {
+      const hasStrongAttack = dc.card.attacks?.some(attack => {
+        const damage = parseInt(attack.damage || '0');
+        return damage >= 60; // Can 2-3 hit KO most Pokemon
+      });
+      return hasStrongAttack;
+    });
+    
+    const totalStrongAttackers = strongAttackers.reduce((sum, dc) => sum + dc.quantity, 0);
+    
+    if (totalStrongAttackers < 4) {
+      advice.push({
+        category: 'needs-help',
+        icon: '🤔',
+        title: 'Attacks Need More Power!',
+        message: 'Your Pokemon\'s attacks might be too weak to win battles quickly.',
+        tip: 'Look for Pokemon with attacks that do 60+ damage.',
+        fixIt: 'Add Pokemon with stronger attacks or evolution cards to power up.'
+      });
+    } else {
+      advice.push({
+        category: 'good',
+        icon: '👍',
+        title: 'Good Attackers!',
+        message: 'Your deck has Pokemon that can battle well!'
+      });
+    }
   }
 }
 
@@ -333,6 +448,64 @@ function checkTrainerCards(
   advice: KidFriendlyAdvice[],
   swapSuggestions: BasicDeckAnalysis['swapSuggestions']
 ) {
+  // Count specific trainer types for consistency
+  let drawSupporters = 0;
+  let searchCards = 0;
+  let energyAccel = 0;
+  
+  const trainerCards = cards.filter(dc => dc.card.supertype === 'TRAINER');
+  
+  trainerCards.forEach(dc => {
+    const cardName = dc.card.name.toLowerCase();
+    const cardText = (dc.card.rules?.join(' ') || '').toLowerCase();
+    
+    // Count draw supporters
+    if (cardName.includes('professor') || cardName.includes('research') || 
+        cardName.includes('cynthia') || cardName.includes('marnie') ||
+        cardText.includes('draw')) {
+      drawSupporters += dc.quantity;
+    }
+    
+    // Count search cards
+    if (cardName.includes('ball') || cardName.includes('search') ||
+        cardText.includes('search your deck')) {
+      searchCards += dc.quantity;
+    }
+    
+    // Count energy acceleration
+    if (cardText.includes('attach') && cardText.includes('energy')) {
+      energyAccel += dc.quantity;
+    }
+  });
+  
+  // Check draw consistency
+  if (drawSupporters < 6) {
+    advice.push({
+      category: 'oops',
+      icon: '❌',
+      title: 'Need Draw Power!',
+      message: `You only have ${drawSupporters} cards that help you draw. You need at least 6-8!`,
+      tip: 'Without draw cards, you\'ll run out of options quickly!',
+      fixIt: 'Add Professor\'s Research, Marnie, or other draw supporters.',
+      cardsToAdd: [
+        { name: "Professor's Research", why: 'Draw 7 cards - the best!' },
+        { name: 'Marnie', why: 'Draw 5 and disrupt opponent!' }
+      ]
+    });
+  }
+  
+  // Check search consistency
+  if (searchCards < 4) {
+    advice.push({
+      category: 'needs-help',
+      icon: '🤔',
+      title: 'Need Pokemon Search!',
+      message: `You only have ${searchCards} cards to find Pokemon. Add more!`,
+      tip: 'Search cards help you find the Pokemon you need when you need them.',
+      fixIt: 'Add Quick Ball, Ultra Ball, or Pokemon Communication.'
+    });
+  }
+  
   // Check total trainers
   if (counts.trainers < 20) {
     const toAdd: Array<{name: string, quantity: number, why: string, rarity?: string}> = [
@@ -430,40 +603,115 @@ function checkEvolutions(
   const missingBasics: Array<{evolved: string, basic: string, quantity: number}> = [];
   const evolutionLineIssues: Array<{stage2: string, stage1: string, stage2Qty: number, stage1Qty: number}> = [];
   
-  // Build evolution chains
-  const evolutionChains = new Map<string, {basic?: any, stage1?: any, stage2?: any}>();
-  
+  // Map to track all evolution lines comprehensively
+  const pokemonByName = new Map<string, DeckCard & { card: Card }>();
   cards.forEach(dc => {
+    if (dc.card.supertype === 'POKEMON') {
+      pokemonByName.set(dc.card.name.toLowerCase(), dc);
+    }
+  });
+  
+  // Check EVERY evolution Pokemon
+  const evolutionLines = new Map<string, {
+    basic?: DeckCard & { card: Card },
+    stage1?: DeckCard & { card: Card },
+    stage2?: DeckCard & { card: Card },
+    lineType: 'single' | 'double'
+  }>();
+  
+  // First pass: identify all evolution Pokemon
+  cards.forEach(dc => {
+    if (dc.card.supertype !== 'POKEMON') return;
+    
     if (dc.card.subtypes?.includes('Stage 2')) {
-      const chainKey = dc.card.evolvesFrom || '';
-      if (!evolutionChains.has(chainKey)) evolutionChains.set(chainKey, {});
-      evolutionChains.get(chainKey)!.stage2 = dc;
-    } else if (dc.card.subtypes?.includes('Stage 1')) {
-      const chainKey = dc.card.name;
-      if (!evolutionChains.has(chainKey)) evolutionChains.set(chainKey, {});
-      evolutionChains.get(chainKey)!.stage1 = dc;
-      
-      // Also check for basic
-      const basicName = dc.card.evolvesFrom;
-      if (basicName) {
-        const basic = cards.find(c => c.card.name.toLowerCase() === basicName.toLowerCase());
-        if (basic) {
-          evolutionChains.get(chainKey)!.basic = basic;
+      // This is a Stage 2, trace back to Basic
+      const stage1Name = dc.card.evolvesFrom?.toLowerCase();
+      if (stage1Name) {
+        const stage1 = pokemonByName.get(stage1Name);
+        const basicName = stage1?.card.evolvesFrom?.toLowerCase();
+        const basic = basicName ? pokemonByName.get(basicName) : undefined;
+        
+        const lineKey = basic?.card.name || stage1?.card.name || dc.card.name;
+        if (!evolutionLines.has(lineKey)) {
+          evolutionLines.set(lineKey, { lineType: 'double' });
         }
+        const line = evolutionLines.get(lineKey)!;
+        line.stage2 = dc;
+        if (stage1) line.stage1 = stage1;
+        if (basic) line.basic = basic;
+      }
+    } else if (dc.card.subtypes?.includes('Stage 1')) {
+      // This is a Stage 1
+      const basicName = dc.card.evolvesFrom?.toLowerCase();
+      if (basicName) {
+        const basic = pokemonByName.get(basicName);
+        
+        // Check if this Stage 1 evolves into a Stage 2
+        const evolvesIntoStage2 = Array.from(pokemonByName.values()).some(
+          p => p.card.evolvesFrom?.toLowerCase() === dc.card.name.toLowerCase() && 
+               p.card.subtypes?.includes('Stage 2')
+        );
+        
+        const lineKey = basic?.card.name || dc.card.name;
+        if (!evolutionLines.has(lineKey)) {
+          evolutionLines.set(lineKey, { lineType: evolvesIntoStage2 ? 'double' : 'single' });
+        }
+        const line = evolutionLines.get(lineKey)!;
+        line.stage1 = dc;
+        if (basic) line.basic = basic;
       }
     }
   });
   
-  // Check evolution ratios
-  evolutionChains.forEach((chain, key) => {
-    if (chain.stage2 && chain.stage1) {
-      if (chain.stage2.quantity > chain.stage1.quantity) {
+  // Check each evolution line for problems
+  let lineNumber = 0;
+  evolutionLines.forEach((line, lineKey) => {
+    lineNumber++;
+    const linePrefix = evolutionLines.size > 1 ? `Evolution Line ${lineNumber}: ` : '';
+    
+    // Check for missing basics
+    if (line.stage1 && !line.basic) {
+      evolutionProblems.push(
+        `${linePrefix}You have ${line.stage1.card.name} but no ${line.stage1.card.evolvesFrom} to evolve from!`
+      );
+      missingBasics.push({
+        evolved: line.stage1.card.name,
+        basic: line.stage1.card.evolvesFrom!,
+        quantity: Math.min(line.stage1.quantity + 1, 4)
+      });
+    }
+    
+    if (line.stage2 && !line.stage1) {
+      evolutionProblems.push(
+        `${linePrefix}You have ${line.stage2.card.name} but no ${line.stage2.card.evolvesFrom} to evolve from!`
+      );
+    }
+    
+    // Check ratios
+    if (line.lineType === 'double' && line.basic && line.stage1 && line.stage2) {
+      const basicQty = line.basic.quantity;
+      const stage1Qty = line.stage1.quantity;
+      const stage2Qty = line.stage2.quantity;
+      
+      if (stage2Qty > stage1Qty) {
         evolutionLineIssues.push({
-          stage2: chain.stage2.card.name,
-          stage1: chain.stage1.card.name,
-          stage2Qty: chain.stage2.quantity,
-          stage1Qty: chain.stage1.quantity
+          stage2: line.stage2.card.name,
+          stage1: line.stage1.card.name,
+          stage2Qty: stage2Qty,
+          stage1Qty: stage1Qty
         });
+      }
+      
+      if (stage1Qty > basicQty) {
+        evolutionProblems.push(
+          `${linePrefix}You have ${stage1Qty} ${line.stage1.card.name} but only ${basicQty} ${line.basic.card.name}!`
+        );
+      }
+    } else if (line.lineType === 'single' && line.basic && line.stage1) {
+      if (line.stage1.quantity > line.basic.quantity) {
+        evolutionProblems.push(
+          `${linePrefix}You have ${line.stage1.quantity} ${line.stage1.card.name} but only ${line.basic.quantity} ${line.basic.card.name}!`
+        );
       }
     }
   });

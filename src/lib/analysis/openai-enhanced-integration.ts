@@ -322,7 +322,9 @@ ${basicAnalysis.advice.map(a => `
 `).join('\n')}
 
 ${basicAnalysis.swapSuggestions?.length > 0 ? `SWAP SUGGESTIONS:
-${basicAnalysis.swapSuggestions.map(s => `- Remove ${s.removeCard} → Add ${s.addCard} (${s.reason})`).join('\n')}` : ''}
+${basicAnalysis.swapSuggestions.map(s => `- ${s.title} (Priority: ${s.priority})
+${s.remove.map(r => `  Remove: ${r.quantity}x ${r.name} - ${r.reason}`).join('\n')}
+${s.add.map(a => `  Add: ${a.quantity}x ${a.name} - ${a.why}`).join('\n')}`).join('\n')}` : ''}
 
 ${basicAnalysis.tradeSuggestions?.length > 0 ? `TRADE SUGGESTIONS:
 ${basicAnalysis.tradeSuggestions.map(t => `- Trade away ${t.tradeAway} for ${t.tradeFor}`).join('\n')}` : ''}
