@@ -17,20 +17,20 @@ const FEEDBACK_SECRET = process.env.FEEDBACK_LOOP_SECRET || process.env.CRON_SEC
 
 export async function POST(req: NextRequest) {
   try {
-    // Check authentication - either admin user or valid secret
+    // Check authentication - either logged in user or valid secret
     const { userId } = auth();
     const authHeader = req.headers.get('authorization');
     const providedSecret = authHeader?.replace('Bearer ', '');
     
-    // For now, require secret authentication
-    if (!FEEDBACK_SECRET || providedSecret !== FEEDBACK_SECRET) {
-      // Check if user is admin (would need to implement role checking)
-      if (!userId) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+    // Allow authenticated users OR valid secret
+    const hasValidSecret = FEEDBACK_SECRET && providedSecret === FEEDBACK_SECRET;
+    const isAuthenticated = !!userId;
+    
+    if (!hasValidSecret && !isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
     
     // Parse request body
@@ -181,18 +181,20 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
+    // Check authentication - either logged in user or valid secret
     const { userId } = auth();
     const authHeader = req.headers.get('authorization');
     const providedSecret = authHeader?.replace('Bearer ', '');
     
-    if (!FEEDBACK_SECRET || providedSecret !== FEEDBACK_SECRET) {
-      if (!userId) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+    // Allow authenticated users OR valid secret
+    const hasValidSecret = FEEDBACK_SECRET && providedSecret === FEEDBACK_SECRET;
+    const isAuthenticated = !!userId;
+    
+    if (!hasValidSecret && !isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
     
     // Get query parameters
