@@ -38,6 +38,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
+  const [analysisStatus, setAnalysisStatus] = useState<string>('');
 
   const focusAreaOptions = [
     { id: 'competitive', label: 'Competitive Play', icon: Target },
@@ -50,8 +51,14 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setError(null);
+    setAnalysisStatus('Preparing your deck data...');
+
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
 
     try {
+      setAnalysisStatus('Sending to AI assistant...');
       const response = await fetch('/api/analysis/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,20 +69,34 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
             temperature: 0.7,
             focusAreas: selectedFocusAreas
           }
-        })
+        }),
+        signal: controller.signal
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
+      setAnalysisStatus('AI is analyzing your deck...');
 
       if (!response.ok) {
-        throw new Error(data.error || 'Analysis failed');
+        const data = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(data.error || `Analysis failed with status ${response.status}`);
       }
 
+      const data = await response.json();
+      setAnalysisStatus('Analysis complete!');
       setAnalysis(data.analysis);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Analysis is taking longer than expected. Please try again or select fewer focus areas.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setIsAnalyzing(false);
+      clearTimeout(timeoutId);
     }
   };
 
@@ -181,7 +202,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Analyzing Deck...
+                    {analysisStatus || 'Analyzing Deck...'}
                   </>
                 ) : (
                   <>

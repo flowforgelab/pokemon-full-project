@@ -35,6 +35,9 @@
     },
     "src/app/api/analysis/sync-meta/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/analysis/ai/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [

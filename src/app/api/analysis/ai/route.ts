@@ -8,6 +8,9 @@ import { analyzeWithAI } from '@/lib/analysis/ai-deck-analyzer';
 import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
 
+// Configure route segment to allow longer timeout
+export const maxDuration = 60; // 60 seconds timeout for Vercel
+
 // Request validation schema
 const aiAnalysisSchema = z.object({
   deckId: z.string().min(1, 'Deck ID is required'),
