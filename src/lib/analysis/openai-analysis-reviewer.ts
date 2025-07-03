@@ -204,7 +204,7 @@ Return your assessment in the specified JSON format.`;
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: modelConfig?.model || 'gpt-4.1-mini', // Default to GPT-4.1 mini
+        model: modelConfig?.model || 'gpt-4o-mini', // Default to GPT-4o mini
         messages: [
           {
             role: 'system',
@@ -232,7 +232,29 @@ Return your assessment in the specified JSON format.`;
       throw new Error('No response content from OpenAI');
     }
 
-    return JSON.parse(reviewContent) as OpenAIReviewResponse;
+    const parsed = JSON.parse(reviewContent);
+    
+    // Handle different response formats
+    return {
+      accuracyScore: parsed.accuracyScore || 70, // Default score if not provided
+      missedIssues: parsed.missedIssues || parsed.issuesMissed?.map((issue: any) => ({
+        issue: issue.issue || issue.description,
+        severity: issue.severity || 'major',
+        suggestion: issue.suggestion || issue.description
+      })) || [],
+      incorrectRecommendations: parsed.incorrectRecommendations?.map((rec: any) => ({
+        recommendation: rec.recommendation,
+        reason: rec.reason || rec.description,
+        betterSuggestion: rec.betterSuggestion || 'See suggestion'
+      })) || [],
+      goodPoints: parsed.goodPoints || parsed.positiveAspects?.map((aspect: any) => 
+        aspect.aspect || aspect.description
+      ) || [],
+      overallAssessment: parsed.overallAssessment || 'Analysis completed',
+      suggestedImprovements: parsed.suggestedImprovements || parsed.suggestionsForImprovement?.map((s: any) => 
+        s.suggestion || s.improvement || s.description || (typeof s === 'string' ? s : JSON.stringify(s))
+      ) || []
+    } as OpenAIReviewResponse;
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
     throw error;

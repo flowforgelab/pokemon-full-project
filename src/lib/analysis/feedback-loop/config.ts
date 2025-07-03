@@ -73,7 +73,7 @@ export interface FeedbackLoopConfig {
 export const defaultConfig: FeedbackLoopConfig = {
   openAI: {
     apiKey: process.env.OPENAI_API_KEY || '',
-    assistantId: 'asst_P2cUMxaYYnH1O6naiuRqAC72',
+    assistantId: '', // Temporarily disabled - using chat completion instead
     temperature: 0.3,
     topP: 0.9,
     maxTokens: 2000
@@ -174,9 +174,10 @@ export function validateConfig(config: FeedbackLoopConfig): string[] {
     errors.push('OpenAI API key is required');
   }
   
-  if (!config.openAI.assistantId) {
-    errors.push('OpenAI Assistant ID is required');
-  }
+  // Assistant ID is now optional - can use chat API instead
+  // if (!config.openAI.assistantId) {
+  //   errors.push('OpenAI Assistant ID is required');
+  // }
   
   // Check value ranges
   if (config.autoApplyThreshold < 0 || config.autoApplyThreshold > 100) {

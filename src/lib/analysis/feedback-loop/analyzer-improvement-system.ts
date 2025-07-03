@@ -264,13 +264,6 @@ export class AnalyzerImprovementSystem {
     testDeck: TestDeck,
     testResult: AnalyzerTestResult
   ): Promise<EnhancedReviewResponse> {
-    const openAIConfig: EnhancedOpenAIConfig = {
-      apiKey: this.config.openAI.apiKey,
-      assistantId: this.config.openAI.assistantId,
-      temperature: this.config.openAI.temperature,
-      topP: this.config.openAI.topP
-    };
-    
     // Create a mock analysis result for the review
     const mockAnalysis = {
       deckScore: testResult.actualScore,
@@ -281,6 +274,45 @@ export class AnalyzerImprovementSystem {
         fixIt: 'Needs improvement'
       })),
       swapSuggestions: []
+    };
+    
+    // Use standard chat API if no assistant ID
+    if (!this.config.openAI.assistantId) {
+      const { prepareDeckAnalysisPayload, reviewAnalysisWithOpenAI } = await import('../openai-analysis-reviewer');
+      
+      const payload = prepareDeckAnalysisPayload(
+        testDeck.name,
+        testDeck.cards,
+        mockAnalysis,
+        'basic'
+      );
+      
+      const review = await reviewAnalysisWithOpenAI(
+        payload,
+        this.config.openAI.apiKey,
+        undefined,
+        {
+          model: 'gpt-4o-mini',
+          temperature: this.config.openAI.temperature,
+          topP: this.config.openAI.topP,
+          maxTokens: this.config.openAI.maxTokens
+        }
+      );
+      
+      // Convert to enhanced response format
+      return {
+        ...review,
+        codeImprovements: [],
+        testCases: []
+      };
+    }
+    
+    // Otherwise use assistant API
+    const openAIConfig: EnhancedOpenAIConfig = {
+      apiKey: this.config.openAI.apiKey,
+      assistantId: this.config.openAI.assistantId,
+      temperature: this.config.openAI.temperature,
+      topP: this.config.openAI.topP
     };
     
     return reviewAnalysisWithAssistant(
