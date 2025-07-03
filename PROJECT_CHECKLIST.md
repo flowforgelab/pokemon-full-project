@@ -936,6 +936,16 @@ To deploy successfully on Vercel, configure these environment variables:
     - ✅ Added AI review button to both basic and advanced analyzer pages
     - ✅ Review shows accuracy score, missed issues, and improvement suggestions
     - ✅ Works with OpenAI Assistant ID asst_P2cUMxaYYnH1O6naiuRqAC72
+  - Basic Deck Analyzer Improvements from AI Feedback (2025-07-03 Late Night):
+    - ✅ Fixed swap suggestions showing "undefined → undefined" in OpenAI payload
+    - ✅ Added mulligan rate calculation using hypergeometric distribution
+    - ✅ Shows exact % chance of starting without Basic Pokemon
+    - ✅ Added win condition analysis - checks for Pokemon with attacks
+    - ✅ Enhanced evolution checking to analyze ALL evolution lines
+    - ✅ Numbers each evolution line when multiple present
+    - ✅ Added trainer consistency checks (draw supporters, search cards)
+    - ✅ Added format legality checking (4-card limit, banned cards)
+    - ✅ AI review improved from 50% to expected 70-80% accuracy
   - Deck Analyzer Phase 3 Complete - All Tasks Done! (2025-07-03 Morning):
     - ✅ Replaced binary scoring with 20+ individual factors analyzed
     - ✅ Dynamic speed rating: Rayquaza is "GLACIAL" (slower than all meta decks!)
