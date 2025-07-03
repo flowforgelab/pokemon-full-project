@@ -6,7 +6,7 @@
  */
 
 import { limitlessScraper, type MetaDeck, type DeckList } from '@/lib/api/limitless-tcg-scraper';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/server/db/prisma';
 import { MetaGameContext } from '@/lib/analysis/meta-context';
 import { Format } from '@prisma/client';
 
