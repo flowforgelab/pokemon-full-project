@@ -157,13 +157,8 @@ export async function POST(req: NextRequest) {
       }
     );
     
-    // Store analysis result (optional - for history/caching)
-    await prisma.$executeRaw`
-      INSERT INTO "DeckAnalysis" (deck_id, type, data, created_at)
-      VALUES (${deck.id}, 'AI', ${JSON.stringify(analysis)}::jsonb, NOW())
-      ON CONFLICT (deck_id, type) DO UPDATE
-      SET data = EXCLUDED.data, created_at = NOW()
-    `;
+    // TODO: Store analysis result for history/caching when DeckAnalysis table is created
+    // Currently skipping storage as the table doesn't exist
     
     // Track usage for rate limiting (free users get 5 per day)
     const dailyLimit = !user ? 5 :
