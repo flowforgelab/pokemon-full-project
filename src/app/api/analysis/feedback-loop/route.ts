@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 import { 
   AnalyzerImprovementSystem, 
   ImprovementSystemOptions 
@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
       options = {},
       configOverrides = {}
     } = body;
+    
+    // Load preset configuration early
+    const presetConfig = preset ? configPresets[preset as keyof typeof configPresets] : {};
     
     // Check if this is a single deck test
     if (options.testSingleDeck) {
@@ -102,7 +105,6 @@ export async function POST(req: NextRequest) {
     }
     
     // Load configuration
-    const presetConfig = preset ? configPresets[preset as keyof typeof configPresets] : {};
     const config = loadConfig({
       ...presetConfig,
       ...configOverrides
