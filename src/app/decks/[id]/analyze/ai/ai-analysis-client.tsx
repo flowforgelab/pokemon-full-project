@@ -67,7 +67,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
           deckId: deck.id,
           options: {
             model: selectedModel,
-            temperature: 0.7,
+            temperature: 0.3, // Lower temperature for more consistent results
             focusAreas: selectedFocusAreas,
             userAge: userAge ? parseInt(userAge) : undefined
           }

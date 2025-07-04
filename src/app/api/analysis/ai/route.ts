@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
       {
         apiKey,
         model: validated.options?.model || 'gpt-4-turbo-preview',
-        temperature: validated.options?.temperature || 0.7,
+        temperature: validated.options?.temperature || 0.3, // Lower for consistency
         systemPrompt: customPrompt,
         userAge: validated.options?.userAge
       }

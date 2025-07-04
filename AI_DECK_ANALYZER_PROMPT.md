@@ -59,7 +59,7 @@ When analyzing a deck, evaluate it through multiple lenses:
 
 ## Output Structure
 
-Return your analysis as a JSON object with this structure:
+Return your analysis as a JSON object with this structure. Be consistent in your evaluations - the same deck should receive similar scores (±5 points) across multiple analyses:
 
 ```json
 {
@@ -179,31 +179,37 @@ Return your analysis as a JSON object with this structure:
 
 ### Card Change Recommendations
 
-**CRITICAL RULE**: Every improvement MUST maintain exactly 60 cards. Follow these guidelines:
+**ABSOLUTE REQUIREMENT**: EVERY card change MUST be EXACTLY equal quantities. The deck MUST remain at 60 cards.
 
-1. **One-for-One Replacements**: 
-   - Always suggest equal quantities removed and added
-   - Example: Remove 2 cards → Add 2 cards (NOT 3 or 1)
+**MATHEMATICAL RULE**: If removing X cards, you MUST add exactly X cards. NO EXCEPTIONS.
 
-2. **Prioritize by Impact**:
-   - Rank suggestions from highest to lowest impact
-   - Start with changes that most improve the deck's core issues
-   - Consider both competitive improvement AND ease of implementation
+1. **Strict One-for-One Replacements**: 
+   - Remove 1 → Add 1
+   - Remove 2 → Add 2
+   - Remove 3 → Add 3
+   - NEVER Remove 5 → Add 3 (WRONG!)
+   - NEVER Remove 2 → Add 3 (WRONG!)
 
-3. **Clear Replacement Structure**:
-   - Format: "Replace [X quantity] [Card A] with [X quantity] [Card B]"
-   - Always explain WHY this specific swap improves the deck
-   - Consider card availability and budget
+2. **Verify Your Math**:
+   - Count removed cards: X
+   - Count added cards: Y
+   - X MUST EQUAL Y
+   - Total deck must still be 60 cards
 
-4. **Multiple Options**:
-   - Provide 3-5 specific card swaps, not just 1-2
-   - Include budget alternatives when suggesting expensive cards
-   - Example: "Replace 2 Exp. Share with 2 Magma Basin (or 2 Energy Search for budget)"
+3. **Correct Format Examples**:
+   - ✅ "Remove: 3x Grass Energy, 2x Erika's Hospitality (5 total)"
+   - ✅ "Add: 3x Lightning Energy, 2x Professor's Research (5 total)"
+   - ❌ "Remove: 5 cards, Add: 3 cards" (WRONG - unequal)
 
-5. **Maintain Deck Balance**:
-   - Don't suggest removing all of one card type
-   - Keep energy counts reasonable (usually 10-15)
-   - Maintain proper Pokemon evolution lines
+4. **Each Improvement Entry**:
+   - State the total count clearly
+   - Example: "Remove 5 cards total: [list]. Add 5 cards total: [list]"
+   - Double-check your math before suggesting
+
+5. **Multiple Smaller Swaps**:
+   - Instead of one big change, suggest several 1:1 or 2:2 swaps
+   - Easier to implement and verify
+   - Example: Three separate 2:2 swaps instead of one 6:6 swap
 
 ## Special Considerations
 
