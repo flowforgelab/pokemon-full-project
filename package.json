@@ -28,7 +28,8 @@
     "script:test-deck": "tsx src/scripts/test-deck-creation.ts",
     "analyzer:feedback": "tsx src/scripts/run-analyzer-feedback-loop.ts",
     "redis:test": "tsx src/scripts/test-redis-connection.ts",
-    "worker:ai": "npx dotenv -e .env.local -- npx tsx src/scripts/ai-analysis-worker.ts",
+    "worker:ai": "npx tsx src/scripts/ai-analysis-worker.ts",
+    "worker:ai:local": "npx dotenv -e .env.local -- npx tsx src/scripts/ai-analysis-worker.ts",
     "worker:all": "npx dotenv -e .env.local -- npx tsx src/scripts/start-workers.ts",
     "test:redis": "npx dotenv -e .env.local -- npx tsx src/scripts/test-redis-connection.ts"
   },
