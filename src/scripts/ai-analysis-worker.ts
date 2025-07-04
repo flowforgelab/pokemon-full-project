@@ -3,7 +3,10 @@
  * This script runs the AI analysis job processor
  */
 
-import 'dotenv/config';
+// Only load dotenv in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 import { Worker, Job } from 'bullmq';
 import { prisma } from '@/server/db/prisma';
 import { analyzeWithAI } from '@/lib/analysis/ai-deck-analyzer';
@@ -153,10 +156,18 @@ async function processAIAnalysis(job: Job<AIAnalysisJobData>) {
 }
 
 async function startWorker() {
+  console.log('Environment check:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✓ Set' : '✗ Not set');
+  console.log('REDIS_URL:', process.env.REDIS_URL ? '✓ Set' : '✗ Not set');
+  console.log('KV_URL:', process.env.KV_URL ? '✓ Set' : '✗ Not set');
+  console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✓ Set' : '✗ Not set');
+  
   const redisUrl = process.env.REDIS_URL || process.env.KV_URL;
   
   if (!redisUrl) {
     console.error('❌ No Redis URL found in environment variables');
+    console.error('Please set REDIS_URL or KV_URL in Railway environment variables');
     process.exit(1);
   }
 
