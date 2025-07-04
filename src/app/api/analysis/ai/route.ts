@@ -133,9 +133,15 @@ export async function POST(req: NextRequest) {
     
     // Check if we have Redis configured
     const hasRedis = process.env.REDIS_URL || process.env.KV_URL;
+    console.log('Redis check:', {
+      REDIS_URL: process.env.REDIS_URL ? 'Set' : 'Not set',
+      KV_URL: process.env.KV_URL ? 'Set' : 'Not set',
+      hasRedis: !!hasRedis
+    });
     
     if (hasRedis) {
       // Add job to queue
+      console.log('Using Redis queue for AI analysis');
       const queue = await aiAnalysisQueue;
       const job = await queue.add('analyze-deck', jobData, {
         attempts: 2,
