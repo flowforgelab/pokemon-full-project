@@ -70,17 +70,36 @@ export async function GET(
     // Get job status from queue if still processing
     let queueStatus = null;
     if (analysis.status === 'PENDING' || analysis.status === 'PROCESSING') {
-      const queue = await aiAnalysisQueue;
-      const job = await queue.getJob(jobId);
-      
-      if (job) {
-        const state = await job.getState();
+      // Skip queue check for mock jobs (fallback mode)
+      if (jobId === 'mock' || jobId.startsWith('mock-')) {
+        console.log('Skipping queue check for mock job:', jobId);
         queueStatus = {
-          state,
-          progress: job.progress,
-          failedReason: job.failedReason,
-          attemptsMade: job.attemptsMade
+          state: 'active',
+          progress: 0,
+          note: 'Analysis running in fallback mode'
         };
+      } else {
+        try {
+          const queue = await aiAnalysisQueue;
+          // Check if queue has getJob method (not MockQueue)
+          if (typeof queue.getJob === 'function') {
+            const job = await queue.getJob(jobId);
+            
+            if (job) {
+              const state = await job.getState();
+              queueStatus = {
+                state,
+                progress: job.progress,
+                failedReason: job.failedReason,
+                attemptsMade: job.attemptsMade
+              };
+            }
+          } else {
+            console.warn('Queue does not support getJob - likely using MockQueue');
+          }
+        } catch (queueError) {
+          console.error('Error checking queue status:', queueError);
+        }
       }
     }
 

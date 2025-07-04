@@ -4,6 +4,16 @@ import type { JobData, JobResult } from '@/lib/api/types';
 // Only use mock during actual build process, not in production runtime
 const IS_BUILD = process.env.BUILDING === 'true';
 
+// Log for debugging in production
+if (typeof window === 'undefined') {
+  console.log('[Queue] Environment check:', {
+    BUILDING: process.env.BUILDING,
+    NODE_ENV: process.env.NODE_ENV,
+    IS_BUILD,
+    hasRedis: !!(process.env.REDIS_URL || process.env.KV_URL)
+  });
+}
+
 // Type imports only - won't trigger actual module loading
 type Queue = any;
 type Worker = any;
@@ -20,11 +30,21 @@ class MockQueue {
   async getCompletedCount() { return 0; }
   async getFailedCount() { return 0; }
   async getDelayedCount() { return 0; }
+  async getJobCounts() { 
+    return { 
+      waiting: 0, active: 0, completed: 0, 
+      failed: 0, delayed: 0, paused: 0 
+    }; 
+  }
+  async getJob(jobId: string) { return null; }
+  async getJobs() { return []; }
   async isPaused() { return false; }
   async pause() {}
   async resume() {}
   async clean() {}
   async obliterate() {}
+  async remove() {}
+  async close() {}
 }
 
 class MockQueueEvents {
