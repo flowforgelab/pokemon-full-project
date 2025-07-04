@@ -554,25 +554,53 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                       </div>
                       <p className="font-medium mb-2">{improvement.suggestion}</p>
                       
-                      {improvement.cardChanges.remove && improvement.cardChanges.remove.length > 0 && (
+                      {(improvement.cardChanges.remove || improvement.cardChanges.add) && (
                         <div className="mb-2">
-                          <p className="text-sm font-medium text-red-600 mb-1">Remove:</p>
-                          <ul className="text-sm text-gray-600 dark:text-gray-400">
-                            {improvement.cardChanges.remove.map((card, i) => (
-                              <li key={i}>- {card.quantity}x {card.card}: {card.reason}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {improvement.cardChanges.add && improvement.cardChanges.add.length > 0 && (
-                        <div className="mb-2">
-                          <p className="text-sm font-medium text-green-600 mb-1">Add:</p>
-                          <ul className="text-sm text-gray-600 dark:text-gray-400">
-                            {improvement.cardChanges.add.map((card, i) => (
-                              <li key={i}>+ {card.quantity}x {card.card}: {card.reason}</li>
-                            ))}
-                          </ul>
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Replacements:</p>
+                          <div className="space-y-2">
+                            {(() => {
+                              const removes = improvement.cardChanges.remove || [];
+                              const adds = improvement.cardChanges.add || [];
+                              const maxLength = Math.max(removes.length, adds.length);
+                              
+                              return Array.from({ length: maxLength }, (_, i) => {
+                                const removeCard = removes[i];
+                                const addCard = adds[i];
+                                
+                                if (removeCard && addCard) {
+                                  // Paired replacement
+                                  return (
+                                    <div key={i} className="flex items-center gap-2 text-sm">
+                                      <span className="text-red-600">- {removeCard.quantity}x {removeCard.card}</span>
+                                      <span className="text-gray-400">→</span>
+                                      <span className="text-green-600">+ {addCard.quantity}x {addCard.card}</span>
+                                    </div>
+                                  );
+                                } else if (removeCard) {
+                                  // Only removal (shouldn't happen with proper 1:1)
+                                  return (
+                                    <div key={i} className="text-sm text-red-600">
+                                      - {removeCard.quantity}x {removeCard.card}
+                                    </div>
+                                  );
+                                } else if (addCard) {
+                                  // Only addition (shouldn't happen with proper 1:1)
+                                  return (
+                                    <div key={i} className="text-sm text-green-600">
+                                      + {addCard.quantity}x {addCard.card}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              });
+                            })()}
+                          </div>
+                          {/* Show reasons if available */}
+                          {(improvement.cardChanges.remove?.[0]?.reason || improvement.cardChanges.add?.[0]?.reason) && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                              {improvement.cardChanges.remove?.[0]?.reason || improvement.cardChanges.add?.[0]?.reason}
+                            </p>
+                          )}
                         </div>
                       )}
                       

@@ -47,17 +47,37 @@ export function exportAnalysisToMarkdown(
   // Improvements
   if (analysis.improvements && analysis.improvements.length > 0) {
     markdown += `## Recommended Improvements\n\n`;
-    analysis.improvements.forEach(improvement => {
-      markdown += `### ${improvement.priority === 'high' ? '🔴' : improvement.priority === 'medium' ? '🟡' : '🟢'} ${improvement.title}\n`;
-      markdown += `${improvement.description}\n\n`;
+    analysis.improvements.forEach((improvement, idx) => {
+      const priorityEmoji = improvement.priority === 'immediate' ? '🔴' : improvement.priority === 'short-term' ? '🟡' : '🟢';
+      markdown += `### ${priorityEmoji} Improvement ${idx + 1}: ${improvement.suggestion.split('.')[0]}\n`;
+      markdown += `${improvement.suggestion}\n\n`;
       
-      if (improvement.replacements && improvement.replacements.length > 0) {
-        markdown += `**Card Changes:**\n`;
-        improvement.replacements.forEach(replacement => {
-          markdown += `- Remove: ${replacement.remove.quantity}x ${replacement.remove.cardName}\n`;
-          markdown += `  Add: ${replacement.add.quantity}x ${replacement.add.cardName}\n`;
-          markdown += `  Reason: ${replacement.reason}\n\n`;
-        });
+      if (improvement.cardChanges) {
+        const removes = improvement.cardChanges.remove || [];
+        const adds = improvement.cardChanges.add || [];
+        
+        if (removes.length > 0 || adds.length > 0) {
+          markdown += `**Card Changes:**\n`;
+          
+          // Ensure 1:1 matching by pairing removes and adds
+          const maxLength = Math.max(removes.length, adds.length);
+          for (let i = 0; i < maxLength; i++) {
+            if (i < removes.length) {
+              markdown += `- Remove: ${removes[i].quantity}x ${removes[i].card}\n`;
+              if (i < adds.length) {
+                markdown += `  Replace with: ${adds[i].quantity}x ${adds[i].card}\n`;
+                markdown += `  Reason: ${removes[i].reason || adds[i].reason || 'Improve deck consistency'}\n\n`;
+              }
+            } else if (i < adds.length) {
+              markdown += `- Add: ${adds[i].quantity}x ${adds[i].card}\n`;
+              markdown += `  Reason: ${adds[i].reason || 'Improve deck consistency'}\n\n`;
+            }
+          }
+          
+          if (improvement.expectedImpact) {
+            markdown += `**Expected Impact:** ${improvement.expectedImpact}\n\n`;
+          }
+        }
       }
     });
   }
@@ -110,9 +130,22 @@ export function exportAnalysisToMarkdown(
   if (analysis.matchupAnalysis && analysis.matchupAnalysis.length > 0) {
     markdown += `## Matchup Analysis\n\n`;
     analysis.matchupAnalysis.forEach(matchup => {
-      const emoji = matchup.outcome === 'favorable' ? '✅' : matchup.outcome === 'unfavorable' ? '❌' : '⚖️';
-      markdown += `### ${emoji} vs ${matchup.archetype} (${matchup.winRate}% win rate)\n`;
-      markdown += `${matchup.keyFactors}\n\n`;
+      const winRate = matchup.winRate || 50;
+      const emoji = winRate >= 60 ? '✅' : winRate <= 40 ? '❌' : '⚖️';
+      markdown += `### ${emoji} vs ${matchup.opponent} (${winRate}% win rate)\n`;
+      if (matchup.keyFactors && matchup.keyFactors.length > 0) {
+        markdown += `**Key Factors:**\n`;
+        matchup.keyFactors.forEach(factor => {
+          markdown += `- ${factor}\n`;
+        });
+      }
+      if (matchup.techCards && matchup.techCards.length > 0) {
+        markdown += `\n**Tech Cards to Consider:**\n`;
+        matchup.techCards.forEach(tech => {
+          markdown += `- ${tech}\n`;
+        });
+      }
+      markdown += `\n`;
     });
   }
   

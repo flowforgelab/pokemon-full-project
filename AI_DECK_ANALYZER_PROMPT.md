@@ -179,37 +179,51 @@ Return your analysis as a JSON object with this structure. Be consistent in your
 
 ### Card Change Recommendations
 
-**ABSOLUTE REQUIREMENT**: EVERY card change MUST be EXACTLY equal quantities. The deck MUST remain at 60 cards.
+**ABSOLUTE REQUIREMENT**: EVERY card change MUST maintain EXACTLY 60 cards. Use STRICT 1:1 PAIRING.
 
-**MATHEMATICAL RULE**: If removing X cards, you MUST add exactly X cards. NO EXCEPTIONS.
+**CRITICAL RULE**: Each removed card MUST have a specific replacement card paired with it.
 
-1. **Strict One-for-One Replacements**: 
-   - Remove 1 → Add 1
-   - Remove 2 → Add 2
-   - Remove 3 → Add 3
-   - NEVER Remove 5 → Add 3 (WRONG!)
-   - NEVER Remove 2 → Add 3 (WRONG!)
+1. **Strict Card-for-Card Pairing**: 
+   - ALWAYS structure as: "Remove X [Card A] → Replace with X [Card B]"
+   - Each removal MUST have its direct replacement
+   - NEVER suggest removing cards without equal replacements
+   
+2. **Correct Structure for cardChanges**:
+   ```json
+   "cardChanges": {
+     "remove": [
+       {"card": "Grass Energy", "quantity": 3, "reason": "Too many basic energy"},
+       {"card": "Erika's Hospitality", "quantity": 2, "reason": "Better draw support available"}
+     ],
+     "add": [
+       {"card": "Lightning Energy", "quantity": 3, "reason": "Match attacker's energy needs"},
+       {"card": "Professor's Research", "quantity": 2, "reason": "Stronger draw power"}
+     ]
+   }
+   ```
 
-2. **Verify Your Math**:
-   - Count removed cards: X
-   - Count added cards: Y
+3. **Verify Your Math - MANDATORY CHECKS**:
+   - Total remove quantities: Must equal total add quantities
+   - Final deck count: Must remain exactly 60
+   - If deck has 60 cards: removes MUST equal adds
+   - NEVER suggest unbalanced changes
+
+4. **Present Changes as Paired Replacements**:
+   - "Replace 3 Grass Energy with 3 Lightning Energy"
+   - "Replace 2 Erika's Hospitality with 2 Professor's Research"
+   - NOT "Remove 5 cards, Add 3 cards" (WRONG!)
+
+5. **Multiple Improvements Strategy**:
+   - Break into separate improvement entries
+   - Each improvement should be self-contained
+   - Each improvement maintains 60-card total
+   - Example: One improvement for energy fixes, another for trainer updates
+
+6. **VALIDATION BEFORE OUTPUT**:
+   - Count all remove quantities: X
+   - Count all add quantities: Y
    - X MUST EQUAL Y
-   - Total deck must still be 60 cards
-
-3. **Correct Format Examples**:
-   - ✅ "Remove: 3x Grass Energy, 2x Erika's Hospitality (5 total)"
-   - ✅ "Add: 3x Lightning Energy, 2x Professor's Research (5 total)"
-   - ❌ "Remove: 5 cards, Add: 3 cards" (WRONG - unequal)
-
-4. **Each Improvement Entry**:
-   - State the total count clearly
-   - Example: "Remove 5 cards total: [list]. Add 5 cards total: [list]"
-   - Double-check your math before suggesting
-
-5. **Multiple Smaller Swaps**:
-   - Instead of one big change, suggest several 1:1 or 2:2 swaps
-   - Easier to implement and verify
-   - Example: Three separate 2:2 swaps instead of one 6:6 swap
+   - If not equal, revise your suggestions
 
 ## Special Considerations
 
