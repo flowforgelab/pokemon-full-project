@@ -10,6 +10,7 @@
     "restartPolicyMaxRetries": 10
   },
   "variables": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NIXPACKS_NODE_VERSION": "20"
   }
 }
