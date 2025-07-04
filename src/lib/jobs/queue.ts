@@ -1,7 +1,8 @@
 import type { JobData, JobResult } from '@/lib/api/types';
 
 // Check if we're in a build environment
-const IS_BUILD = process.env.NODE_ENV === 'production' && (!process.env.KV_REST_API_URL || process.env.VERCEL_ENV === 'production');
+// Only use mock during actual build process, not in production runtime
+const IS_BUILD = process.env.BUILDING === 'true';
 
 // Type imports only - won't trigger actual module loading
 type Queue = any;

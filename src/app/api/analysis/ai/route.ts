@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Fallback: Run analysis directly in development without Redis
       console.log('Redis not configured - running analysis directly');
+      console.log('This should NOT happen in production!');
       
       // Import the analyzer function and system prompt
       const { analyzeWithAI } = await import('@/lib/analysis/ai-deck-analyzer');

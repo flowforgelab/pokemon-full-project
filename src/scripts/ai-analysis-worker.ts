@@ -32,6 +32,14 @@ async function processAIAnalysis(job: Job<AIAnalysisJobData>) {
   const { analysisId, deckId, userId, model, focusAreas, userAge, options } = job.data;
   
   console.log(`[Job ${job.id}] Starting AI analysis for deck ${deckId}`);
+  console.log(`[Job ${job.id}] Analysis ID: ${analysisId}`);
+
+  // Validate required data
+  if (!analysisId || !deckId || !userId) {
+    const error = `Missing required data: analysisId=${analysisId}, deckId=${deckId}, userId=${userId}`;
+    console.error(`[Job ${job.id}] ${error}`);
+    throw new Error(error);
+  }
 
   try {
     // Update analysis status to processing
