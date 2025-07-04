@@ -18,10 +18,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Loader2,
-  Info
+  Info,
+  Download
 } from 'lucide-react';
 import type { AIDeckAnalysis } from '@/lib/analysis/ai-deck-analyzer';
 import { AnalysisStatus } from '@/components/analysis/AnalysisStatus';
+import { exportAnalysisToMarkdown, downloadMarkdown } from '@/lib/utils/export-analysis';
 // Badge component inline since it doesn't exist in UI library
 import { cn } from '@/lib/utils';
 
@@ -217,6 +219,20 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
     'critical': 'text-red-600',
     'major': 'text-orange-600',
     'minor': 'text-yellow-600'
+  };
+
+  const handleDownloadAnalysis = () => {
+    if (!analysis) return;
+    
+    const markdown = exportAnalysisToMarkdown(
+      analysis,
+      deck.name,
+      deck.format || 'STANDARD',
+      userAge ? parseInt(userAge) : undefined
+    );
+    
+    const filename = `${deck.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_analysis_${new Date().toISOString().split('T')[0]}.md`;
+    downloadMarkdown(markdown, filename);
   };
 
   return (
@@ -431,18 +447,30 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
           <PremiumCard>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">Overall Analysis</h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     {analysis.executiveSummary}
                   </p>
                 </div>
-                <div className="text-center">
+                <div className="text-center ml-6">
                   <div className="text-4xl font-bold mb-2">{analysis.overallRating}/100</div>
                   <span className={cn("inline-block text-lg px-3 py-1 rounded-full font-semibold", tierColors[analysis.tierRating])}>
                     Tier {analysis.tierRating}
                   </span>
                 </div>
+              </div>
+              
+              {/* Download Button */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  onClick={handleDownloadAnalysis}
+                  variant="outline"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Analysis Report
+                </Button>
               </div>
             </div>
           </PremiumCard>
@@ -559,12 +587,20 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Button
               onClick={() => setAnalysis(null)}
               variant="outline"
             >
               Run Another Analysis
+            </Button>
+            <Button
+              onClick={handleDownloadAnalysis}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download Report
             </Button>
             <Button
               onClick={() => router.push(`/decks/${deck.id}/analyze`)}
