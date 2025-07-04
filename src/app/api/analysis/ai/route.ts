@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
-import { aiAnalysisQueue } from '@/lib/jobs/queue';
+import { getAiAnalysisQueue } from '@/lib/jobs/queue-runtime';
 import type { AIAnalysisJobData } from '@/lib/jobs/types';
 
 // Configure route segment to allow longer timeout
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     if (hasRedis) {
       // Add job to queue
       console.log('Using Redis queue for AI analysis');
-      const queue = await aiAnalysisQueue;
+      const queue = await getAiAnalysisQueue();
       const job = await queue.add('analyze-deck', jobData, {
         attempts: 2,
         backoff: {
