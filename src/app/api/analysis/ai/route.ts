@@ -131,21 +131,104 @@ export async function POST(req: NextRequest) {
       }
     };
     
-    // Add job to queue
-    const queue = await aiAnalysisQueue;
-    const job = await queue.add('analyze-deck', jobData, {
-      attempts: 2,
-      backoff: {
-        type: 'fixed',
-        delay: 30000
-      }
-    });
+    // Check if we have Redis configured
+    const hasRedis = process.env.REDIS_URL || process.env.KV_URL;
     
-    // Update analysis record with jobId
-    await prisma.analysis.update({
-      where: { id: analysisRecord.id },
-      data: { jobId: job.id }
-    });
+    if (hasRedis) {
+      // Add job to queue
+      const queue = await aiAnalysisQueue;
+      const job = await queue.add('analyze-deck', jobData, {
+        attempts: 2,
+        backoff: {
+          type: 'fixed',
+          delay: 30000
+        }
+      });
+      
+      // Update analysis record with jobId
+      await prisma.analysis.update({
+        where: { id: analysisRecord.id },
+        data: { jobId: job.id }
+      });
+    } else {
+      // Fallback: Run analysis directly in development without Redis
+      console.log('Redis not configured - running analysis directly');
+      
+      // Import the analyzer function
+      const { analyzeWithAI } = await import('@/lib/analysis/ai-deck-analyzer');
+      
+      // Update status to processing
+      await prisma.analysis.update({
+        where: { id: analysisRecord.id },
+        data: {
+          status: 'PROCESSING',
+          startedAt: new Date(),
+          jobId: 'mock-' + analysisRecord.id
+        }
+      });
+      
+      // Run analysis in background (fire and forget)
+      (async () => {
+        try {
+          // Customize prompt based on focus areas
+          let customPrompt = '';
+          if (validated.options?.focusAreas && validated.options.focusAreas.length > 0) {
+            customPrompt = '\n\nFOCUS AREAS: Please pay special attention to:\n';
+            validated.options.focusAreas.forEach(area => {
+              switch (area) {
+                case 'competitive':
+                  customPrompt += '- Competitive viability and tournament performance\n';
+                  break;
+                case 'budget':
+                  customPrompt += '- Budget considerations and cost-effective alternatives\n';
+                  break;
+                case 'beginner':
+                  customPrompt += '- Beginner-friendly explanations and simple improvements\n';
+                  break;
+                case 'synergy':
+                  customPrompt += '- Card synergies, combos, and anti-synergies\n';
+                  break;
+                case 'matchups':
+                  customPrompt += '- Detailed matchup analysis against meta decks\n';
+                  break;
+              }
+            });
+          }
+          
+          const analysis = await analyzeWithAI(
+            deck.cards,
+            deck.name,
+            {
+              apiKey: process.env.OPENAI_API_KEY!,
+              model: validated.options?.model || 'gpt-3.5-turbo',
+              temperature: validated.options?.temperature || 0.3,
+              systemPrompt: customPrompt,
+              userAge: validated.options?.userAge
+            }
+          );
+          
+          // Update with result
+          await prisma.analysis.update({
+            where: { id: analysisRecord.id },
+            data: {
+              status: 'COMPLETED',
+              result: analysis as any,
+              completedAt: new Date()
+            }
+          });
+        } catch (error) {
+          console.error('Analysis failed:', error);
+          await prisma.analysis.update({
+            where: { id: analysisRecord.id },
+            data: {
+              status: 'FAILED',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              completedAt: new Date()
+            }
+          });
+        }
+      })();
+    }
     
     // Track usage for rate limiting (free users get 5 per day)
     const dailyLimit = !user ? 5 :
@@ -156,10 +239,16 @@ export async function POST(req: NextRequest) {
     // Simple in-memory rate limiting (should use Redis in production)
     // TODO: Implement proper rate limiting with Redis
     
+    // Get the updated analysis record to get the jobId
+    const updatedAnalysis = await prisma.analysis.findUnique({
+      where: { id: analysisRecord.id },
+      select: { jobId: true }
+    });
+    
     return NextResponse.json({
       success: true,
       analysisId: analysisRecord.id,
-      jobId: job.id,
+      jobId: updatedAnalysis?.jobId || 'mock-' + analysisRecord.id,
       status: 'PENDING',
       message: 'Analysis has been queued and will be processed shortly',
       deck: {

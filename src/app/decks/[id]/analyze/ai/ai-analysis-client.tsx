@@ -59,15 +59,60 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
     };
   }, []);
 
+  // Check for jobId or analysisId in URL params on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const jobIdParam = searchParams.get('jobId');
+    const analysisIdParam = searchParams.get('analysisId');
+    
+    if (jobIdParam) {
+      console.log('Found jobId in URL:', jobIdParam);
+      currentJobId.current = jobIdParam;
+      setIsAnalyzing(true);
+      
+      // Start polling for this job
+      checkAnalysisStatus(jobIdParam);
+      pollingInterval.current = setInterval(() => {
+        checkAnalysisStatus(jobIdParam);
+      }, 2000);
+    } else if (analysisIdParam) {
+      console.log('Found analysisId in URL:', analysisIdParam);
+      // Load completed analysis directly
+      loadCompletedAnalysis(analysisIdParam);
+    }
+  }, []);
+
+  const loadCompletedAnalysis = async (analysisId: string) => {
+    try {
+      const response = await fetch(`/api/analysis/ai/result/${analysisId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load analysis');
+      }
+
+      const data = await response.json();
+      if (data.analysis) {
+        setAnalysis(data.analysis);
+        setAnalysisStatus('Analysis loaded');
+      }
+    } catch (err) {
+      console.error('Failed to load analysis:', err);
+      setError('Failed to load previous analysis');
+    }
+  };
+
   const checkAnalysisStatus = async (jobId: string) => {
     try {
+      console.log('Checking analysis status for job:', jobId);
       const response = await fetch(`/api/analysis/ai/status/${jobId}`);
       
       if (!response.ok) {
+        console.error('Status check failed:', response.status, response.statusText);
         throw new Error('Failed to check status');
       }
 
       const data = await response.json();
+      console.log('Status response:', data);
       
       if (data.status === 'COMPLETED') {
         // Stop polling
@@ -353,9 +398,32 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
         </div>
       ) : isAnalyzing ? (
         /* Analysis in Progress */
-        <PremiumCard>
-          <AnalysisStatus status={analysisStatus} error={error} />
-        </PremiumCard>
+        <div className="space-y-4">
+          <PremiumCard>
+            <AnalysisStatus status={analysisStatus} error={error} />
+          </PremiumCard>
+          
+          <div className="flex justify-center gap-4">
+            <Button
+              onClick={() => router.push('/analysis/history')}
+              variant="outline"
+            >
+              View Analysis History
+            </Button>
+            <Button
+              onClick={() => {
+                if (pollingInterval.current) {
+                  clearInterval(pollingInterval.current);
+                }
+                setIsAnalyzing(false);
+                setAnalysisStatus('');
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
       ) : (
         /* Analysis Results */
         <div className="space-y-6">
