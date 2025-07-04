@@ -154,8 +154,21 @@ export async function POST(req: NextRequest) {
       // Fallback: Run analysis directly in development without Redis
       console.log('Redis not configured - running analysis directly');
       
-      // Import the analyzer function
+      // Import the analyzer function and system prompt
       const { analyzeWithAI } = await import('@/lib/analysis/ai-deck-analyzer');
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      let systemPrompt = '';
+      try {
+        systemPrompt = fs.readFileSync(
+          path.join(process.cwd(), 'AI_DECK_ANALYZER_PROMPT.md'),
+          'utf-8'
+        );
+      } catch (error) {
+        console.error('Failed to load AI analyzer prompt:', error);
+        systemPrompt = `You are an expert Pokemon TCG analyst. Provide comprehensive deck analysis in JSON format.`;
+      }
       
       // Update status to processing
       await prisma.analysis.update({
@@ -167,13 +180,15 @@ export async function POST(req: NextRequest) {
         }
       });
       
-      // Run analysis in background (fire and forget)
-      (async () => {
+      // Run analysis immediately (don't wait)
+      setTimeout(async () => {
         try {
+          console.log('Starting direct analysis for:', analysisRecord.id);
+          
           // Customize prompt based on focus areas
-          let customPrompt = '';
+          let customPrompt = systemPrompt;
           if (validated.options?.focusAreas && validated.options.focusAreas.length > 0) {
-            customPrompt = '\n\nFOCUS AREAS: Please pay special attention to:\n';
+            customPrompt += '\n\nFOCUS AREAS: Please pay special attention to:\n';
             validated.options.focusAreas.forEach(area => {
               switch (area) {
                 case 'competitive':
@@ -195,6 +210,7 @@ export async function POST(req: NextRequest) {
             });
           }
           
+          console.log('Calling analyzeWithAI...');
           const analysis = await analyzeWithAI(
             deck.cards,
             deck.name,
@@ -207,6 +223,7 @@ export async function POST(req: NextRequest) {
             }
           );
           
+          console.log('Analysis complete, updating database...');
           // Update with result
           await prisma.analysis.update({
             where: { id: analysisRecord.id },
@@ -216,6 +233,7 @@ export async function POST(req: NextRequest) {
               completedAt: new Date()
             }
           });
+          console.log('Analysis saved successfully');
         } catch (error) {
           console.error('Analysis failed:', error);
           await prisma.analysis.update({
@@ -227,7 +245,7 @@ export async function POST(req: NextRequest) {
             }
           });
         }
-      })();
+      }, 100); // Small delay to ensure response is sent first
     }
     
     // Track usage for rate limiting (free users get 5 per day)
