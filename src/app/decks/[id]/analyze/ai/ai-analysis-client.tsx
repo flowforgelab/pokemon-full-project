@@ -177,9 +177,10 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
                     onChange={(e) => setSelectedModel(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:border-gray-600"
                   >
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast)</option>
-                    <option value="gpt-4">GPT-4 (Balanced)</option>
-                    <option value="gpt-4-turbo-preview">GPT-4 Turbo (Best)</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast, Reliable)</option>
+                    <option value="gpt-4">GPT-4 (Detailed)</option>
+                    <option value="gpt-4-turbo-preview">GPT-4 Turbo (Best Quality)</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
                   </select>
                 </div>
               )}

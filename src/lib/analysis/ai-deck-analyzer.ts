@@ -346,7 +346,9 @@ export async function analyzeWithAI(
     
     // Poll for completion with timeout
     let runStatus = run;
-    const maxAttempts = 60; // 60 seconds timeout
+    // Longer timeout for certain models
+    const isSlowerModel = options.model?.includes('gpt-4') && !options.model.includes('mini');
+    const maxAttempts = isSlowerModel ? 120 : 60; // 120 seconds for GPT-4, 60 for others
     let attempts = 0;
     
     while (runStatus.status !== 'completed' && attempts < maxAttempts) {
@@ -404,8 +406,38 @@ export async function analyzeWithAI(
     }
     
     const aiResponse = assistantMessage.content[0].text.value;
+    console.log('AI Response:', aiResponse.substring(0, 500) + '...'); // Log first 500 chars
     
-    return parseAIAnalysis(aiResponse);
+    try {
+      const analysis = parseAIAnalysis(aiResponse);
+      
+      // Validate the analysis has required fields
+      if (!analysis.executiveSummary || analysis.strengths.length === 0 || analysis.weaknesses.length === 0) {
+        console.error('Incomplete analysis data:', analysis);
+        
+        // Return a default analysis if incomplete
+        return {
+          ...analysis,
+          executiveSummary: analysis.executiveSummary || 'Analysis incomplete. Please try again.',
+          strengths: analysis.strengths.length > 0 ? analysis.strengths : [{
+            title: 'Analysis in progress',
+            description: 'The AI is still processing your deck.',
+            impact: 'low' as const
+          }],
+          weaknesses: analysis.weaknesses.length > 0 ? analysis.weaknesses : [{
+            title: 'Analysis in progress',
+            description: 'The AI is still processing your deck.',
+            severity: 'minor' as const,
+            suggestion: 'Please try running the analysis again.'
+          }]
+        };
+      }
+      
+      return analysis;
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      throw new Error('Failed to parse analysis results. The AI response may be incomplete.');
+    }
     
   } catch (error) {
     console.error('AI analysis error:', error);

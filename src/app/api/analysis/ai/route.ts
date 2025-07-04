@@ -15,7 +15,7 @@ export const maxDuration = 60; // 60 seconds timeout for Vercel
 const aiAnalysisSchema = z.object({
   deckId: z.string().min(1, 'Deck ID is required'),
   options: z.object({
-    model: z.enum(['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo']).optional(),
+    model: z.enum(['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4o-mini']).optional(),
     temperature: z.number().min(0).max(1).optional(),
     focusAreas: z.array(z.enum([
       'competitive', 'budget', 'beginner', 'synergy', 'matchups'
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       deck.name,
       {
         apiKey,
-        model: validated.options?.model || 'gpt-4-turbo-preview',
+        model: validated.options?.model || 'gpt-3.5-turbo', // Default to reliable model
         temperature: validated.options?.temperature || 0.3, // Lower for consistency
         systemPrompt: customPrompt,
         userAge: validated.options?.userAge
