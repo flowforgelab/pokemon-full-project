@@ -42,6 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Railway
+.railway
+
 # prisma
 prisma/*.db
 prisma/*.db-journal

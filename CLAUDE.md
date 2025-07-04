@@ -1,21 +1,31 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides comprehensive guidance to Claude Code (claude.ai/code) when working with the Pokemon TCG Deck Builder codebase.
 
-** Standard Workflow
+## Standard Workflow
+
 1. First think through the problem, read the codebase for relevant files, and write a plan to tasks/todo.md.
 2. The plan should have a list of todo items that you can check off as you complete them
 3. Before you begin working, check in with me and I will verify the plan.
 4. Then, begin working on the todo items, marking them as complete as you go.
 5. Please every step of the way just give me a high level explanation of what changes you made
 6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
-7. Finally, add a review section to the [todo.md](http://todo.md/) file with a summary of the changes you made and any other relevant information.
+7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
 
 ## Project Overview
 
-Pokemon TCG Deck Builder - A Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks. Features include AI-powered deck analysis, collection management with value tracking, drag-and-drop deck building, and real-time card pricing from the Pokemon TCG API.
+Pokemon TCG Deck Builder - A comprehensive Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks with AI-powered recommendations.
 
-**Current Status**: v1.0.16-MVP with 13,622 cards imported (71.19% of 19,136 total)
+**Key Features**:
+- **AI Expert Analysis**: Free GPT-powered deck analysis with age-appropriate recommendations
+- **Asynchronous Processing**: Redis/BullMQ job queue for long-running analyses
+- **Collection Management**: Track cards with conditions, values, and trade status
+- **Deck Builder**: Drag-and-drop interface with real-time validation
+- **Trading System**: Create and manage trade offers
+- **Real-time Updates**: Built with tRPC for type-safe APIs
+
+**Current Version**: v0.8.0 (README) / v1.0.16-MVP (Project Checklist)
+**Card Import Progress**: 13,622 cards imported (71.19% of 19,136 total)
 
 ## Essential Commands
 
@@ -33,6 +43,11 @@ npx dotenv -e .env.local -- prisma db push      # Apply schema changes to databa
 npx dotenv -e .env.local -- prisma migrate dev  # Create new migration
 npx dotenv -e .env.local -- prisma studio       # Open Prisma Studio GUI
 npx prisma generate                              # Regenerate Prisma client after schema changes
+
+# AI Analysis System
+npm run test:redis                               # Test Redis connection
+npm run worker:ai                                # Start AI analysis worker (REQUIRED for AI analysis)
+npm run worker:all                               # Start all background workers
 
 # Card Data Import Scripts
 npx tsx src/scripts/test-import.ts               # Test import (2 sets, 10 cards each)
@@ -58,12 +73,15 @@ npm run dev                                      # Then navigate to /design-syst
 
 ### Tech Stack
 - **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
 - **Database**: PostgreSQL (Neon) + Prisma ORM
 - **API**: tRPC for type-safe APIs
 - **Auth**: Clerk with role-based access
 - **Caching**: Redis (Vercel KV/Upstash REST API)
-- **Jobs**: Bull/BullMQ for background processing (requires direct Redis connection)
+- **Jobs**: Bull/BullMQ for background processing
+- **AI**: OpenAI Assistant API (ID: asst_6zlH4JsbKRq10am9JTAULmRP)
 - **Styling**: Tailwind CSS + custom design system
+- **State Management**: TanStack Query
 - **Monitoring**: Web Vitals and performance tracking
 - **PWA**: Service Worker for offline support
 - **Security**: CSP headers, XSS protection, input validation
@@ -71,10 +89,17 @@ npm run dev                                      # Then navigate to /design-syst
 ### Request Flow
 ```
 Client Request → Clerk Middleware → Security Middleware → tRPC Router → Business Logic → Database
-                                                    ↓                              ↓
-                                           Security Headers                Cache Layer (Redis)
-                                                                                  ↓
-                                                                     External APIs (Pokemon TCG)
+                                                   ↓                              ↓
+                                          Security Headers                Cache Layer (Redis)
+                                                                                 ↓
+                                                                    External APIs (Pokemon TCG, OpenAI)
+```
+
+### AI Analysis Architecture
+```
+User → API Route → Redis Queue → Worker Process → OpenAI Assistant → Database → UI
+         ↓                                                               ↑
+         └──────────── Status Polling (2s intervals) ───────────────────┘
 ```
 
 ### Authentication & Authorization
@@ -103,11 +128,44 @@ Key models and relationships:
 - `User` → `UserCollection` → `Card` (many-to-many with metadata)
 - `Card` → `CardPrice` → `PriceHistory` (pricing data chain)
 - `Deck` → `DeckCard` → `Card` (deck composition)
+- `Analysis` → `Deck`, `User` (AI analysis tracking)
+
+Key enums:
+- `AnalysisStatus`: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+- `DeckCategory`, `Rarity`, `Supertype`, `Format`
 
 Always use Prisma enums from `@prisma/client` for type safety:
 ```typescript
-import { Rarity, Supertype, DeckCategory } from '@prisma/client';
+import { Rarity, Supertype, DeckCategory, AnalysisStatus } from '@prisma/client';
 ```
+
+## AI Analysis System
+
+### Overview
+The AI Expert Analysis uses OpenAI's Assistant API with asynchronous processing to handle long-running analyses without timeouts.
+
+### Setup Requirements
+1. **Redis Worker**: Must run `npm run worker:ai` in a separate terminal
+2. **OpenAI API Key**: Set in `.env.local`
+3. **Assistant ID**: asst_6zlH4JsbKRq10am9JTAULmRP (configured in code)
+
+### How It Works
+1. User requests analysis → Creates job in Redis queue
+2. Worker picks up job → Calls OpenAI Assistant API
+3. UI polls for status → Updates every 2 seconds
+4. Results saved to database → Displayed to user
+
+### Key Features
+- **Age-Appropriate Analysis**: Adjusts language complexity based on user age (5-99)
+- **Focus Areas**: Competitive, Budget, Beginner, Synergy, Matchups
+- **1:1 Card Replacements**: Maintains exactly 60 cards in recommendations
+- **Consistency**: Low temperature (0.3) for consistent scoring
+- **Fallback Mode**: Direct execution in development without Redis
+
+### Troubleshooting
+- **Stuck on "Queued"**: Start worker with `npm run worker:ai`
+- **Analysis Fails**: Check worker terminal for errors
+- **Timeout Issues**: Ensure Redis is configured and worker is running
 
 ## Security Implementation
 
@@ -120,6 +178,7 @@ All forms use Zod schemas from `/lib/validations/index.ts`:
 - **Collection**: `addToCollectionSchema`, `bulkAddToCollectionSchema`
 - **Trading**: `createTradeOfferSchema`
 - **Search**: `searchSchema`
+- **AI Analysis**: Includes `userAge` validation (5-99)
 
 Use `sanitizeInput()` for user-generated content before storage/display.
 
@@ -182,6 +241,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 }
 ```
 
+### Error Handling Patterns
+```typescript
+// API routes should handle errors gracefully
+try {
+  // ... operation
+} catch (error) {
+  console.error('Operation failed:', error);
+  return { error: 'User-friendly error message' };
+}
+
+// AI Analysis specific error handling
+if (error.message.includes('timeout')) {
+  return { error: 'Analysis is taking longer than expected. Please try again.' };
+}
+```
+
 ## Search System
 
 The app has an advanced search system with multiple features:
@@ -207,6 +282,15 @@ The app has an advanced search system with multiple features:
 - Sort dropdown shows "✓ Sorting by relevance when searching" and is disabled
 - Single character searches only return prefix matches
 - Filters (supertype, set, rarity) still work during search
+
+### Database Indexes
+```sql
+idx_card_name_lower     -- Case-insensitive name searches
+idx_card_number         -- Card number searches
+idx_card_name_trgm      -- Fuzzy/contains searches (uses pg_trgm)
+idx_card_name_pattern   -- LIKE pattern matching
+idx_card_number_pattern -- Number pattern matching
+```
 
 ## Pokemon TCG API Integration
 
@@ -250,14 +334,6 @@ The project has multiple import scripts for different scenarios:
    - Limited to 2 sets, 10 cards each
    - Good for testing configuration
 
-Import features:
-- Batch processing with configurable limits
-- Rate limiting (500ms delay between requests)
-- Progress tracking with detailed logging
-- Price data extraction from Pokemon TCG API
-- Transaction-based imports for data integrity
-- TCGPlayer purchase link generation (search-based, not direct links)
-
 ### TCGPlayer URL Format
 The API doesn't provide direct TCGPlayer product URLs. We generate search URLs:
 ```typescript
@@ -290,6 +366,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY    # Clerk auth
 CLERK_SECRET_KEY                     # Clerk auth
 KV_REST_API_URL                      # Redis/Vercel KV
 KV_REST_API_TOKEN                    # Redis/Vercel KV
+OPENAI_API_KEY                       # For AI analysis
 ```
 
 ### Optional but Recommended
@@ -298,86 +375,6 @@ POKEMON_TCG_API_KEY                  # For 20k requests/day (vs 1k)
 NEXT_PUBLIC_APP_URL                  # For sharing features
 REDIS_URL                            # Direct Redis connection for BullMQ
 CRON_SECRET                          # Protect cron endpoints
-```
-
-## Current Status (June 2025)
-
-### Working Features
-- Complete API layer with all routers
-- Deck builder with drag-and-drop
-- Collection management with value tracking
-- AI-powered deck analysis and recommendations
-- Card browser with modal detail view
-- User profiles and subscription system
-- Background job infrastructure
-- Clerk authentication with modal sign-in
-- Card data import (13,622 cards from 111 sets imported)
-- Auto-import system that switches between full and smart updates
-- Smart daily import system with priority tiers
-- TCGPlayer search links for all cards
-- Automated cron jobs for data updates
-- USD pricing display (filtered from API data)
-- PWA support with manifest.json and icons
-- Comprehensive security (input validation, XSS protection, CSP headers)
-
-### Recent Updates (June 30, 2025)
-- Security & PWA Enhancements:
-  - Implemented comprehensive input validation on all forms using Zod
-  - Added XSS protection with security middleware and CSP headers
-  - Created PWA manifest.json with all required app icons
-  - Generated Open Graph and Twitter card images
-  - Created logo.svg and logo-dark.svg
-  - Added robots.txt and dynamic sitemap generation
-  - Fixed unsafe innerHTML usage
-  - Enhanced all forms with proper validation
-- Advanced Search Enhancements:
-  - Search now only searches card names, not set names
-  - Added card number search capability
-  - Space-separated name+number search ("char 32" finds Charcadet #032)
-  - Relevance-first sorting during search with visual indicator
-  - Fixed grid layout to 5 columns for perfect alignment
-- Performance optimizations: Added database indexes for search (queries now ~0.2ms)
-- Fixed SQL parameter ordering issues for complex search queries
-
-### Not Implemented
-- Trading UI (API exists, no frontend)
-- Stripe payment processing (infrastructure ready)
-- Test suite (no tests written)
-- Direct Redis connection for BullMQ in production
-- Collection export/import functionality (buttons exist, logic missing)
-- Deck deletion and cloning (UI exists, functionality missing)
-- Email/push notifications for price alerts
-- User permission checks (last security item)
-
-## Design System
-
-The app uses a comprehensive design system (`/src/styles/design-tokens.ts`) with:
-- Pokemon energy type colors
-- Glass morphism effects
-- Dark mode with system preference detection
-- Mobile-first responsive design
-- Touch-friendly interfaces (44px minimum targets)
-- Framer Motion animations
-
-### Standardized UI Components
-```typescript
-// Form components with consistent styling (44px min-height for accessibility)
-import { Input, Select, Textarea, FormField } from '@/components/ui';
-
-// Unified card component for Pokemon cards
-import PokemonCard from '@/components/cards/PokemonCard';
-// Supports: layout='grid'|'list'|'compact', viewMode='minimal'|'compact'|'detailed'
-
-// Modal components
-import CardDetailModal from '@/components/cards/CardDetailModal';
-// Custom modal implementation (replaced Headless UI due to build issues)
-
-// Loading states
-import { Skeleton, CardSkeleton, DeckCardSkeleton, TableRowSkeleton } from '@/components/ui';
-
-// Touch-friendly components (all meet 44x44px minimum)
-import { Toast } from '@/components/ui/Toast';
-import { DeckCardItem } from '@/components/decks/DeckCardItem';
 ```
 
 ## Common Gotchas
@@ -402,109 +399,133 @@ import { DeckCardItem } from '@/components/decks/DeckCardItem';
 18. **Form Validation**: All forms must use Zod schemas from `/lib/validations`
 19. **XSS Prevention**: Use `sanitizeInput()` for all user-generated content
 20. **Image URLs**: Validate against trusted domains using `sanitizeImageUrl()`
+21. **AI Analysis Worker**: Must run `npm run worker:ai` for AI analysis to work
+22. **Analysis Polling**: UI polls every 2 seconds for status updates
+23. **Age Validation**: User age must be between 5-99 for AI analysis
+24. **Card Replacements**: AI must maintain exactly 60 cards (1:1 replacements)
+25. **Temperature Setting**: Keep at 0.3 for consistent AI responses
 
-## Deployment
+## Current Status (January 2025)
 
-Configured for Vercel deployment:
-- `vercel.json` with function timeouts and cron jobs
-- Automated deployment via `./deploy.sh` script
-- Build includes Prisma generation
-- See `DEPLOYMENT.md` for detailed instructions
+### Working Features
+- Complete API layer with all routers
+- Deck builder with drag-and-drop
+- Collection management with value tracking
+- AI-powered deck analysis with OpenAI Assistant API
+- Free AI Expert Analysis (previously premium-only)
+- Age-appropriate analysis with customized language
+- Asynchronous AI processing with Redis/BullMQ
+- Card browser with modal detail view
+- User profiles and subscription system
+- Background job infrastructure
+- Clerk authentication with modal sign-in
+- Card data import (13,622 cards from 111 sets imported)
+- Auto-import system that switches between full and smart updates
+- Smart daily import system with priority tiers
+- TCGPlayer search links for all cards
+- Automated cron jobs for data updates
+- USD pricing display (filtered from API data)
+- PWA support with manifest.json and icons
+- Comprehensive security (input validation, XSS protection, CSP headers)
+- Advanced search with relevance ranking
+- Database performance optimization with indexes
+
+### Recent Updates (January 2025)
+- AI Analysis Improvements:
+  - Made AI Expert Analysis free for all users
+  - Switched to new OpenAI Assistant ID (asst_6zlH4JsbKRq10am9JTAULmRP)
+  - Added age-appropriate analysis (ages 5-99)
+  - Fixed 1:1 card replacement rules
+  - Improved scoring consistency (temperature 0.3)
+  - Implemented asynchronous processing for GPT-4
+  - Added Redis/BullMQ job queue system
+  - Created worker process for background analysis
+  - Added Analysis model to track job status
+  - Implemented polling mechanism for UI updates
+  - Added comprehensive error handling
+
+### Not Implemented
+- Trading UI (API exists, no frontend)
+- Stripe payment processing (infrastructure ready)
+- Test suite (no tests written)
+- Direct Redis connection for BullMQ in production (using Upstash REST)
+- Collection export/import functionality (buttons exist, logic missing)
+- Deck deletion and cloning (UI exists, functionality missing)
+- Email/push notifications for price alerts
+
+## Quick Start Guide
+
+### Running AI Analysis
+1. Start Redis worker: `npm run worker:ai` (keep running in separate terminal)
+2. Start dev server: `npm run dev`
+3. Navigate to a deck's analyze page
+4. Select "AI Expert Analysis" (now FREE)
+5. Enter your age (optional, 5-99)
+6. Select focus areas
+7. Click "Start AI Analysis"
+8. Wait for results (polls every 2 seconds)
+
+### Checking Import Progress
+```bash
+npx tsx src/scripts/check-total-cards.ts
+```
+
+### Running Manual Import
+```bash
+npx tsx src/scripts/auto-import.ts  # Recommended - chooses mode automatically
+```
+
+### Testing Redis Connection
+```bash
+npm run test:redis
+```
+
+### Monitoring AI Analysis
+- Check worker terminal for job processing
+- View analysis history at `/analysis/history`
+- Check database: `npx dotenv -e .env.local -- prisma studio`
+
+## Deployment Notes
 
 ### Vercel-Specific Requirements
 1. Set all required environment variables in Vercel dashboard
 2. Add `CRON_SECRET` for protecting cron endpoints
 3. Enable Vercel KV for Redis caching
-4. BullMQ jobs won't work without direct Redis connection
+4. BullMQ jobs require separate worker deployment or QStash for serverless
 5. Daily import runs automatically at 5 AM UTC
+6. Function timeout set to 60 seconds for AI analysis
 
-## Project Status
+### Worker Deployment Options
+1. **Separate Service**: Deploy worker as standalone Node.js service
+2. **QStash**: Use Upstash QStash for serverless job processing
+3. **Railway/Render**: Deploy worker alongside Redis instance
+4. **Development**: Run locally with `npm run worker:ai`
 
-- **Current Version**: v0.8.0 (per README.md)
-- **Project Checklist Version**: 1.0.16-MVP (updated)
-- **Status**: MVP ready with complete security implementation and PWA support
-- **Database**: 13,622 cards from 111 sets with 78,000+ prices
-- **Import Progress**: 71.19% complete (13,622 of 19,136 cards)
-- **Search Performance**: Optimized with database indexes (queries ~0.2ms)
-- **Security**: Complete implementation with validation, XSS protection, CSP headers, and permission checks
-- **Next Steps**:
-  1. Set up unit tests framework
-  2. Create integration tests for API routes
-  3. Activate design tokens with generateCSSVariables()
-  4. Replace hardcoded values with design tokens
-  5. Consolidate energy colors to single source
-  6. Create type-safe client hooks for tRPC
+## Troubleshooting Guide
 
-## MVP Priority List (9 Tasks Remaining)
+### AI Analysis Issues
+- **"Analysis queued but nothing happens"**: Worker not running, start with `npm run worker:ai`
+- **"Failed to run assistant"**: Check OpenAI API key and assistant ID
+- **"Analysis timeout"**: Normal for GPT-4, system handles it with async processing
+- **"Empty analysis results"**: Check worker logs, may be API rate limit
 
-### Completed for Launch (14 items done)
-- ✅ 4/7 Visual/PWA Issues (manifest, icons, OG images, logo, robots.txt, sitemap)
-- ✅ 3/3 Security items (input validation, XSS protection, user permission checks)
+### Import Issues
+- **Import fails**: Check API key, use test-import.ts first
+- **Missing cards**: Run auto-import.ts, check progress with check-total-cards.ts
+- **Price data missing**: Prices extracted from Pokemon TCG API during import
 
-### Remaining Critical Items (9 items)
-1. **Testing Foundation** (2 items):
-   - Unit tests setup (currently no tests exist)
-   - Integration tests for API routes
+### Development Issues
+- **Build fails**: Ensure `BUILDING=true` is set, run `npx prisma generate`
+- **Type errors**: Run `npm run type-check`, check Prisma client generation
+- **Redis connection fails**: Check REDIS_URL or KV_URL in .env.local
 
-2. **Design System** (3 items):
-   - Activate design tokens with generateCSSVariables()
-   - Replace hardcoded values with design tokens
-   - Consolidate energy colors to single source
+## Contact & Support
 
-### Important but Can Deploy Without (4 items)
-- API documentation
-- Type-safe client hooks for tRPC
-- E2E and performance testing
-- Contributing guidelines
+- **GitHub Issues**: Report bugs at https://github.com/anthropics/claude-code/issues
+- **Documentation**: https://docs.anthropic.com/en/docs/claude-code
+- **Version**: Pokemon TCG Deck Builder v0.8.0
 
-### Search Optimization Details
+---
 
-**Database Indexes Created**:
-- `idx_card_name_lower` - Case-insensitive name searches
-- `idx_card_number` - Card number searches
-- `idx_card_name_trgm` - Fuzzy/contains searches (uses pg_trgm)
-- `idx_card_name_pattern` - LIKE pattern matching
-- `idx_card_number_pattern` - Number pattern matching
-
-**Search Performance Script**:
-```bash
-npx tsx src/scripts/test-search-performance.ts  # Test various search scenarios
-```
-
-## Quick Reference
-
-### Check Import Progress
-```bash
-npx tsx src/scripts/check-total-cards.ts
-```
-
-### Run Manual Import
-```bash
-npx tsx src/scripts/auto-import.ts  # Recommended - chooses mode automatically
-```
-
-### Fix TCGPlayer URLs
-```bash
-npx tsx src/scripts/fix-tcgplayer-search-urls.ts
-```
-
-### Generate PWA Assets
-```bash
-npx tsx src/scripts/generate-icons.ts       # App icons
-npx tsx src/scripts/generate-og-image.ts    # Social images
-```
-
-### Monitor Logs
-```bash
-tail -f import.log  # Watch import progress
-```
-
-### Test Search Performance
-```bash
-npx tsx src/scripts/test-search-performance.ts
-```
-
-### Run with Proper Environment
-```bash
-npx dotenv -e .env.local -- npm run dev     # Run with local env vars
-```
+Last Updated: January 2025
+Built with ❤️ by the Pokemon TCG community
