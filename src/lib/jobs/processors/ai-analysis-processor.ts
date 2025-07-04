@@ -29,23 +29,32 @@ export class AIAnalysisProcessor {
 
   async initialize() {
     // Only initialize worker if Redis is available
-    if (!process.env.REDIS_URL && !process.env.KV_URL) {
+    const redisUrl = process.env.REDIS_URL || process.env.KV_URL;
+    if (!redisUrl) {
       console.log('Redis not configured - AI analysis processor will not be initialized');
       return;
     }
 
+    console.log('Initializing AI Analysis processor with Redis URL:', redisUrl.substring(0, 30) + '...');
+
     const connection = this.getRedisConnection();
 
-    this.worker = new Worker(
-      JobQueue.AI_ANALYSIS,
-      this.process.bind(this),
-      {
-        connection,
-        concurrency: 2, // Process 2 AI analysis jobs concurrently
-      }
-    );
+    try {
+      this.worker = new Worker(
+        JobQueue.AI_ANALYSIS,
+        this.process.bind(this),
+        {
+          connection,
+          concurrency: 2, // Process 2 AI analysis jobs concurrently
+        }
+      );
 
-    this.setupEventHandlers();
+      this.setupEventHandlers();
+      console.log('AI Analysis worker initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize AI Analysis worker:', error);
+      throw error;
+    }
   }
 
   private getRedisConnection() {
