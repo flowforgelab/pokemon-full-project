@@ -10,12 +10,13 @@ let realQueueCache: Record<string, Queue> = {};
 export async function getRuntimeQueue(queueName: string): Promise<Queue> {
   // Return cached queue if available
   if (realQueueCache[queueName]) {
+    console.log(`[Runtime Queue] Returning cached queue for ${queueName}`);
     return realQueueCache[queueName];
   }
 
-  // In production runtime, ALWAYS use real queue
-  if (process.env.NODE_ENV === 'production' && process.env.BUILDING !== 'true') {
-    console.log(`[Runtime Queue] Forcing real queue for ${queueName} in production`);
+  // ALWAYS try to use real queue first unless explicitly building
+  if (process.env.BUILDING !== 'true') {
+    console.log(`[Runtime Queue] Creating real queue for ${queueName}`);
     
     const { Queue } = await import('bullmq');
     const redisUrl = process.env.REDIS_URL || process.env.KV_URL || '';

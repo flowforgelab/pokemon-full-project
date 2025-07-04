@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { getAiAnalysisQueue } from '@/lib/jobs/queue-runtime';
+import { createDirectQueue } from '@/lib/jobs/direct-queue';
 
 interface RouteParams {
   params: Promise<{
@@ -80,7 +81,7 @@ export async function GET(
         };
       } else {
         try {
-          const queue = await getAiAnalysisQueue();
+          const queue = createDirectQueue('ai-analysis');
           // Check if queue has getJob method (not MockQueue)
           if (typeof queue.getJob === 'function') {
             const job = await queue.getJob(jobId);

@@ -7,6 +7,7 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
 import { getAiAnalysisQueue } from '@/lib/jobs/queue-runtime';
+import { createDirectQueue } from '@/lib/jobs/direct-queue';
 import type { AIAnalysisJobData } from '@/lib/jobs/types';
 
 // Configure route segment to allow longer timeout
@@ -136,13 +137,21 @@ export async function POST(req: NextRequest) {
     console.log('Redis check:', {
       REDIS_URL: process.env.REDIS_URL ? 'Set' : 'Not set',
       KV_URL: process.env.KV_URL ? 'Set' : 'Not set',
-      hasRedis: !!hasRedis
+      hasRedis: !!hasRedis,
+      NODE_ENV: process.env.NODE_ENV,
+      BUILDING: process.env.BUILDING
     });
     
-    if (hasRedis) {
-      // Add job to queue
-      console.log('Using Redis queue for AI analysis');
-      const queue = await getAiAnalysisQueue();
+    // FORCE queue usage in production - remove the if check temporarily
+    const forceQueue = process.env.NODE_ENV === 'production' || hasRedis;
+    
+    if (forceQueue) {
+      try {
+        // Add job to queue
+        console.log('Using Redis queue for AI analysis (forced in production)');
+        // Use direct queue creation to bypass any caching issues
+        const queue = createDirectQueue('ai-analysis');
+        console.log('Queue obtained:', queue.constructor.name);
       const job = await queue.add('analyze-deck', jobData, {
         attempts: 2,
         backoff: {
@@ -151,11 +160,17 @@ export async function POST(req: NextRequest) {
         }
       });
       
-      // Update analysis record with jobId
-      await prisma.analysis.update({
-        where: { id: analysisRecord.id },
-        data: { jobId: job.id }
-      });
+        // Update analysis record with jobId
+        await prisma.analysis.update({
+          where: { id: analysisRecord.id },
+          data: { jobId: job.id }
+        });
+        
+        console.log('Job created successfully:', job.id);
+      } catch (queueError) {
+        console.error('Failed to use queue, falling back:', queueError);
+        throw queueError; // Don't fall back, fail loudly
+      }
     } else {
       // Fallback: Run analysis directly in development without Redis
       console.log('Redis not configured - running analysis directly');
