@@ -38,9 +38,12 @@ if (IS_BUILD) {
     reportQueue: mockQueuePromise,
     collectionIndexQueue: mockQueuePromise,
     pokemonTCGQueue: mockQueuePromise,
+    aiAnalysisQueue: mockQueuePromise,
     priceUpdateEvents: mockQueuePromise,
     setImportEvents: mockQueuePromise,
     cardSyncEvents: mockQueuePromise,
+    aiAnalysisEvents: mockQueuePromise,
+    aiAnalysisProcessor: null,
     scheduleRecurringJobs: async () => {
       console.log('Skipping job scheduling in build environment');
     },

@@ -156,11 +156,13 @@ export const dataCleanupQueue = createQueue('data-cleanup');
 export const reportQueue = createQueue('reports');
 export const collectionIndexQueue = createQueue('collection-index');
 export const pokemonTCGQueue = createQueue('pokemon-tcg');
+export const aiAnalysisQueue = createQueue('ai-analysis');
 
 // Export queue events  
 export const priceUpdateEvents = createQueueEvents('price-updates');
 export const setImportEvents = createQueueEvents('set-imports');
 export const cardSyncEvents = createQueueEvents('card-sync');
+export const aiAnalysisEvents = createQueueEvents('ai-analysis');
 
 // Job scheduling utilities
 export async function scheduleRecurringJobs(): Promise<void> {
@@ -384,14 +386,16 @@ export async function getAllQueuesStats(): Promise<Record<string, any>> {
     syncQueue,
     cleanupQueue,
     reportQ,
-    indexQueue
+    indexQueue,
+    aiQueue
   ] = await Promise.all([
     priceUpdateQueue,
     setImportQueue,
     cardSyncQueue,
     dataCleanupQueue,
     reportQueue,
-    collectionIndexQueue
+    collectionIndexQueue,
+    aiAnalysisQueue
   ]);
 
   const queues = {
@@ -401,6 +405,7 @@ export async function getAllQueuesStats(): Promise<Record<string, any>> {
     dataCleanup: cleanupQueue,
     reports: reportQ,
     collectionIndex: indexQueue,
+    aiAnalysis: aiQueue,
   };
 
   const stats: Record<string, any> = {};
@@ -440,6 +445,13 @@ export const retryConfigs = {
     backoff: {
       type: 'fixed' as const,
       delay: 60000, // 1 minute delay
+    },
+  },
+  aiAnalysis: {
+    attempts: 2,
+    backoff: {
+      type: 'fixed' as const,
+      delay: 30000, // 30 seconds delay
     },
   },
 };
@@ -521,19 +533,24 @@ if (!IS_BUILD && process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN &&
   // Set up event listeners asynchronously
   (async () => {
     try {
-      const [priceEvents, setEvents, syncEvents] = await Promise.all([
+      const [priceEvents, setEvents, syncEvents, aiEvents] = await Promise.all([
         priceUpdateEvents,
         setImportEvents,
-        cardSyncEvents
+        cardSyncEvents,
+        aiAnalysisEvents
       ]);
       
-      if (priceEvents && setEvents && syncEvents) {
+      if (priceEvents && setEvents && syncEvents && aiEvents) {
         setupJobEventListeners(priceEvents, 'price-updates');
         setupJobEventListeners(setEvents, 'set-imports');
         setupJobEventListeners(syncEvents, 'card-sync');
+        setupJobEventListeners(aiEvents, 'ai-analysis');
       }
     } catch (error) {
       console.error('Failed to set up job event listeners:', error);
     }
   })();
 }
+
+// Export AI analysis processor
+export { aiAnalysisProcessor } from './processors/ai-analysis-processor';

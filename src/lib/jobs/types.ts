@@ -9,6 +9,7 @@ export enum JobQueue {
   BACKUP = 'backup',
   AUDIT = 'audit',
   MAINTENANCE = 'maintenance',
+  AI_ANALYSIS = 'ai-analysis',
 }
 
 export enum JobPriority {
@@ -349,4 +350,33 @@ export interface JobMetadata {
   retryCount?: number;
   lastError?: string;
   tags?: string[];
+}
+
+// AI Analysis Types
+export interface AIAnalysisJobData {
+  analysisId: string;
+  deckId: string;
+  userId: string;
+  model: string;
+  focusAreas?: string[];
+  userAge?: number;
+  options?: {
+    temperature?: number;
+    maxTokens?: number;
+  };
+}
+
+export interface AIAnalysisResult {
+  analysisId: string;
+  analysis: any; // AIDeckAnalysis from ai-deck-analyzer
+  processingTimeMs: number;
+  tokensUsed?: number;
+  cost?: number;
+}
+
+export interface AIAnalysisError {
+  analysisId: string;
+  error: string;
+  code?: string;
+  timestamp: Date;
 }

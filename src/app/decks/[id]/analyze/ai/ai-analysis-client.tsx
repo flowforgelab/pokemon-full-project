@@ -4,25 +4,24 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PremiumCard } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { 
   Brain, 
   Sparkles, 
-  TrendingUp, 
-  TrendingDown,
+  TrendingUp,
   Target,
   DollarSign,
   Gamepad2,
   AlertTriangle,
   CheckCircle,
   Loader2,
-  ChevronRight,
   Info
 } from 'lucide-react';
 import type { AIDeckAnalysis } from '@/lib/analysis/ai-deck-analyzer';
+import { AnalysisStatus } from '@/components/analysis/AnalysisStatus';
 // Badge component inline since it doesn't exist in UI library
 import { cn } from '@/lib/utils';
 
@@ -40,6 +39,8 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
   const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
   const [analysisStatus, setAnalysisStatus] = useState<string>('');
   const [userAge, setUserAge] = useState<string>('');
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const currentJobId = useRef<string | null>(null);
 
   const focusAreaOptions = [
     { id: 'competitive', label: 'Competitive Play', icon: Target },
@@ -49,17 +50,68 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
     { id: 'matchups', label: 'Matchup Analysis', icon: TrendingUp }
   ];
 
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
+    };
+  }, []);
+
+  const checkAnalysisStatus = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/analysis/ai/status/${jobId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to check status');
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'COMPLETED') {
+        // Stop polling
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+        }
+        
+        // Set the analysis result
+        setAnalysis(data.result);
+        setIsAnalyzing(false);
+        setAnalysisStatus('Analysis complete!');
+      } else if (data.status === 'FAILED') {
+        // Stop polling on failure
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+        }
+        
+        setError(data.error || 'Analysis failed');
+        setIsAnalyzing(false);
+      } else {
+        // Update status message
+        if (data.status === 'PROCESSING') {
+          setAnalysisStatus('AI is analyzing your deck...');
+        } else {
+          setAnalysisStatus('Analysis queued, waiting to start...');
+        }
+      }
+    } catch (err) {
+      console.error('Status check error:', err);
+      // Don't stop polling on transient errors
+    }
+  };
+
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setError(null);
     setAnalysisStatus('Preparing your deck data...');
-
-    // Create an AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
+    setAnalysis(null);
+    currentJobId.current = null;
 
     try {
-      setAnalysisStatus('Sending to AI assistant...');
+      setAnalysisStatus('Queueing analysis...');
       const response = await fetch('/api/analysis/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,12 +123,8 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
             focusAreas: selectedFocusAreas,
             userAge: userAge ? parseInt(userAge) : undefined
           }
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeoutId);
-      setAnalysisStatus('AI is analyzing your deck...');
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
@@ -84,21 +132,24 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
       }
 
       const data = await response.json();
-      setAnalysisStatus('Analysis complete!');
-      setAnalysis(data.analysis);
+      currentJobId.current = data.jobId;
+      setAnalysisStatus('Analysis queued successfully!');
+
+      // Start polling for status
+      pollingInterval.current = setInterval(() => {
+        checkAnalysisStatus(data.jobId);
+      }, 2000); // Poll every 2 seconds
+
+      // Initial status check
+      checkAnalysisStatus(data.jobId);
+      
     } catch (err) {
+      setIsAnalyzing(false);
       if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          setError('Analysis is taking longer than expected. Please try again or select fewer focus areas.');
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       } else {
         setError('An unexpected error occurred');
       }
-    } finally {
-      setIsAnalyzing(false);
-      clearTimeout(timeoutId);
     }
   };
 
@@ -136,7 +187,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
         </p>
       </div>
 
-      {!analysis ? (
+      {!analysis && !isAnalyzing ? (
         /* Configuration Section */
         <div className="grid gap-6 md:grid-cols-2">
           <PremiumCard>
@@ -300,6 +351,11 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
             </div>
           </PremiumCard>
         </div>
+      ) : isAnalyzing ? (
+        /* Analysis in Progress */
+        <PremiumCard>
+          <AnalysisStatus status={analysisStatus} error={error} />
+        </PremiumCard>
       ) : (
         /* Analysis Results */
         <div className="space-y-6">

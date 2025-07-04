@@ -4,6 +4,7 @@ import { processSetImportJob } from './set-import';
 import { processCardSyncJob } from './card-sync';
 import { processDataCleanupJob } from './data-cleanup';
 import { processReportJob } from './report-generator';
+import { aiAnalysisProcessor } from './ai-analysis-processor';
 import type { Worker } from 'bullmq';
 
 // Worker instances
@@ -32,6 +33,9 @@ export async function startAllWorkers(): Promise<void> {
   dataCleanupWorker = cleanupWorker;
   reportWorker = reportW;
   
+  // Initialize AI analysis processor separately as it uses a different pattern
+  await aiAnalysisProcessor.initialize();
+  
   console.log('All job workers started');
 }
 
@@ -47,7 +51,10 @@ export async function stopAllWorkers(): Promise<void> {
     reportWorker,
   ].filter(Boolean);
   
-  await Promise.all(workers.map(worker => worker!.close()));
+  await Promise.all([
+    ...workers.map(worker => worker!.close()),
+    aiAnalysisProcessor.close()
+  ]);
   
   console.log('All job workers stopped');
 }

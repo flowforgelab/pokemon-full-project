@@ -4,9 +4,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { analyzeWithAI } from '@/lib/analysis/ai-deck-analyzer';
 import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
+import { aiAnalysisQueue } from '@/lib/jobs/queue';
+import type { AIAnalysisJobData } from '@/lib/jobs/types';
 
 // Configure route segment to allow longer timeout
 export const maxDuration = 60; // 60 seconds timeout for Vercel
@@ -23,21 +24,6 @@ const aiAnalysisSchema = z.object({
     userAge: z.number().min(5).max(99).optional()
   }).optional()
 });
-
-// Load system prompt
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-let systemPrompt: string;
-try {
-  systemPrompt = readFileSync(
-    join(process.cwd(), 'AI_DECK_ANALYZER_PROMPT.md'),
-    'utf-8'
-  );
-} catch (error) {
-  console.error('Failed to load AI analyzer prompt:', error);
-  systemPrompt = `You are an expert Pokemon TCG analyst. Provide comprehensive deck analysis in JSON format.`;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -111,9 +97,8 @@ export async function POST(req: NextRequest) {
     
     // AI analysis is now free for all users
     
-    // Get OpenAI API key
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // Verify OpenAI API key is configured before queueing
+    if (!process.env.OPENAI_API_KEY) {
       console.error('OpenAI API key not configured');
       return NextResponse.json(
         { error: 'AI analysis service not configured' },
@@ -121,47 +106,46 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Customize prompt based on focus areas
-    let customPrompt = systemPrompt;
-    
-    if (validated.options?.focusAreas && validated.options.focusAreas.length > 0) {
-      customPrompt += '\n\nFOCUS AREAS: Please pay special attention to:\n';
-      validated.options.focusAreas.forEach(area => {
-        switch (area) {
-          case 'competitive':
-            customPrompt += '- Competitive viability and tournament performance\n';
-            break;
-          case 'budget':
-            customPrompt += '- Budget considerations and cost-effective alternatives\n';
-            break;
-          case 'beginner':
-            customPrompt += '- Beginner-friendly explanations and simple improvements\n';
-            break;
-          case 'synergy':
-            customPrompt += '- Card synergies, combos, and anti-synergies\n';
-            break;
-          case 'matchups':
-            customPrompt += '- Detailed matchup analysis against meta decks\n';
-            break;
-        }
-      });
-    }
-    
-    // Perform AI analysis
-    const analysis = await analyzeWithAI(
-      deck.cards,
-      deck.name,
-      {
-        apiKey,
-        model: validated.options?.model || 'gpt-3.5-turbo', // Default to reliable model
-        temperature: validated.options?.temperature || 0.3, // Lower for consistency
-        systemPrompt: customPrompt,
+    // Create analysis record
+    const analysisRecord = await prisma.analysis.create({
+      data: {
+        deckId: deck.id,
+        userId: user.id,
+        status: 'PENDING',
+        model: validated.options?.model || 'gpt-3.5-turbo',
+        focusAreas: validated.options?.focusAreas || [],
         userAge: validated.options?.userAge
       }
-    );
+    });
     
-    // TODO: Store analysis result for history/caching when DeckAnalysis table is created
-    // Currently skipping storage as the table doesn't exist
+    // Create job data
+    const jobData: AIAnalysisJobData = {
+      analysisId: analysisRecord.id,
+      deckId: deck.id,
+      userId: user.id,
+      model: validated.options?.model || 'gpt-3.5-turbo',
+      focusAreas: validated.options?.focusAreas,
+      userAge: validated.options?.userAge,
+      options: {
+        temperature: validated.options?.temperature || 0.3
+      }
+    };
+    
+    // Add job to queue
+    const queue = await aiAnalysisQueue;
+    const job = await queue.add('analyze-deck', jobData, {
+      attempts: 2,
+      backoff: {
+        type: 'fixed',
+        delay: 30000
+      }
+    });
+    
+    // Update analysis record with jobId
+    await prisma.analysis.update({
+      where: { id: analysisRecord.id },
+      data: { jobId: job.id }
+    });
     
     // Track usage for rate limiting (free users get 5 per day)
     const dailyLimit = !user ? 5 :
@@ -174,11 +158,14 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      analysis,
+      analysisId: analysisRecord.id,
+      jobId: job.id,
+      status: 'PENDING',
+      message: 'Analysis has been queued and will be processed shortly',
       deck: {
         id: deck.id,
         name: deck.name,
-        format: deck.format
+        format: deck.formatId || 'STANDARD'
       },
       usage: {
         remaining: dailyLimit - 1, // Simplified
