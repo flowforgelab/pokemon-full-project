@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm install && npm run prisma:generate"
+    "buildCommand": "npm ci --include=dev && npm run prisma:generate"
   },
   "deploy": {
-    "startCommand": "node --loader tsx src/scripts/ai-analysis-worker.ts",
+    "startCommand": "npx tsx src/scripts/ai-analysis-worker.ts",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
