@@ -170,6 +170,8 @@ async function startWorker() {
       port: parseInt(url.port || '6379'),
       password: url.password || process.env.KV_REST_API_TOKEN,
       username: url.username || undefined,
+      // Add TLS support for rediss:// URLs
+      tls: redisUrl.startsWith('rediss://') ? {} : undefined,
     };
 
     const worker = new Worker(

@@ -70,6 +70,8 @@ const createQueue = async (name: string): Promise<Queue> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     } catch (error) {
       console.error('Failed to parse Redis URL:', error);
@@ -81,6 +83,8 @@ const createQueue = async (name: string): Promise<Queue> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     }
   } else {
@@ -120,6 +124,8 @@ const createQueueEvents = async (name: string): Promise<QueueEvents> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     } catch (error) {
       console.error('Failed to parse Redis URL:', error);
@@ -131,6 +137,8 @@ const createQueueEvents = async (name: string): Promise<QueueEvents> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     }
   } else {
@@ -295,6 +303,8 @@ export async function createWorker(
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     } catch (error) {
       console.error('Failed to parse Redis URL:', error);
@@ -306,6 +316,8 @@ export async function createWorker(
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
+        // Add TLS support for rediss:// URLs
+        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     }
   } else {
