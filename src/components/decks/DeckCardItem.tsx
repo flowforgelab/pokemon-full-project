@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { DeckCard } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
 import { Plus, Minus, X } from 'lucide-react';
+import { getCardFormat, getFormatBadgeColors } from '@/lib/utils/format-legality';
 
 interface DeckCardItemProps {
   deckCard: DeckCard;
@@ -61,9 +62,29 @@ export const DeckCardItem: React.FC<DeckCardItemProps> = ({
 
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium truncate">{card.name}</h4>
-        <p className="text-xs text-muted-foreground">
-          {card.set?.name} • {card.number}
-        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-xs text-muted-foreground">
+            {card.set?.name} • {card.number}
+          </p>
+          {/* Format legality badge */}
+          {(() => {
+            const format = getCardFormat(card);
+            const colors = getFormatBadgeColors(format);
+            if (format === 'Not Legal') return null;
+            
+            return (
+              <span className={cn(
+                'text-xs px-1.5 py-0.5 rounded font-medium',
+                colors.bg,
+                colors.text,
+                colors.darkBg,
+                colors.darkText
+              )}>
+                {format}
+              </span>
+            );
+          })()}
+        </div>
       </div>
 
       <div className="flex items-center gap-1">

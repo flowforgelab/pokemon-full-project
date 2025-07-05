@@ -6,6 +6,7 @@ import { Card } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
 import { Check, Zap } from 'lucide-react';
 import { CardSkeleton } from './CardSkeleton';
+import { getCardFormat, getFormatBadgeColors } from '@/lib/utils/format-legality';
 
 interface CardItemProps {
   card: Card;
@@ -105,6 +106,28 @@ export const CardItem = memo<CardItemProps>(({
                     </span>
                   )}
                 </div>
+              </div>
+            )}
+            {/* Format legality badge */}
+            {viewMode !== 'minimal' && imageLoaded && (
+              <div className="absolute top-2 left-2">
+                {(() => {
+                  const format = getCardFormat(card);
+                  const colors = getFormatBadgeColors(format);
+                  if (format === 'Not Legal') return null;
+                  
+                  return (
+                    <span className={cn(
+                      'text-xs px-2 py-0.5 rounded font-medium',
+                      colors.bg,
+                      colors.text,
+                      colors.darkBg,
+                      colors.darkText
+                    )}>
+                      {format}
+                    </span>
+                  );
+                })()}
               </div>
             )}
           </>

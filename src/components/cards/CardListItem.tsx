@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Card } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
 import { Check, ChevronRight } from 'lucide-react';
+import { getCardFormat, getFormatBadgeColors } from '@/lib/utils/format-legality';
 
 interface CardListItemProps {
   card: Card;
@@ -109,6 +110,24 @@ export const CardListItem = memo<CardListItemProps>(({
                 #{card.number}
               </span>
             )}
+            {/* Format legality badge */}
+            {(() => {
+              const format = getCardFormat(card);
+              const colors = getFormatBadgeColors(format);
+              if (format === 'Not Legal') return null;
+              
+              return (
+                <span className={cn(
+                  'text-xs px-2 py-0.5 rounded font-medium',
+                  colors.bg,
+                  colors.text,
+                  colors.darkBg,
+                  colors.darkText
+                )}>
+                  {format}
+                </span>
+              );
+            })()}
           </div>
         )}
         {viewMode === 'detailed' && (
