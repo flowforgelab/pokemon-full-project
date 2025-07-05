@@ -10,6 +10,7 @@ import { Card as CardType } from '@/types/pokemon';
 import { api } from '@/utils/api';
 import { useToastNotification } from '@/hooks/useToastNotification';
 import { CollectionIndicator } from './CollectionIndicator';
+import { getCardFormat, getFormatBadgeColors } from '@/lib/utils/format-legality';
 
 export interface PokemonCardProps {
   card: CardType;
@@ -343,6 +344,28 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
               </>
             )}
           </div>
+          {/* Format legality badge */}
+          {viewMode !== 'minimal' && (
+            <div className="mt-1">
+              {(() => {
+                const format = getCardFormat(card);
+                const colors = getFormatBadgeColors(format);
+                if (format === 'Not Legal') return null;
+                
+                return (
+                  <span className={cn(
+                    'inline-block text-xs px-2 py-0.5 rounded font-medium',
+                    colors.bg,
+                    colors.text,
+                    colors.darkBg,
+                    colors.darkText
+                  )}>
+                    {format}
+                  </span>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Collection Toggle Button for List Layout */}
@@ -462,6 +485,29 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
           />
         )}
       </div>
+
+      {/* Format legality badge (positioned absolutely for grid) */}
+      {layout === 'grid' && viewMode !== 'minimal' && (
+        <div className="absolute top-2 left-2 z-10">
+          {(() => {
+            const format = getCardFormat(card);
+            const colors = getFormatBadgeColors(format);
+            if (format === 'Not Legal') return null;
+            
+            return (
+              <span className={cn(
+                'inline-block text-xs px-2 py-0.5 rounded font-medium shadow-sm',
+                colors.bg,
+                colors.text,
+                colors.darkBg,
+                colors.darkText
+              )}>
+                {format}
+              </span>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Card details (for grid layout) */}
       {layout === 'grid' && viewMode !== 'minimal' && (

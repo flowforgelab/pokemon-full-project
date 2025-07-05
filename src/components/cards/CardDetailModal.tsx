@@ -6,6 +6,8 @@ import { api } from '@/utils/api';
 import { useAuth } from '@clerk/nextjs';
 import { CollectionIndicator } from '@/components/cards/CollectionIndicator';
 import { useToastNotification } from '@/hooks/useToastNotification';
+import { getCardFormat, getFormatBadgeColors } from '@/lib/utils/format-legality';
+import { cn } from '@/lib/utils';
 
 interface CardDetailModalProps {
   cardId: string;
@@ -275,6 +277,32 @@ export default function CardDetailModal({ cardId, isOpen, onClose }: CardDetailM
                         <p className="font-medium text-gray-900 dark:text-white">{card.hp}</p>
                       </div>
                     )}
+
+                    {/* Format Legality */}
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Format</p>
+                      <div className="mt-1">
+                        {(() => {
+                          const format = getCardFormat(card);
+                          const colors = getFormatBadgeColors(format);
+                          if (format === 'Not Legal') {
+                            return <span className="text-sm text-gray-500 dark:text-gray-400">Not Legal</span>;
+                          }
+                          
+                          return (
+                            <span className={cn(
+                              'inline-block text-sm px-2 py-1 rounded font-medium',
+                              colors.bg,
+                              colors.text,
+                              colors.darkBg,
+                              colors.darkText
+                            )}>
+                              {format}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
                     {card.types && card.types.length > 0 && (
                       <div>
