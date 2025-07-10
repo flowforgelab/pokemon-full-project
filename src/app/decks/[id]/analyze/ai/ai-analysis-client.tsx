@@ -43,6 +43,8 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
   const [userAge, setUserAge] = useState<string>('');
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const currentJobId = useRef<string | null>(null);
+  const pollingAttempts = useRef<number>(0);
+  const maxPollingAttempts = 60; // 5 minutes with 5 second intervals
 
   const focusAreaOptions = [
     { id: 'competitive', label: 'Competitive Play', icon: Target },
@@ -73,10 +75,9 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
       setIsAnalyzing(true);
       
       // Start polling for this job
+      pollingAttempts.current = 0;
       checkAnalysisStatus(jobIdParam);
-      pollingInterval.current = setInterval(() => {
-        checkAnalysisStatus(jobIdParam);
-      }, 2000);
+      startPollingWithBackoff(jobIdParam);
     } else if (analysisIdParam) {
       console.log('Found analysisId in URL:', analysisIdParam);
       // Load completed analysis directly
@@ -103,9 +104,50 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
     }
   };
 
-  const checkAnalysisStatus = async (jobId: string) => {
+  const startPollingWithBackoff = (jobId: string) => {
+    // Clear any existing interval
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+    }
+
+    // Start with 5 second interval
+    let currentInterval = 5000;
+    const maxInterval = 30000; // Max 30 seconds
+
+    const poll = () => {
+      pollingAttempts.current++;
+      
+      // Stop polling after max attempts
+      if (pollingAttempts.current >= maxPollingAttempts) {
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+        }
+        setError('Analysis is taking longer than expected. Please check back later.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      checkAnalysisStatus(jobId).then((shouldContinue) => {
+        if (shouldContinue && pollingAttempts.current < maxPollingAttempts) {
+          // Increase interval with exponential backoff
+          if (pollingAttempts.current > 10) {
+            currentInterval = Math.min(currentInterval * 1.5, maxInterval);
+          }
+          
+          // Schedule next poll
+          pollingInterval.current = setTimeout(poll, currentInterval);
+        }
+      });
+    };
+
+    // Start polling
+    pollingInterval.current = setTimeout(poll, currentInterval);
+  };
+
+  const checkAnalysisStatus = async (jobId: string): Promise<boolean> => {
     try {
-      console.log('Checking analysis status for job:', jobId);
+      console.log(`Checking analysis status for job: ${jobId} (attempt ${pollingAttempts.current})`);
       const response = await fetch(`/api/analysis/ai/status/${jobId}`);
       
       if (!response.ok) {
@@ -127,6 +169,7 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
         setAnalysis(data.result);
         setIsAnalyzing(false);
         setAnalysisStatus('Analysis complete!');
+        return false; // Stop polling
       } else if (data.status === 'FAILED') {
         // Stop polling on failure
         if (pollingInterval.current) {
@@ -136,17 +179,20 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
         
         setError(data.error || 'Analysis failed');
         setIsAnalyzing(false);
+        return false; // Stop polling
       } else {
         // Update status message
         if (data.status === 'PROCESSING') {
-          setAnalysisStatus('AI is analyzing your deck...');
+          setAnalysisStatus(`AI is analyzing your deck... (${Math.round(pollingAttempts.current * 5 / 60)}m elapsed)`);
         } else {
           setAnalysisStatus('Analysis queued, waiting to start...');
         }
+        return true; // Continue polling
       }
     } catch (err) {
       console.error('Status check error:', err);
-      // Don't stop polling on transient errors
+      // Continue polling on transient errors
+      return true;
     }
   };
 
@@ -182,13 +228,10 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
       currentJobId.current = data.jobId;
       setAnalysisStatus('Analysis queued successfully!');
 
-      // Start polling for status
-      pollingInterval.current = setInterval(() => {
-        checkAnalysisStatus(data.jobId);
-      }, 2000); // Poll every 2 seconds
-
-      // Initial status check
+      // Start polling for status with backoff
+      pollingAttempts.current = 0;
       checkAnalysisStatus(data.jobId);
+      startPollingWithBackoff(data.jobId);
       
     } catch (err) {
       setIsAnalyzing(false);
@@ -237,6 +280,12 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && currentJobId.current && (
+        <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          Job ID: {currentJobId.current} | Attempts: {pollingAttempts.current}
+        </div>
+      )}
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
@@ -438,6 +487,11 @@ export function AIAnalysisClient({ deck, userTier }: AIAnalysisClientProps) {
             >
               Cancel
             </Button>
+            {pollingAttempts.current > 0 && (
+              <p className="text-sm text-gray-500">
+                Checking status... (attempt {pollingAttempts.current}/{maxPollingAttempts})
+              </p>
+            )}
           </div>
         </div>
       ) : (

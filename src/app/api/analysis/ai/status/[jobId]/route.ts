@@ -5,8 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
-import { getAiAnalysisQueue } from '@/lib/jobs/queue-runtime';
-import { createDirectQueue } from '@/lib/jobs/direct-queue';
+import { getRedisPool } from '@/lib/redis/connection-pool';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{
@@ -81,7 +81,10 @@ export async function GET(
         };
       } else {
         try {
-          const queue = createDirectQueue('ai-analysis');
+          // Use connection pool to get queue
+          const pool = getRedisPool();
+          const queue = await pool.getQueue('ai-analysis');
+          
           // Check if queue has getJob method (not MockQueue)
           if (typeof queue.getJob === 'function') {
             const job = await queue.getJob(jobId);
@@ -96,10 +99,10 @@ export async function GET(
               };
             }
           } else {
-            console.warn('Queue does not support getJob - likely using MockQueue');
+            logger.warn('Queue does not support getJob - likely using MockQueue');
           }
         } catch (queueError) {
-          console.error('Error checking queue status:', queueError);
+          logger.error('Error checking queue status:', queueError);
         }
       }
     }

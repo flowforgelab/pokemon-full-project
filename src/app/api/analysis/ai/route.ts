@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/server/db/prisma';
 import { z } from 'zod';
-import { getAiAnalysisQueue } from '@/lib/jobs/queue-runtime';
-import { createDirectQueue } from '@/lib/jobs/direct-queue';
+import { getRedisPool } from '@/lib/redis/connection-pool';
+import { logger } from '@/lib/logger';
 import type { AIAnalysisJobData } from '@/lib/jobs/types';
 
 // Configure route segment to allow longer timeout
@@ -149,16 +149,18 @@ export async function POST(req: NextRequest) {
       try {
         // Add job to queue
         console.log('Using Redis queue for AI analysis (forced in production)');
-        // Use direct queue creation to bypass any caching issues
-        const queue = createDirectQueue('ai-analysis');
-        console.log('Queue obtained:', queue.constructor.name);
-      const job = await queue.add('analyze-deck', jobData, {
-        attempts: 2,
-        backoff: {
-          type: 'fixed',
-          delay: 30000
-        }
-      });
+        // Use connection pool to get queue
+        const pool = getRedisPool();
+        const queue = await pool.getQueue('ai-analysis');
+        logger.info('Queue obtained from pool:', queue.constructor.name);
+        
+        const job = await queue.add('analyze-deck', jobData, {
+          attempts: 2,
+          backoff: {
+            type: 'fixed',
+            delay: 30000
+          }
+        });
       
         // Update analysis record with jobId
         await prisma.analysis.update({

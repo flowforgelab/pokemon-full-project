@@ -23,6 +23,7 @@ const collectionFilterSchema = z.object({
   types: z.array(z.string()).optional(),
   supertype: z.nativeEnum(Supertype).optional(),
   rarity: z.array(z.nativeEnum(Rarity)).optional(),
+  format: z.array(z.enum(['standard', 'expanded', 'unlimited'])).optional(),
   
   // Collection filters
   condition: z.array(z.nativeEnum(CardCondition)).optional(),
@@ -410,6 +411,27 @@ export const collectionRouter = createTRPCRouter({
       }
       if (filters.rarity?.length) {
         cardWhere.rarity = { in: filters.rarity };
+      }
+      
+      // Format filter
+      if (filters.format && filters.format.length > 0) {
+        const formatConditions = [];
+        for (const format of filters.format) {
+          switch (format) {
+            case 'standard':
+              formatConditions.push({ isLegalStandard: true });
+              break;
+            case 'expanded':
+              formatConditions.push({ isLegalExpanded: true });
+              break;
+            case 'unlimited':
+              formatConditions.push({ isLegalUnlimited: true });
+              break;
+          }
+        }
+        if (formatConditions.length > 0) {
+          cardWhere.OR = formatConditions;
+        }
       }
 
       if (Object.keys(cardWhere).length > 0) {

@@ -1,126 +1,112 @@
-import { NextResponse } from 'next/server';
-import { Redis } from 'ioredis';
+import { NextRequest, NextResponse } from 'next/server';
+import { getRedisPool } from '@/lib/redis/connection-pool';
+import { logger } from '@/lib/logger';
 
-// Health check endpoint for Redis connection
-export async function GET() {
+// Health check endpoint for Redis connection pool
+export async function GET(req: NextRequest) {
   const startTime = Date.now();
   
-  // Check if Redis is configured
-  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL;
-  
-  if (!REDIS_URL) {
-    return NextResponse.json({
-      status: 'error',
-      message: 'Redis not configured',
-      details: {
-        REDIS_URL: false,
-        KV_URL: false,
-      },
-      timestamp: new Date().toISOString(),
-    }, { status: 503 });
-  }
-
-  let redis: Redis | null = null;
-  
   try {
-    // Parse connection options
-    let connectionOptions: any = {};
-    
-    if (REDIS_URL.startsWith('redis://') || REDIS_URL.startsWith('rediss://')) {
-      const url = new URL(REDIS_URL);
-      connectionOptions = {
-        host: url.hostname,
-        port: parseInt(url.port || '6379'),
-        password: url.password || process.env.KV_REST_API_TOKEN,
-        username: url.username || undefined,
-        lazyConnect: true,
-        enableOfflineQueue: false,
-        maxRetriesPerRequest: 1,
-        connectTimeout: 5000,
-        commandTimeout: 2000,
-      };
-      
-      if (REDIS_URL.startsWith('rediss://')) {
-        connectionOptions.tls = {};
-      }
-    } else {
-      // Vercel KV URL - cannot be used with ioredis directly
-      return NextResponse.json({
-        status: 'error',
-        message: 'Vercel KV detected - use Upstash Redis URL for BullMQ compatibility',
-        details: {
-          connectionType: 'Vercel KV REST API',
-          compatible: false,
-        },
-        timestamp: new Date().toISOString(),
-      }, { status: 503 });
-    }
-    
-    // Create Redis connection
-    redis = new Redis(connectionOptions);
-    
-    // Test connection with ping
-    const pingResult = await redis.ping();
-    const responseTime = Date.now() - startTime;
-    
-    // Get Redis info
-    const info = await redis.info('server');
-    const versionMatch = info.match(/redis_version:(\S+)/);
-    const modeMatch = info.match(/redis_mode:(\S+)/);
-    
-    // Test basic operations
-    const testKey = `health:check:${Date.now()}`;
-    await redis.set(testKey, 'ok', 'EX', 10); // Expire in 10 seconds
-    const testValue = await redis.get(testKey);
-    await redis.del(testKey);
+    const pool = getRedisPool();
     
     // Get connection stats
-    const [connectedClients, usedMemory] = await Promise.all([
-      redis.info('clients').then(str => {
-        const match = str.match(/connected_clients:(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      }),
-      redis.info('memory').then(str => {
-        const match = str.match(/used_memory_human:(\S+)/);
-        return match ? match[1] : 'unknown';
-      }),
-    ]);
+    const stats = pool.getStats();
     
-    return NextResponse.json({
-      status: 'healthy',
-      message: 'Redis connection successful',
-      details: {
-        ping: pingResult,
-        responseTimeMs: responseTime,
-        redisVersion: versionMatch ? versionMatch[1] : 'unknown',
-        redisMode: modeMatch ? modeMatch[1] : 'unknown',
-        connectedClients,
-        usedMemory,
-        testOperation: testValue === 'ok' ? 'passed' : 'failed',
-        connectionUrl: REDIS_URL.replace(/:[^:@]+@/, ':****@'), // Hide password
-      },
+    // Perform health check
+    const isHealthy = await pool.healthCheck();
+    
+    // Get detailed queue information
+    const queueDetails: Record<string, any> = {};
+    const queueNames = ['ai-analysis', 'price-updates', 'card-sync'];
+    
+    for (const name of queueNames) {
+      try {
+        const queue = await pool.getQueue(name);
+        const [waiting, active, completed, failed] = await Promise.all([
+          queue.getWaitingCount?.() || 0,
+          queue.getActiveCount?.() || 0,
+          queue.getCompletedCount?.() || 0,
+          queue.getFailedCount?.() || 0,
+        ]);
+        
+        queueDetails[name] = {
+          waiting,
+          active,
+          completed,
+          failed,
+          total: waiting + active + completed + failed
+        };
+      } catch (error) {
+        queueDetails[name] = { error: 'Failed to get queue stats' };
+      }
+    }
+    
+    const responseTime = Date.now() - startTime;
+    
+    const response = {
+      status: isHealthy ? 'healthy' : 'unhealthy',
+      message: isHealthy ? 'Redis connection pool healthy' : 'Redis connection pool unhealthy',
       timestamp: new Date().toISOString(),
+      responseTimeMs: responseTime,
+      connectionPool: {
+        ...stats,
+        isHealthy
+      },
+      queues: queueDetails,
+      redis: {
+        url: process.env.REDIS_URL ? 'configured' : 'not configured',
+        kvUrl: process.env.KV_URL ? 'configured' : 'not configured',
+      },
+      recommendations: [] as string[]
+    };
+    
+    // Add recommendations based on stats
+    if (stats.errors > 10) {
+      response.recommendations.push('High error count detected. Check Redis connection stability.');
+    }
+    
+    if (stats.active > 50) {
+      response.recommendations.push('High number of active connections. Consider increasing connection limits.');
+    }
+    
+    if (!isHealthy) {
+      response.recommendations.push('Redis health check failed. Check connection and credentials.');
+    }
+    
+    // Check for Upstash rate limit issues
+    if (stats.lastError?.includes('max requests limit')) {
+      response.recommendations.push('Upstash rate limit detected. Connection pooling is critical.');
+    }
+    
+    logger.info('Redis health check completed', response);
+    
+    return NextResponse.json(response, {
+      status: isHealthy ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      }
     });
     
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    logger.error('Redis health check error:', error);
     
     return NextResponse.json({
       status: 'error',
-      message: 'Redis connection failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      details: {
-        responseTimeMs: responseTime,
-        connectionUrl: REDIS_URL.replace(/:[^:@]+@/, ':****@'), // Hide password
-      },
+      message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
-    }, { status: 503 });
-    
-  } finally {
-    // Clean up connection
-    if (redis) {
-      await redis.quit();
-    }
+      responseTimeMs: responseTime,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      recommendations: [
+        'Redis connection pool may not be initialized',
+        'Check environment variables and Redis availability'
+      ]
+    }, { 
+      status: 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      }
+    });
   }
 }
 

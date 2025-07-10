@@ -30,6 +30,7 @@ interface CardFilters {
   rarity: string[];
   series: string[];
   sets: string[];
+  format: string[]; // 'standard', 'expanded', 'unlimited'
   hp: { min?: number; max?: number };
   retreatCost: { min?: number; max?: number };
   sortBy: string;
@@ -46,6 +47,7 @@ export default function CardsPage() {
     cardType: true,
     pokemonType: false,
     rarity: false,
+    format: false,
     series: true,
     sort: false,
   });
@@ -57,6 +59,7 @@ export default function CardsPage() {
     rarity: [],
     series: [],
     sets: [],
+    format: [],
     hp: {},
     retreatCost: {},
     sortBy: 'name',
@@ -77,6 +80,7 @@ export default function CardsPage() {
       rarity: filters.rarity.length > 0 ? filters.rarity.map(r => r.toUpperCase().replace(' ', '_') as any) : undefined,
       series: filters.series.length > 0 ? filters.series : undefined,
       setIds: filters.sets.length > 0 ? filters.sets : undefined,
+      format: filters.format.length > 0 ? filters.format : undefined,
       hp: Object.keys(filters.hp).length > 0 ? filters.hp : undefined,
       retreatCost: Object.keys(filters.retreatCost).length > 0 ? filters.retreatCost : undefined,
     },
@@ -408,6 +412,34 @@ export default function CardsPage() {
                           className="mr-2"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">{rarity}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Format */}
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">Format</h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Standard', value: 'standard' },
+                      { label: 'Expanded', value: 'expanded' },
+                      { label: 'Unlimited', value: 'unlimited' }
+                    ].map((format) => (
+                      <label key={format.value} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={filters.format.includes(format.value)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFilters({ ...filters, format: [...filters.format, format.value] });
+                            } else {
+                              setFilters({ ...filters, format: filters.format.filter(f => f !== format.value) });
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{format.label}</span>
                       </label>
                     ))}
                   </div>

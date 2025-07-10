@@ -1,4 +1,4 @@
-# Pokemon TCG Deck Builder - Project Checklist (v1.2.0)
+# Pokemon TCG Deck Builder - Project Checklist (v1.2.1)
 
 ## 🎯 Project Overview
 A comprehensive Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks.
@@ -17,6 +17,11 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - **Simplified UI**: Hidden non-AI analysis tabs, focus on AI Expert Analysis
 - **Multi-Mode Optimization**: Consistency, Speed, Power, and Budget optimization modes
 - **Tiered Upgrade Paths**: Critical fixes → Core improvements → Premium upgrades
+- **Redis Connection Pool Fix**: Resolved Upstash rate limit issue
+  - Implemented singleton connection pool manager
+  - Reduced polling frequency from 2s to 5s with exponential backoff
+  - Added health monitoring endpoint at `/api/health/redis`
+  - Expected 90%+ reduction in Redis requests
 
 ### Previous Updates (July 3, 2025)
 - **Deck Analyzer Overhaul**: Implemented tiered scoring system with strict penalties for fundamental issues
@@ -703,6 +708,12 @@ To deploy successfully on Vercel, configure these environment variables:
   - [x] Virtual list implementation for large datasets
   - [x] Performance monitoring with Web Vitals
   - [x] Bundle size optimization strategies
+- [x] Redis Connection Pooling (Added 2025-07-10):
+  - [x] Singleton connection pool manager
+  - [x] Queue instance caching and reuse
+  - [x] Connection health monitoring
+  - [x] Upstash rate limit mitigation
+  - [x] Reduced AI polling frequency with backoff
 - [x] Service Worker implementation:
   - [x] Offline support with caching strategies
   - [x] Background sync for offline actions
@@ -754,6 +765,28 @@ To deploy successfully on Vercel, configure these environment variables:
 - [ ] Component documentation
 - [x] Deployment guide (DEPLOYMENT.md created)
 - [ ] Contributing guidelines
+
+## 🔧 In Progress / TODO
+
+### Recently Completed (July 10, 2025)
+- [x] **Fix Redis/Upstash Connection Pooling** ✅:
+  - [x] Implement singleton connection manager for BullMQ
+  - [x] Cache and reuse queue instances instead of creating new ones
+  - [x] Increase AI analysis polling interval from 2s to 5-10s with exponential backoff
+  - [x] Add connection limits and proper cleanup
+  - [x] Monitor Redis operation counts via health endpoint
+
+## 🔧 In Progress / TODO
+
+### AI Enhancement - Current Data Integration
+- [ ] **Supplement AI with Current Meta Data**:
+  - [ ] Connect existing tournament scraper to AI analysis
+  - [ ] Inject live tournament data into AI prompts
+  - [ ] Cache meta data for 24 hours
+  - [ ] Add placeholders in system prompt for dynamic data
+  - [ ] Create background job for daily meta sync
+  - [ ] Store tournament results in database
+  - [ ] Track trending cards and strategies post-Dec 2024
 
 ### Automated Data Maintenance System
 - [x] Weekly Price Update System:

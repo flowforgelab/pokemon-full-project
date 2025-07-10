@@ -27,6 +27,7 @@ interface CollectionFilters {
   set?: string;
   type?: string;
   rarity?: string;
+  format?: string[];
   sortBy?: 'name' | 'value' | 'acquiredDate' | 'quantity' | 'set';
   sortOrder?: 'asc' | 'desc';
 }
@@ -35,7 +36,8 @@ export default function CollectionPage() {
   const [view, setView] = useState<ViewMode>('grid');
   const [filters, setFilters] = useState<CollectionFilters>({
     sortBy: 'acquiredDate',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    format: []
   });
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export default function CollectionPage() {
       sets: filters.set ? [filters.set] : undefined,
       supertype: filters.type as any,
       rarity: filters.rarity ? [filters.rarity as any] : undefined,
+      format: filters.format && filters.format.length > 0 ? filters.format : undefined,
       isWishlist: false, // Explicitly filter for collection items, not wishlist
     },
     pagination: {
@@ -258,6 +261,21 @@ export default function CollectionPage() {
                   <option value="name-desc">Name (Z-A)</option>
                   <option value="value-desc">Highest Value</option>
                   <option value="value-asc">Lowest Value</option>
+                </select>
+                <select
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  value={filters.format?.join(',') || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFilters({ ...filters, format: value ? value.split(',') : [] });
+                  }}
+                >
+                  <option value="">All Formats</option>
+                  <option value="standard">Standard</option>
+                  <option value="expanded">Expanded</option>
+                  <option value="unlimited">Unlimited</option>
+                  <option value="standard,expanded">Standard & Expanded</option>
+                  <option value="expanded,unlimited">Expanded & Unlimited</option>
                 </select>
               </div>
             </div>

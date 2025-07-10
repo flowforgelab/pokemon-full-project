@@ -1,4 +1,6 @@
 import type { JobData, JobResult } from '@/lib/api/types';
+import { getRedisPool } from '@/lib/redis/connection-pool';
+import { logger } from '@/lib/logger';
 
 // Check if we're in a build environment
 // Only use mock during actual build process, not in production runtime
@@ -6,7 +8,7 @@ const IS_BUILD = process.env.BUILDING === 'true';
 
 // Log for debugging in production
 if (typeof window === 'undefined') {
-  console.log('[Queue] Environment check:', {
+  logger.info('[Queue] Environment check:', {
     BUILDING: process.env.BUILDING,
     NODE_ENV: process.env.NODE_ENV,
     IS_BUILD,
@@ -61,11 +63,20 @@ const getBullMQ = async () => {
     try {
       BullMQ = await import('bullmq');
     } catch (error) {
-      console.error('Failed to load BullMQ:', error);
+      logger.error('Failed to load BullMQ:', error);
       throw new Error('BullMQ is required for queue operations but Redis is not available');
     }
   }
   return BullMQ;
+};
+
+// Get connection pool instance
+let connectionPool: any = null;
+const getConnectionPool = () => {
+  if (!connectionPool && !IS_BUILD) {
+    connectionPool = getRedisPool();
+  }
+  return connectionPool;
 };
 
 // Create queue instances - will be either mock or real based on environment
@@ -74,29 +85,44 @@ const createQueue = async (name: string): Promise<Queue> => {
     return new MockQueue(name) as any;
   }
   
-  const { Queue } = await getBullMQ();
-  // Extract Redis connection details from environment
-  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
-  let connection: any;
-  
-  if (REDIS_URL) {
-    // Parse Redis URL if available
-    try {
-      const url = new URL(REDIS_URL);
-      connection = {
-        host: url.hostname,
-        port: parseInt(url.port || '6379'),
-        password: url.password || process.env.KV_REST_API_TOKEN,
-        username: url.username || undefined,
-        lazyConnect: true,
-        enableOfflineQueue: false,
-        maxRetriesPerRequest: 0,
-        // Add TLS support for rediss:// URLs
-        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
-      };
-    } catch (error) {
-      console.error('Failed to parse Redis URL:', error);
-      // Fallback to localhost
+  try {
+    // Use connection pool to get or create queue
+    const pool = getConnectionPool();
+    if (pool) {
+      return await pool.getQueue(name);
+    }
+    
+    // Fallback to direct creation if pool is not available
+    logger.warn(`Connection pool not available, creating direct queue for ${name}`);
+    const { Queue } = await getBullMQ();
+    const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+    let connection: any;
+    
+    if (REDIS_URL) {
+      try {
+        const url = new URL(REDIS_URL);
+        connection = {
+          host: url.hostname,
+          port: parseInt(url.port || '6379'),
+          password: url.password || process.env.KV_REST_API_TOKEN,
+          username: url.username || undefined,
+          lazyConnect: true,
+          enableOfflineQueue: false,
+          maxRetriesPerRequest: 0,
+          tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
+        };
+      } catch (error) {
+        logger.error('Failed to parse Redis URL:', error);
+        connection = {
+          host: 'localhost',
+          port: 6379,
+          password: process.env.KV_REST_API_TOKEN,
+          lazyConnect: true,
+          enableOfflineQueue: false,
+          maxRetriesPerRequest: 0,
+        };
+      }
+    } else {
       connection = {
         host: 'localhost',
         port: 6379,
@@ -104,23 +130,14 @@ const createQueue = async (name: string): Promise<Queue> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
-        // Add TLS support for rediss:// URLs
-        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     }
-  } else {
-    // Default connection
-    connection = {
-      host: 'localhost',
-      port: 6379,
-      password: process.env.KV_REST_API_TOKEN,
-      lazyConnect: true,
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 0,
-    };
+    
+    return new Queue(name, { connection });
+  } catch (error) {
+    logger.error(`Failed to create queue ${name}:`, error);
+    throw error;
   }
-  
-  return new Queue(name, { connection });
 };
 
 const createQueueEvents = async (name: string): Promise<QueueEvents> => {
@@ -128,29 +145,44 @@ const createQueueEvents = async (name: string): Promise<QueueEvents> => {
     return new MockQueueEvents(name) as any;
   }
   
-  const { QueueEvents } = await getBullMQ();
-  // Extract Redis connection details from environment
-  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
-  let connection: any;
-  
-  if (REDIS_URL) {
-    // Parse Redis URL if available
-    try {
-      const url = new URL(REDIS_URL);
-      connection = {
-        host: url.hostname,
-        port: parseInt(url.port || '6379'),
-        password: url.password || process.env.KV_REST_API_TOKEN,
-        username: url.username || undefined,
-        lazyConnect: true,
-        enableOfflineQueue: false,
-        maxRetriesPerRequest: 0,
-        // Add TLS support for rediss:// URLs
-        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
-      };
-    } catch (error) {
-      console.error('Failed to parse Redis URL:', error);
-      // Fallback to localhost
+  try {
+    // Use connection pool to get or create queue events
+    const pool = getConnectionPool();
+    if (pool) {
+      return await pool.getQueueEvents(name);
+    }
+    
+    // Fallback to direct creation if pool is not available
+    logger.warn(`Connection pool not available, creating direct queue events for ${name}`);
+    const { QueueEvents } = await getBullMQ();
+    const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+    let connection: any;
+    
+    if (REDIS_URL) {
+      try {
+        const url = new URL(REDIS_URL);
+        connection = {
+          host: url.hostname,
+          port: parseInt(url.port || '6379'),
+          password: url.password || process.env.KV_REST_API_TOKEN,
+          username: url.username || undefined,
+          lazyConnect: true,
+          enableOfflineQueue: false,
+          maxRetriesPerRequest: 0,
+          tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
+        };
+      } catch (error) {
+        logger.error('Failed to parse Redis URL:', error);
+        connection = {
+          host: 'localhost',
+          port: 6379,
+          password: process.env.KV_REST_API_TOKEN,
+          lazyConnect: true,
+          enableOfflineQueue: false,
+          maxRetriesPerRequest: 0,
+        };
+      }
+    } else {
       connection = {
         host: 'localhost',
         port: 6379,
@@ -158,23 +190,14 @@ const createQueueEvents = async (name: string): Promise<QueueEvents> => {
         lazyConnect: true,
         enableOfflineQueue: false,
         maxRetriesPerRequest: 0,
-        // Add TLS support for rediss:// URLs
-        tls: REDIS_URL.startsWith('rediss://') ? {} : undefined,
       };
     }
-  } else {
-    // Default connection
-    connection = {
-      host: 'localhost',
-      port: 6379,
-      password: process.env.KV_REST_API_TOKEN,
-      lazyConnect: true,
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 0,
-    };
+    
+    return new QueueEvents(name, { connection });
+  } catch (error) {
+    logger.error(`Failed to create queue events ${name}:`, error);
+    throw error;
   }
-  
-  return new QueueEvents(name, { connection });
 };
 
 // Export queue getters that return promises
@@ -196,11 +219,11 @@ export const aiAnalysisEvents = createQueueEvents('ai-analysis');
 // Job scheduling utilities
 export async function scheduleRecurringJobs(): Promise<void> {
   if (IS_BUILD) {
-    console.log('Skipping job scheduling in build environment');
+    logger.info('Skipping job scheduling in build environment');
     return;
   }
 
-  console.log('Scheduling recurring jobs...');
+  logger.info('Scheduling recurring jobs...');
 
   // Get queue instances
   const [
@@ -282,7 +305,7 @@ export async function scheduleRecurringJobs(): Promise<void> {
     }
   );
 
-  console.log('Recurring jobs scheduled successfully');
+  logger.info('Recurring jobs scheduled successfully');
 }
 
 // Job processors configuration
@@ -303,14 +326,22 @@ export async function createWorker(
   concurrency = 1
 ): Promise<Worker | null> {
   if (IS_BUILD) {
-    console.log(`Skipping worker creation for ${queueName} in build environment`);
+    logger.info(`Skipping worker creation for ${queueName} in build environment`);
     return null;
   }
 
-  const { Worker } = await getBullMQ();
-  // Extract Redis connection details from environment
-  const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
-  let connection: any;
+  try {
+    // Use connection pool to get or create worker
+    const pool = getConnectionPool();
+    if (pool) {
+      return await pool.getWorker(queueName, processor);
+    }
+    
+    // Fallback to direct creation if pool is not available
+    logger.warn(`Connection pool not available, creating direct worker for ${queueName}`);
+    const { Worker } = await getBullMQ();
+    const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || '';
+    let connection: any;
   
   if (REDIS_URL) {
     // Parse Redis URL if available

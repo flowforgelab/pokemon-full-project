@@ -36,6 +36,7 @@ const cardSearchFiltersSchema = z.object({
   rarity: z.array(z.nativeEnum(Rarity)).optional(),
   isLegalStandard: z.boolean().optional(),
   isLegalExpanded: z.boolean().optional(),
+  format: z.array(z.enum(['standard', 'expanded', 'unlimited'])).optional(),
   
   // Stats
   hp: z.object({
@@ -144,6 +145,27 @@ export const cardRouter = createTRPCRouter({
               }
               if (filters?.rarity && filters.rarity.length > 0) {
                 where.rarity = { in: filters.rarity };
+              }
+              
+              // Format filter
+              if (filters?.format && filters.format.length > 0) {
+                const formatConditions = [];
+                for (const format of filters.format) {
+                  switch (format) {
+                    case 'standard':
+                      formatConditions.push({ isLegalStandard: true });
+                      break;
+                    case 'expanded':
+                      formatConditions.push({ isLegalExpanded: true });
+                      break;
+                    case 'unlimited':
+                      formatConditions.push({ isLegalUnlimited: true });
+                      break;
+                  }
+                }
+                if (formatConditions.length > 0) {
+                  where.OR = formatConditions;
+                }
               }
               
               // Owned cards filter
@@ -318,6 +340,26 @@ export const cardRouter = createTRPCRouter({
           ).join(', ');
           filterConditions += ` AND c.rarity IN (${placeholders})`;
           filterParams.push(...filters.rarity);
+        }
+        
+        // Format filter
+        if (filters?.format && filters.format.length > 0) {
+          const formatConditions = filters.format.map(format => {
+            switch (format) {
+              case 'standard':
+                return 'c."isLegalStandard" = true';
+              case 'expanded':
+                return 'c."isLegalExpanded" = true';
+              case 'unlimited':
+                return 'c."isLegalUnlimited" = true';
+              default:
+                return null;
+            }
+          }).filter(Boolean);
+          
+          if (formatConditions.length > 0) {
+            filterConditions += ` AND (${formatConditions.join(' OR ')})`;
+          }
         }
         
         // Owned cards filter
