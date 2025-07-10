@@ -134,16 +134,18 @@ export async function POST(req: NextRequest) {
     
     // Check if we have Redis configured
     const hasRedis = process.env.REDIS_URL || process.env.KV_URL;
+    const isBuilding = process.env.BUILDING === 'true';
     console.log('Redis check:', {
       REDIS_URL: process.env.REDIS_URL ? 'Set' : 'Not set',
       KV_URL: process.env.KV_URL ? 'Set' : 'Not set',
       hasRedis: !!hasRedis,
       NODE_ENV: process.env.NODE_ENV,
-      BUILDING: process.env.BUILDING
+      BUILDING: process.env.BUILDING,
+      isBuilding
     });
     
-    // FORCE queue usage in production - remove the if check temporarily
-    const forceQueue = process.env.NODE_ENV === 'production' || hasRedis;
+    // Use queue if Redis is available and not building
+    const forceQueue = !isBuilding && (process.env.NODE_ENV === 'production' || hasRedis);
     
     if (forceQueue) {
       try {
@@ -152,7 +154,7 @@ export async function POST(req: NextRequest) {
         // Use connection pool to get queue
         const pool = getRedisPool();
         const queue = await pool.getQueue('ai-analysis');
-        logger.info('Queue obtained from pool:', queue.constructor.name);
+        logger.info('Queue obtained from pool', { queueType: queue.constructor.name });
         
         const job = await queue.add('analyze-deck', jobData, {
           attempts: 2,
@@ -170,8 +172,31 @@ export async function POST(req: NextRequest) {
         
         console.log('Job created successfully:', job.id);
       } catch (queueError) {
-        console.error('Failed to use queue, falling back:', queueError);
-        throw queueError; // Don't fall back, fail loudly
+        console.error('Failed to use queue:', queueError);
+        
+        // If Redis is not available in build environment, return an error
+        if (isBuilding) {
+          return NextResponse.json(
+            { 
+              error: 'Redis not available in build environment',
+              message: 'Redis not available in build environment'
+            },
+            { status: 503 }
+          );
+        }
+        
+        // In production without Redis, return error
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json(
+            { 
+              error: 'Analysis service temporarily unavailable',
+              message: 'Please try again later'
+            },
+            { status: 503 }
+          );
+        }
+        
+        throw queueError; // In development, fail loudly
       }
     } else {
       // Fallback: Run analysis directly in development without Redis
@@ -180,6 +205,7 @@ export async function POST(req: NextRequest) {
       
       // Import the analyzer function and system prompt
       const { analyzeWithAI } = await import('@/lib/analysis/ai-deck-analyzer');
+      const { MetaCacheService } = await import('@/lib/services/meta-cache-service');
       const fs = await import('fs');
       const path = await import('path');
       
@@ -193,6 +219,20 @@ export async function POST(req: NextRequest) {
         console.error('Failed to load AI analyzer prompt:', error);
         systemPrompt = `You are an expert Pokemon TCG analyst. Provide comprehensive deck analysis in JSON format.`;
       }
+      
+      // Get current meta data
+      let metaData = '';
+      try {
+        const formatId = deck.formatId || 'STANDARD';
+        metaData = await MetaCacheService.getMetaForAI(formatId);
+        console.log('Fetched meta data for format:', formatId);
+      } catch (error) {
+        console.error('Failed to fetch meta data:', error);
+        metaData = 'Unable to fetch current meta data.';
+      }
+      
+      // Replace meta data placeholder
+      systemPrompt = systemPrompt.replace('{{META_DATA}}', metaData);
       
       // Update status to processing
       await prisma.analysis.update({
@@ -325,7 +365,7 @@ export async function POST(req: NextRequest) {
 }
 
 // GET endpoint to check rate limits
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
