@@ -1,4 +1,4 @@
-# Pokemon TCG Deck Builder - Project Checklist (v1.1.0)
+# Pokemon TCG Deck Builder - Project Checklist (v1.2.0)
 
 ## 🎯 Project Overview
 A comprehensive Next.js 14 application for building, analyzing, and managing Pokemon Trading Card Game decks.
@@ -10,7 +10,15 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
 - **Phase 4**: ✅ Actionable Recommendations (100% Complete - 5/5 tasks)
 - **Phase 5**: ✅ AI Integration & External Data (100% Complete)
 
-### 🆕 Recent Updates (July 3, 2025)
+### 🆕 Recent Updates (July 10, 2025)
+- **Deck Analyzer & Optimizer Integration**: Combined analyzer and optimizer into unified tool
+- **Collection-Aware Optimization**: Prioritizes cards from user's collection in recommendations
+- **Budget-Conscious Suggestions**: Uses TCGPlayer pricing for cost-effective alternatives
+- **Simplified UI**: Hidden non-AI analysis tabs, focus on AI Expert Analysis
+- **Multi-Mode Optimization**: Consistency, Speed, Power, and Budget optimization modes
+- **Tiered Upgrade Paths**: Critical fixes → Core improvements → Premium upgrades
+
+### Previous Updates (July 3, 2025)
 - **Deck Analyzer Overhaul**: Implemented tiered scoring system with strict penalties for fundamental issues
 - **AI-Powered Analysis**: Added GPT-4 integration with customizable focus areas and detailed recommendations
 - **Limitless TCG Integration**: Built web scraper for real tournament data and meta analysis
@@ -256,6 +264,15 @@ A comprehensive Next.js 14 application for building, analyzing, and managing Pok
   - [x] Analysis result caching
   - [x] Export formatting utilities
   - [x] **Error boundaries** for all analysis components (added 2025-07-02)
+- [x] Deck Optimization System (added 2025-07-10):
+  - [x] **Unified Optimizer** - Combined analysis and optimization engine
+  - [x] **Collection-Aware Recommendations** - Prioritizes owned cards
+  - [x] **Budget Optimization** - Uses TCGPlayer pricing for alternatives
+  - [x] **Multi-Mode Optimization** - Consistency, Speed, Power, Budget modes
+  - [x] **Tiered Upgrade Paths** - Critical → Core → Premium recommendations
+  - [x] **Smart Prioritization** - Fixes legality issues before improvements
+  - [x] **Real-time Analysis** - Updates when mode or settings change
+  - [x] **Cost Calculations** - Shows budget needed for missing cards
 
 ### Deployment
 - [x] Vercel deployment configuration

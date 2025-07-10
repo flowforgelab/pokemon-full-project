@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   WrenchScrewdriverIcon,
   SparklesIcon,
@@ -10,11 +10,17 @@ import {
   ExclamationTriangleIcon,
   LightBulbIcon,
   ChevronRightIcon,
-  ChevronLeftIcon
+  ChevronLeftIcon,
+  CurrencyDollarIcon,
+  HomeIcon,
+  TrophyIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
 import { api } from '@/utils/api';
 import type { DeckAnalysisResult, AnalysisWarning, Recommendation } from '@/lib/analysis/types';
 import type { Deck, DeckCard, Card } from '@prisma/client';
+import { UnifiedOptimizer } from '@/lib/deck-optimization/unified-optimizer';
+import type { UnifiedOptimizationResult, OptimizationRecommendation } from '@/lib/deck-optimization/unified-optimizer';
 
 interface DeckOptimizerProps {
   deck: Deck & { cards: (DeckCard & { card: Card })[] };
@@ -22,15 +28,11 @@ interface DeckOptimizerProps {
   onDeckUpdate?: (updatedDeck: any) => void;
 }
 
-interface OptimizationStep {
-  id: string;
-  type: 'add' | 'remove' | 'replace';
-  card?: string;
-  targetCard?: string;
-  quantity: number;
-  reason: string;
-  impact: string;
-  applied: boolean;
+interface OptimizationMode {
+  id: 'power' | 'consistency' | 'speed' | 'budget';
+  name: string;
+  icon: any;
+  description: string;
 }
 
 export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOptimizerProps) {
@@ -39,104 +41,87 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
   const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
   const [showPreview, setShowPreview] = useState(false);
   const [optimizedDeck, setOptimizedDeck] = useState(deck);
+  const [selectedMode, setSelectedMode] = useState<'power' | 'consistency' | 'speed' | 'budget'>('consistency');
+  const [budget, setBudget] = useState<number>(50);
+  const [useCollection, setUseCollection] = useState(true);
+  const [optimization, setOptimization] = useState<UnifiedOptimizationResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Generate optimization steps from analysis
-  const optimizationSteps = useMemo(() => {
-    const steps: OptimizationStep[] = [];
+  const { data: session } = api.auth.getSession.useQuery();
+  const userId = session?.user?.id;
+
+  const optimizer = useMemo(() => new UnifiedOptimizer(), []);
+
+  const modes: OptimizationMode[] = [
+    {
+      id: 'consistency',
+      name: 'Consistency',
+      icon: HomeIcon,
+      description: 'Improve draw power and search'
+    },
+    {
+      id: 'speed',
+      name: 'Speed',
+      icon: BoltIcon,
+      description: 'Faster setup and energy'
+    },
+    {
+      id: 'power',
+      name: 'Power',
+      icon: TrophyIcon,
+      description: 'Maximum damage output'
+    },
+    {
+      id: 'budget',
+      name: 'Budget',
+      icon: CurrencyDollarIcon,
+      description: 'Cost-effective improvements'
+    }
+  ];
+
+  // Run optimization when mode or settings change
+  useEffect(() => {
+    if (userId) {
+      runOptimization();
+    }
+  }, [selectedMode, budget, useCollection, userId]);
+
+  const runOptimization = async () => {
+    if (!userId) return;
     
-    // Fix critical errors first
-    analysis.warnings
-      ?.filter(w => w.severity === 'error')
-      .forEach((warning, idx) => {
-        if (warning.category === 'Basic Pokemon') {
-          steps.push({
-            id: `error-${idx}`,
-            type: 'add',
-            card: 'Pidgey', // Example basic Pokemon
-            quantity: 4,
-            reason: warning.message,
-            impact: 'Fixes deck legality',
-            applied: false
-          });
-        } else if (warning.category === 'Deck Size') {
-          const totalCards = deck.cards.reduce((sum, dc) => sum + dc.quantity, 0);
-          if (totalCards < 60) {
-            steps.push({
-              id: `error-${idx}`,
-              type: 'add',
-              card: 'Professor\'s Research',
-              quantity: 60 - totalCards,
-              reason: warning.message,
-              impact: 'Makes deck legal size',
-              applied: false
-            });
-          }
+    setIsLoading(true);
+    try {
+      const result = await optimizer.optimizeDeck({
+        deck,
+        userId,
+        options: {
+          budget: selectedMode === 'budget' ? budget : undefined,
+          useCollection,
+          priorityMode: selectedMode,
+          maxChanges: 15,
+          maintainArchetype: true,
         }
       });
-
-    // Add high priority recommendations
-    analysis.recommendations
-      ?.filter(r => r.priority === 'high')
-      .forEach((rec, idx) => {
-        steps.push({
-          id: `rec-high-${idx}`,
-          type: rec.type as any,
-          card: rec.card,
-          targetCard: rec.targetCard,
-          quantity: rec.quantity || 1,
-          reason: rec.reason,
-          impact: rec.impact || 'Improves deck performance',
-          applied: false
-        });
-      });
-
-    // Fix consistency issues
-    if (analysis.consistency?.mulliganProbability > 0.15) {
-      steps.push({
-        id: 'consistency-1',
-        type: 'add',
-        card: 'Quick Ball',
-        quantity: 4,
-        reason: 'High mulligan probability detected',
-        impact: 'Reduces mulligan chance',
-        applied: false
-      });
+      
+      setOptimization(result);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Add draw support if needed
-    if (analysis.consistency?.trainerDistribution?.drawPower < 8) {
-      steps.push({
-        id: 'draw-support-1',
-        type: 'add',
-        card: 'Professor\'s Research',
-        quantity: 2,
-        reason: 'Insufficient draw support',
-        impact: 'Improves consistency',
-        applied: false
-      });
-    }
-
-    // Add energy search if needed
-    const energyCount = deck.cards
-      .filter(dc => dc.card.supertype === 'ENERGY')
-      .reduce((sum, dc) => sum + dc.quantity, 0);
+  // Convert optimization recommendations to display format
+  const optimizationSteps = useMemo(() => {
+    if (!optimization) return [];
     
-    if (energyCount > 10 && !deck.cards.some(dc => dc.card.name.includes('Energy Search'))) {
-      steps.push({
-        id: 'energy-search-1',
-        type: 'add',
-        card: 'Energy Search',
-        quantity: 2,
-        reason: 'No energy search with high energy count',
-        impact: 'Improves energy consistency',
-        applied: false
-      });
-    }
+    return optimization.optimizations.map(opt => ({
+      ...opt,
+      applied: appliedSteps.has(opt.id),
+    }));
+  }, [optimization, appliedSteps]);
 
-    return steps;
-  }, [deck, analysis]);
-
-  const applyStep = (step: OptimizationStep) => {
+  const applyStep = (step: OptimizationRecommendation & { applied: boolean }) => {
     const newDeck = { ...optimizedDeck };
     const newCards = [...newDeck.cards];
 
@@ -181,7 +166,7 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
     setAppliedSteps(new Set([...appliedSteps, step.id]));
   };
 
-  const undoStep = (step: OptimizationStep) => {
+  const undoStep = (step: OptimizationRecommendation & { applied: boolean }) => {
     // Implement undo logic
     setAppliedSteps(prev => {
       const newSet = new Set(prev);
@@ -206,12 +191,17 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
   };
 
   const getScoreImprovement = () => {
-    const appliedCount = appliedSteps.size;
-    const totalSteps = optimizationSteps.length;
-    if (totalSteps === 0) return 0;
+    if (!optimization) return analysis.scores.overall;
     
-    const improvement = (appliedCount / totalSteps) * 20; // Max 20 point improvement
-    return Math.round(analysis.scores.overall + improvement);
+    // Use the estimated score from the optimization
+    if (appliedSteps.size === 0) return analysis.scores.overall;
+    
+    // Calculate partial improvement based on applied steps
+    const appliedImprovement = optimizationSteps
+      .filter(step => step.applied)
+      .reduce((sum, step) => sum + (step.scoreImprovement || 0), 0);
+    
+    return Math.min(100, Math.round(analysis.scores.overall + appliedImprovement));
   };
 
   const getHealthStatus = () => {
@@ -225,16 +215,89 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
 
   return (
     <div className="space-y-6">
+      {/* Mode Selection */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-4 gap-2">
+          {modes.map((mode) => {
+            const Icon = mode.icon;
+            return (
+              <button
+                key={mode.id}
+                onClick={() => setSelectedMode(mode.id)}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  selectedMode === mode.id
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className={`h-6 w-6 mx-auto mb-1 ${
+                  selectedMode === mode.id ? 'text-blue-600' : 'text-gray-600 dark:text-gray-400'
+                }`} />
+                <p className={`text-sm font-medium ${
+                  selectedMode === mode.id ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'
+                }`}>
+                  {mode.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {mode.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Options */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={useCollection}
+                onChange={(e) => setUseCollection(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Use my collection
+              </span>
+            </label>
+            
+            {selectedMode === 'budget' && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700 dark:text-gray-300">
+                  Budget: $
+                </label>
+                <input
+                  type="number"
+                  value={budget}
+                  onChange={(e) => setBudget(Number(e.target.value))}
+                  className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded"
+                  min="0"
+                  step="10"
+                />
+              </div>
+            )}
+          </div>
+          
+          <button
+            onClick={runOptimization}
+            disabled={isLoading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isLoading ? 'Analyzing...' : 'Re-analyze'}
+          </button>
+        </div>
+      </div>
+
       {/* Optimizer Header */}
       <div className={`rounded-lg p-6 ${health.bg} dark:${health.bg}/20`}>
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <WrenchScrewdriverIcon className="h-6 w-6" />
-              Deck Optimizer
+              Optimization Results
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Automatically fix issues and improve your deck
+              {optimization?.summary.estimatedPlacements || 'Analyzing your deck...'}
             </p>
           </div>
           <div className="text-center">
@@ -276,6 +339,50 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
           </button>
         </div>
       </div>
+
+      {/* Optimization Summary */}
+      {optimization && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+              <h5 className="font-medium text-gray-900 dark:text-white">Critical Issues</h5>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {optimization.summary.criticalIssues}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Must fix for legality
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <HomeIcon className="h-5 w-5 text-blue-600" />
+              <h5 className="font-medium text-gray-900 dark:text-white">From Collection</h5>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {optimization.summary.cardsFromCollection}/{optimization.summary.totalRecommendations}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Cards you already own
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <CurrencyDollarIcon className="h-5 w-5 text-green-600" />
+              <h5 className="font-medium text-gray-900 dark:text-white">Budget Needed</h5>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              ${optimization.summary.budgetRequired.toFixed(2)}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              For missing cards
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Optimization Steps */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -323,6 +430,24 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
                     <p className="text-sm text-blue-600 dark:text-blue-400 ml-7 mt-1">
                       Impact: {step.impact}
                     </p>
+                    <div className="flex items-center gap-3 ml-7 mt-2">
+                      {step.inCollection && (
+                        <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full">
+                          <HomeIcon className="h-3 w-3 inline mr-1" />
+                          In Collection
+                        </span>
+                      )}
+                      {step.cost !== undefined && step.cost > 0 && (
+                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                          ${step.cost.toFixed(2)}
+                        </span>
+                      )}
+                      {step.tags && step.tags.map((tag, idx) => (
+                        <span key={idx} className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   <div className="flex gap-2 ml-4">
                     {!isApplied && !isOptimizing && (
@@ -356,6 +481,54 @@ export default function DeckOptimizer({ deck, analysis, onDeckUpdate }: DeckOpti
           )}
         </div>
       </div>
+
+      {/* Upgrade Path */}
+      {optimization && optimization.upgradePath.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            Recommended Upgrade Path
+          </h4>
+          <div className="space-y-4">
+            {optimization.upgradePath.map((tier) => (
+              <div key={tier.tier} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h5 className="font-medium text-gray-900 dark:text-white">
+                      Tier {tier.tier}: {tier.name}
+                    </h5>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {tier.description}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      ${tier.budget.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      +{tier.estimatedScoreImprovement} score
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {tier.cards.map((card, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {card.quantity}x {card.name}
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        ${card.price.toFixed(2)}
+                        {card.inCollection && (
+                          <HomeIcon className="h-3 w-3 inline ml-1 text-green-600" />
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Preview Changes */}
       {showPreview && appliedSteps.size > 0 && (

@@ -13,7 +13,8 @@ import {
   ClockIcon,
   SparklesIcon,
   ExclamationTriangleIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 
 // Import visualization components (to be created)
@@ -62,15 +63,8 @@ export default function DeckAnalyzePage() {
   ];
 
   const tabs = [
-    { id: 'dashboard', name: 'Dashboard', icon: ChartBarIcon },
-    { id: 'overview', name: 'Details', icon: SparklesIcon },
-    { id: 'consistency', name: 'Consistency', icon: ShieldCheckIcon },
-    { id: 'synergy', name: 'Synergy', icon: SparklesIcon },
-    { id: 'speed', name: 'Speed', icon: ClockIcon },
-    { id: 'meta', name: 'Meta Position', icon: ArrowTrendingUpIcon },
-    { id: 'recommendations', name: 'Recommendations', icon: LightBulbIcon },
-    { id: 'improvements', name: 'Improvements', icon: SparklesIcon },
-    { id: 'optimizer', name: 'Optimizer', icon: SparklesIcon },
+    { id: 'dashboard', name: 'AI Expert Analysis', icon: SparklesIcon },
+    { id: 'optimizer', name: 'Optimizer', icon: WrenchScrewdriverIcon },
   ];
 
   const exportAnalysis = () => {
