@@ -384,31 +384,35 @@ export async function createWorker(
     };
   }
 
-  return new Worker(
-    queueName,
-    async (job: Job<JobData>) => {
-      console.log(`Processing job ${job.id} in queue ${queueName}`);
-      const startTime = Date.now();
-      
-      try {
-        const result = await processor(job);
-        const duration = Date.now() - startTime;
+    return new Worker(
+      queueName,
+      async (job: Job<JobData>) => {
+        console.log(`Processing job ${job.id} in queue ${queueName}`);
+        const startTime = Date.now();
         
-        console.log(`Job ${job.id} completed in ${duration}ms`);
-        return result;
-      } catch (error) {
-        const duration = Date.now() - startTime;
-        console.error(`Job ${job.id} failed after ${duration}ms:`, error);
-        throw error;
+        try {
+          const result = await processor(job);
+          const duration = Date.now() - startTime;
+          
+          console.log(`Job ${job.id} completed in ${duration}ms`);
+          return result;
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          console.error(`Job ${job.id} failed after ${duration}ms:`, error);
+          throw error;
+        }
+      },
+      {
+        connection,
+        concurrency,
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 200 },
       }
-    },
-    {
-      connection,
-      concurrency,
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 200 },
-    }
-  );
+    );
+  } catch (error) {
+    logger.error(`Failed to create worker for ${queueName}:`, error);
+    return null;
+  }
 }
 
 // Queue management utilities
