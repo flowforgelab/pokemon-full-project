@@ -7,6 +7,7 @@
 
 import { Card, DeckCard } from '@prisma/client';
 import { CURRENT_STANDARD_META } from './meta-context';
+import { MetaCacheService } from '../services/meta-cache-service';
 
 export interface AIDeckAnalysis {
   overallRating: number; // 0-100

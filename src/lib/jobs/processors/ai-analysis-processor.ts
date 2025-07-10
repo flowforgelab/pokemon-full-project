@@ -8,6 +8,7 @@ import {
   JobQueue,
   JobPriority
 } from '../types';
+import { MetaCacheService } from '../../services/meta-cache-service';
 
 // Load system prompt
 import { readFileSync } from 'fs';
@@ -131,8 +132,19 @@ export class AIAnalysisProcessor {
         throw new Error('OpenAI API key not configured');
       }
 
+      // Get current meta data
+      let metaData = '';
+      try {
+        const formatId = deck.formatId || 'STANDARD';
+        metaData = await MetaCacheService.getMetaForAI(formatId);
+        await job.log(`Fetched meta data for format: ${formatId}`);
+      } catch (error) {
+        console.error('Failed to fetch meta data:', error);
+        metaData = 'Unable to fetch current meta data.';
+      }
+
       // Customize prompt based on focus areas
-      let customPrompt = systemPrompt;
+      let customPrompt = systemPrompt.replace('{{META_DATA}}', metaData);
       
       if (focusAreas && focusAreas.length > 0) {
         customPrompt += '\n\nFOCUS AREAS: Please pay special attention to:\n';
