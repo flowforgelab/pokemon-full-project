@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   AcademicCapIcon, 
@@ -19,37 +19,12 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<'basic' | 'advanced' | 'ai' | null>(null);
 
+  // Since we only have AI analysis, automatically redirect
+  useEffect(() => {
+    router.push(`/decks/${deckId}/analyze/ai`);
+  }, [deckId, router]);
+
   const options = [
-    {
-      id: 'basic' as const,
-      title: 'Basic Deck Helper',
-      subtitle: 'For young trainers (Ages 6-12)',
-      description: 'Get simple tips to make your deck better! Learn what cards to add and why.',
-      icon: SparklesIcon,
-      color: 'blue',
-      features: [
-        '🎯 Easy to understand advice',
-        '😊 Friendly explanations',
-        '🌟 Fun facts about Pokemon',
-        '💡 Simple card suggestions'
-      ],
-      requiresSubscription: false
-    },
-    {
-      id: 'advanced' as const,
-      title: 'Advanced Deck Analyzer',
-      subtitle: 'For competitive players',
-      description: 'Deep analysis with meta matchups, statistical probabilities, and tournament optimization.',
-      icon: ChartBarIcon,
-      color: 'purple',
-      features: [
-        '📊 Detailed statistics',
-        '🎮 Meta game analysis',
-        '💰 Budget recommendations',
-        '🏆 Tournament sideboards'
-      ],
-      requiresSubscription: false
-    },
     {
       id: 'ai' as const,
       title: 'AI Expert Analysis',
@@ -90,7 +65,7 @@ export function AnalysisSelector({ deckId, deckName }: AnalysisSelectorProps) {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="max-w-md mx-auto mb-8">
         {options.map((option) => {
           const Icon = option.icon;
           const isSelected = selected === option.id;
